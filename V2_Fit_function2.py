@@ -100,7 +100,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
     #####################################################################################################
     
-def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
+def fit_data(X_coordinates,Y_coordinates, kernel_method='RQ_Kernel'):
     import imas
     import os
     import sys
@@ -120,31 +120,30 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         raise ValueError("The Fit method is not know, please provide an method from the List")
         return
     
-    print('Te_reduced.shape = ' , density)
-    #np.savetxt('y.txt', density[:,10])
-    np.savetxt('x_y_eror.txt',(rho_pol_norm[:,10],density[:,10],np.full(density[:,10].shape,100)))
-    
+    print('Te_reduced.shape = ' , Y_coordinates)
+    #np.savetxt('x_y_eror.txt',(X_coordinates[:,10],Y_coordinates[:,10],np.full(Y_coordinates[:,10].shape,100)))
+    '''
     file = open("list.txt", "w")
-    for index in range(len(rho_pol_norm[:,10])):
-        file.write(str(rho_pol_norm[:,10][index]) + " " + str(density[:,10][index]) + " " + str(np.full(density[:,10].shape,100)[index])+ "\n")
+    for index in range(len(X_coordinates[:,10])):
+        file.write(str(X_coordinates[:,10][index]) + " " + str(Y_coordinates[:,10][index]) + " " + str(np.full(Y_coordinates[:,10].shape,100)[index])+ "\n")
     file.close()
-    
-    for i in range(len(density)):
-        Te_reduced = density[ :,i]
-        rho_tor_norm_reduced = (rho_pol_norm)[:,i]
+    '''
+    for i in range(len(Y_coordinates)):
+        Y_reduced = Y_coordinates[ :,i]
+        X_reduced = (X_coordinates)[:,i]
         
         
-        plt.plot(rho_tor_norm_reduced, Te_reduced)
+        plt.plot(X_reduced, Y_reduced)
         plt.show()
-        Te_errors = np.full(Te_reduced.shape,100)
-        min = rho_tor_norm_reduced.min() - 0.025
-        max = rho_tor_norm_reduced.max() + 0.025
-        print('Te_reduced.shape = ' , Te_reduced.shape)
-        print('Te_errors.shape = ',Te_errors.shape)
-        rho_errors =  np.full(rho_tor_norm_reduced.shape,0.0091)
-        print('rho_errors.shape = ', rho_errors.shape)
+        Y_errors = np.full(Y_reduced.shape,10e15)
+        minimum = X_reduced.min() - 0.025
+        maximum = X_reduced.max() + 0.025
+        print('Y_reduced.shape = ' , Y_reduced.shape)
+        print('Y_errors.shape = ',Y_errors.shape)
+        X_errors =  np.full(X_reduced.shape,0.0091)
+        print('X_errors.shape = ', X_errors.shape)
         #try to choos the y errors to be just related to the Te that is 3177 and the rho errors relatd to the rho that is 100
-        #print(Te_errors)
+        #print(Y_errors)
         
         
         
@@ -154,7 +153,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         
         
         
-        fit_x_values = np.linspace(min,max,100)
+        fit_x_values = np.linspace(minimum,maximum,100)
         #fit_x_values = np.linspace(0.0,1.5,100)
         # Define a kernel to fit the data itself
         #     Rational quadratic kernel is usually robust enough for general fitting
@@ -184,7 +183,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         print('hi')
         
         #     Define the raw data and associated errors to be fitted
-        gpr_object.set_raw_data(xdata=rho_tor_norm_reduced,ydata=Te_reduced,yerr=Te_errors,xerr=rho_errors, \
+        gpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
                                     dxdata=[0.0],dydata=[0.0],dyerr=[0.0])     # Example of applying derivative constraints
         print('hi')
 
@@ -245,7 +244,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         hsgpr_object.set_error_kernel(kernel=error_kernel)
 
         #     Define the raw data and associated errors to be fitted
-        hsgpr_object.set_raw_data(xdata=rho_tor_norm_reduced,ydata=Te_reduced,yerr=Te_errors,xerr=rho_errors, \
+        hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
                                       dxdata=[0.0],dydata=[0.0],dyerr=[0.0])     # Example of applying derivative constraints
 
         #     Define the search criteria for data fitting routine and error fitting routine
@@ -295,7 +294,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         nigpr_object = GPR1D.GaussianProcessRegression1D()
         nigpr_object.set_kernel(kernel=kernel)
         nigpr_object.set_error_kernel(kernel=error_kernel)
-        nigpr_object.set_raw_data(xdata=rho_tor_norm_reduced,ydata=Te_reduced,yerr=Te_errors,xerr=rho_errors, \
+        nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
                                       dxdata=[0.0],dydata=[0.0],dyerr=[0.0])
         nigpr_object.set_search_parameters(epsilon=1.0e-2)
         nigpr_object.set_error_search_parameters(epsilon=1.0e-1)
@@ -407,7 +406,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
 
         print('123654')
 
-
+        '''
 
 
         
@@ -449,7 +448,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         hsgp_str = hsgp_str + "Log-marginal-likelihood: %18.6f\n" % (hs_fit_lml)
 
         print(hsgp_str)
-
+        '''
         nigp_str = "--- NIGPR Fit ---\n\n"
         nigp_str = nigp_str + "Kernel name: %30s\n" % (nigp_kernel_name)
         nigp_str = nigp_str + "Regularization parameter: %17.4f\n" % (nigp_fit_regpar)
@@ -494,7 +493,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         fig = plt.figure()
         fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
-        plt.plot(rho_tor_norm_reduced, Te_reduced)
+        plt.plot(X_reduced, Y_reduced)
         fig.savefig(plot_save_directory+'data.png')
         plt.close(fig)
 
@@ -513,16 +512,16 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             plot_sigma = 2.0
 
             # Raw data with GPR fit and error, only accounting for y-errors
-            plot_Te_errors = plot_sigma * Te_errors
+            plot_Y_errors = plot_sigma * Y_errors
             fig = plt.figure()
             fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
             ax = fig.add_subplot(111) 
-            ax.errorbar(rho_tor_norm_reduced,Te_reduced,yerr=plot_Te_errors,ls='',marker='.',color='b')
+            ax.errorbar(X_reduced,Y_reduced,yerr=plot_Y_errors,ls='',marker='.',color='b')
             ax.plot(fit_x_values,hs_fit_y_values,color='r')
             plot_hs_fit_y_lower = hs_fit_y_values - plot_sigma * hs_fit_y_errors
             plot_hs_fit_y_upper = hs_fit_y_values + plot_sigma * hs_fit_y_errors
             ax.fill_between(fit_x_values,plot_hs_fit_y_lower,plot_hs_fit_y_upper,facecolor='r',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'gp_data.png')
             plt.close(fig)
 
@@ -534,16 +533,16 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             plot_hs_fit_dydx_lower = hs_fit_dydx_values - plot_sigma * hs_fit_dydx_errors
             plot_hs_fit_dydx_upper = hs_fit_dydx_values + plot_sigma * hs_fit_dydx_errors
             ax.fill_between(fit_x_values,plot_hs_fit_dydx_lower,plot_hs_fit_dydx_upper,facecolor='r',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'gp_derivative_data.png')
             plt.close(fig)
 
             # Raw data with GPR fit and error, comparison of using y-errors as weights, rigourously accounting for y-errors, and rigourously account for y-errors AND x-errors
-            plot_rho_errors = plot_sigma * rho_errors
+            plot_X_errors = plot_sigma * X_errors
             fig = plt.figure()
             fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
             ax = fig.add_subplot(111)
-            ax.errorbar(rho_tor_norm_reduced,Te_reduced,xerr=plot_rho_errors,yerr=plot_Te_errors,ls='',marker='.',color='k')
+            ax.errorbar(X_reduced,Y_reduced,xerr=plot_X_errors,yerr=plot_Y_errors,ls='',marker='.',color='k')
             ax.plot(fit_x_values,fit_y_values,color='g')
             plot_fit_y_lower = fit_y_values - plot_sigma * fit_y_errors
             plot_fit_y_upper = fit_y_values + plot_sigma * fit_y_errors
@@ -560,7 +559,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             ax.plot(fit_x_values,plot_ni_fit_y_lower,color='b',ls='--')
             ax.plot(fit_x_values,plot_ni_fit_y_upper,color='b',ls='--')
             ax.fill_between(fit_x_values,plot_ni_fit_y_lower,plot_ni_fit_y_upper,facecolor='b',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'gp_options_test.png')
             plt.close(fig)
 
@@ -584,7 +583,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             ax.plot(fit_x_values,plot_ni_fit_dydx_lower,color='b',ls='--')
             ax.plot(fit_x_values,plot_ni_fit_dydx_upper,color='b',ls='--')
             ax.fill_between(fit_x_values,plot_ni_fit_dydx_lower,plot_ni_fit_dydx_upper,facecolor='b',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'gp_options_dtest.png')
             plt.close(fig)
             '''
@@ -598,7 +597,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             plot_hs_sample_y_lower = sample_mean - plot_sigma * sample_std
             plot_hs_sample_y_upper = sample_mean + plot_sigma * sample_std
             ax.fill_between(fit_x_values,plot_hs_sample_y_lower,plot_hs_sample_y_upper,facecolor='b',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'sample_gp_test.png')
             plt.close(fig)
 
@@ -612,7 +611,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             plot_hs_sample_dydx_lower = deriv_mean - plot_sigma * deriv_std
             plot_hs_sample_dydx_upper = deriv_mean + plot_sigma * deriv_std
             ax.fill_between(dfit_x_values,plot_hs_sample_dydx_lower,plot_hs_sample_dydx_upper,facecolor='b',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'sample_gp_drv_test.png')
             plt.close(fig)
 
@@ -626,7 +625,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             plot_hs_dsample_dydx_lower = dsample_mean - plot_sigma * dsample_std
             plot_hs_dsample_dydx_upper = dsample_mean + plot_sigma * dsample_std
             ax.fill_between(fit_x_values,plot_hs_dsample_dydx_lower,plot_hs_dsample_dydx_upper,facecolor='b',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'sample_gp_dtest.png')
             plt.close(fig)
 
@@ -640,7 +639,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             plot_hs_dsample_y_lower = integ_mean - plot_sigma * integ_std
             plot_hs_dsample_y_upper = integ_mean + plot_sigma * integ_std
             ax.fill_between(ifit_x_values,plot_hs_dsample_y_lower,plot_hs_dsample_y_upper,facecolor='b',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'sample_gp_itg_dtest.png')
             plt.close(fig)
 
@@ -651,7 +650,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             ax.fill_between(fit_x_values,plot_hs_fit_y_lower,plot_hs_fit_y_upper,facecolor='r',edgecolor='None',alpha=0.2)
             for ii in np.arange(0,plot_num_samples):
                 ax.plot(fit_x_values,nsample_array[ii,:],color='k',alpha=0.5)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'sample_gp_noisy_test.png')
             plt.close(fig)
 
@@ -662,7 +661,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             ax.fill_between(fit_x_values,plot_hs_fit_dydx_lower,plot_hs_fit_dydx_upper,facecolor='r',edgecolor='None',alpha=0.2)
             for ii in np.arange(0,plot_num_samples):
                 ax.plot(fit_x_values,ndsample_array[ii,:],color='k',alpha=0.5)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'sample_gp_noisy_dtest.png')
             plt.close(fig)
 
@@ -678,7 +677,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             plot_hs_zsample_y_lower = zsample_mean - plot_sigma * zsample_std
             plot_hs_zsample_y_upper = zsample_mean + plot_sigma * zsample_std
             ax.fill_between(fit_x_values,plot_hs_sample_y_lower,plot_hs_sample_y_upper,facecolor='b',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'sample_gp_no_noise_test.png')
             plt.close(fig)
 
@@ -694,7 +693,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             plot_hs_zsample_dydx_lower = zderiv_mean - plot_sigma * zderiv_std
             plot_hs_zsample_dydx_upper = zderiv_mean + plot_sigma * zderiv_std
             ax.fill_between(dfit_x_values,plot_hs_zsample_dydx_lower,plot_hs_zsample_dydx_upper,facecolor='b',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'sample_gp_drv_no_noise_test.png')
             plt.close(fig)
 
@@ -708,7 +707,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             plot_hs_zdsample_dydx_lower = zdsample_mean - plot_sigma * zdsample_std
             plot_hs_zdsample_dydx_upper = zdsample_mean + plot_sigma * zdsample_std
             ax.fill_between(fit_x_values,plot_hs_zdsample_dydx_lower,plot_hs_zdsample_dydx_upper,facecolor='b',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'sample_gp_no_noise_dtest.png')
             plt.close(fig)
 
@@ -722,7 +721,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             plot_hs_zdsample_y_lower = zinteg_mean - plot_sigma * zinteg_std
             plot_hs_zdsample_y_upper = zinteg_mean + plot_sigma * zinteg_std
             ax.fill_between(ifit_x_values,plot_hs_zdsample_y_lower,plot_hs_zdsample_y_upper,facecolor='b',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'sample_gp_itg_no_noise_dtest.png')
             plt.close(fig)
             '''
