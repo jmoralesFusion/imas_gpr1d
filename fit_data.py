@@ -116,7 +116,6 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel'):
                }
 
     for i in range(Y_coordinates.shape[1]):
-        import pdb; pdb.set_trace()
         Y_reduced = Y_coordinates[ :,i]
         X_reduced = (X_coordinates)[:,i]
 
