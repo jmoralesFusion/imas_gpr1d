@@ -13,21 +13,7 @@ import GPR1D
 
 # Local libraries
 from fit_data import fit_data
-
-
-default_configuartion = {
-    'Constant_Kernel' : "GPR1D.Constant_Kernel()",
-    'Noise_Kernel'  : "GPR1D.Noise_Kernel()",
-    'Linear_Kernel'   : "GPR1D.Linear_Kernel()",
-    'Poly_Order_Kernel'   : "GPR1D.Poly_Order_Kernel()",
-    'SE_Kernel'   : "GPR1D.SE_Kernel()",
-    'RQ_Kernel'  : "GPR1D.RQ_Kernel()",
-    'Matern_HI_Kernel'   : "GPR1D.Matern_HI_Kernel()",
-    'NN_Kernel'  : "GPR1D.NN_Kernel()",
-    'Gibbs_Kernel'  : "GPR1D.Gibbs_Kernel()"
-    }
-
-
+from small_fit_data import fit_data1
 def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user_in, machine_in, datatype):
     Data_typelist = ['reflectometer_profile', 'ece', 'interferometer']
 
@@ -121,7 +107,8 @@ def main():
   
     rho_pol_norm, electron_density = get_data(54095, 0, 0, 'MK260524', 'west', 0, 0, 'imas_public', 'west', 'reflectometer_profile')
     
-    fit_data( rho_pol_norm, electron_density, 'RQ_Kernel')
+    #fit_data( rho_pol_norm, electron_density, 'RQ_Kernel')
+    fit_data1( rho_pol_norm, electron_density, '0', 'RQ_Kernel')
 
 main()
    
