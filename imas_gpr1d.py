@@ -22,7 +22,8 @@ import imas
 from fit_data import fit_data
 
 
-def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user_in, machine_in, datatype):
+def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user_in, machine_in, \
+             datatype, write_edge_profiles):
     Data_typelist = ['reflectometer_profile', 'ece', 'interferometer']
 
     print('Printing the list of data type that should be used: ')
@@ -89,25 +90,25 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         print('Phi shape : ' , Phi.shape)
         print('Z shape : ',Z.shape)
 
+        if (write_edge_profiles):
+            #####################################################################################################
+            ### save the output to the edge profiles as a start
+            #def put_data(shot, run_out, occ_out, user_out, machine_out):
+            idd_out = imas.ids(shot,  run_out)
+            idd_out.create_env(user_out, machine_out, '3')
+            #print(len(idd_out.core_profiles.profiles_1d))
+            idd_out.edge_profiles.profiles_1d.resize(100)
+            print('rho_pol_norm =', rho_pol_norm)
+            idd_out.edge_profiles.profiles_1d[0].grid.rho_tor_norm = rho_pol_norm[0, :]
+            idd_out.edge_profiles.ids_properties.homogeneous_time = 0
+            idd_out.edge_profiles.put()
+            
+            idd_out.close()
+
+            #####################################################################################################
 
         return rho_pol_norm, electron_density
-    
-            
-    #####################################################################################################
-    ### save the output to the edge profiles as a start
-    #def put_data(shot, run_out, occ_out, user_out, machine_out):
-    idd_out = imas.ids(shot,  run_out)
-    idd_out.create_env(user_out, machine_out, '3')
-    #print(len(idd_out.core_profiles.profiles_1d))
-    idd_out.edge_profiles.profiles_1d.resize(100)
-    print('rho_pol_norm =', rho_pol_norm)
-    idd_out.edge_profiles.profiles_1d[0].grid.rho_tor_norm = rho_pol_norm[0, :]
-    idd_out.edge_profiles.ids_properties.homogeneous_time = 0
-    idd_out.edge_profiles.put()
-    
-    idd_out.close()
 
-    #####################################################################################################
 
 
 if __name__ == '__main__':
@@ -137,8 +138,8 @@ if __name__ == '__main__':
                         help='IDS source of data for profile fit, default=reflectometer_profile')
     parser.add_argument('-k', '--kernel', type=str, default='RQ_Kernel', \
                         help='Kernel to use for profile fit, default=RQ_Kernel')
-    #parser.add_argument('--fast', action='store_true', \
-    #                    help='fast calculation')
+    parser.add_argument('-wep', '--write-edge-profiles', action='store_true', \
+                        help='Write IDS edge_profiles')
 
     args = parser.parse_args()
 
@@ -146,6 +147,6 @@ if __name__ == '__main__':
     x, y = get_data(args.shot, \
              args.run_out, args.occurrence_out, args.user_out, args.machine_out, \
              args.run_in, args.occurrence_in, args.user_in, args.machine_in, \
-             args.ids)
+             args.ids, args.write_edge_profiles)
 
     fit_data(x, y, args.kernel)
