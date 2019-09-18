@@ -43,7 +43,7 @@ default_configuartion = {
 
 
 
-def Optimization(X_coordinates, Y_coordinates, loop_over = 'even' , kernel_method='RQ_Kernel', ):
+def Optimization(X_coordinates, Y_coordinates, loop_over = 'even' , kernel_method='RQ_Kernel' ):
 
 
     optimized_config = {
