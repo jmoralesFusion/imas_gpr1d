@@ -13,7 +13,7 @@ import GPR1D
 
 # Local libraries
 from fit_data import fit_data
-from small_fit_data import fit_data1
+from Optimization_function import Optimization
 def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user_in, machine_in, datatype):
     Data_typelist = ['reflectometer_profile', 'ece', 'interferometer']
 
@@ -107,8 +107,8 @@ def main():
   
     rho_pol_norm, electron_density = get_data(54095, 0, 0, 'MK260524', 'west', 0, 0, 'imas_public', 'west', 'reflectometer_profile')
     
-    #fit_data( rho_pol_norm, electron_density, 'RQ_Kernel')
-    fit_data1( rho_pol_norm, electron_density, 'even', 'RQ_Kernel')
+    fit_data( rho_pol_norm, electron_density, 'RQ_Kernel')
+    #fit_data1( rho_pol_norm, electron_density, 'even', 'RQ_Kernel')
 
 main()
    

@@ -14,6 +14,7 @@ import warnings
 import GPR1D
 import imas
 import pywed as pw
+from Optimization_function import Optimization
 '''
     GPR1D fit data function
 '''
@@ -121,9 +122,9 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel'):
         file.write(str(X_coordinates[:,10][index]) + " " + str(Y_coordinates[:,10][index]) + " " + str(np.full(Y_coordinates[:,10].shape,100)[index])+ "\n")
     file.close()
     '''
-    
-
-
+    #grab the obtimized values and use them in the fitting routine:
+    optimized_values = Optimization(X_coordinates, Y_coordinates, 'even',  kernel_method='RQ_Kernel')
+    print('bla bla bla bla nla balahiasho :' , optimized_values['gp_fit_regpar_optimized']['regularaiztion'])
 
     nbr_pts  = 100
     nbr_time = Y_coordinates.shape[1]
@@ -148,16 +149,12 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel'):
         Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
         minimum = X_reduced.min()
         maximum = X_reduced.max()
-        print('Y_reduced.shape = ' , Y_reduced.shape)
-        print('Y_errors.shape = ',Y_errors.shape)
         X_errors =  np.full(X_reduced.shape,0.0091)
-        print('X_errors.shape = ', X_errors.shape)
 
         fit_x_values = np.linspace(minimum,maximum,100)
         # Define a kernel to fit the data itself
         #     Rational quadratic kernel is usually robust enough for general fitting
         kernel =  default_configuartion.get(kernel_method)
-        print('the chosen kernel is : ' ,kernel)
         # This is only necessary if using kernel restart option on the data fitting
         kernel_hyppar_bounds = np.atleast_2d()
 

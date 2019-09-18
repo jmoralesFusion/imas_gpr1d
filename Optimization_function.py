@@ -48,29 +48,29 @@ def Optimization(X_coordinates, Y_coordinates, loop_over = 'even' , kernel_metho
 
     optimized_config = {
         'gp_fit_regpar_optimized'      : {'regularaiztion'  : [],
-                                          'lower' : [],
-                                          'mid'   : [],
-                                          'upper' : []                                    
+                                          'amp' : [],
+                                          'ls'   : [],
+                                          'alpha' : []                                    
                                           },
         'hsgp_fit_regpar_optimized'    : {'regularaiztion'  : [],
-                                          'lower' : [],
-                                          'mid'   : [],
-                                          'upper' : []                                    
+                                          'amp' : [],
+                                          'ls'   : [],
+                                          'alpha' : []                                    
                                           },
         'nigp_fit_regpar_optimized'      : {'regularaiztion'        : [],
-                                            'lower'       : [],
-                                            'mid'         : [],
-                                            'upper'       : []                                    
+                                            'amp'       : [],
+                                            'ls'         : [],
+                                            'alpha'       : []                                    
                                             },
         'hsgp_error_fit_regpar_optimized'      : {'regularaiztion'  : [],
-                                                  'lower' : [],
-                                                  'mid'   : [],
-                                                  'upper' : []                                    
+                                                  'amp' : [],
+                                                  'ls'   : [],
+                                                  'alpha' : []                                    
                                                   },
         'nigp_error_fit_regpar_optimized'      : {'regularaiztion'  : [],
-                                                  'lower' : [],
-                                                  'mid'   : [],
-                                                  'upper' : []                                    
+                                                  'amp' : [],
+                                                  'ls'   : [],
+                                                  'alpha' : []                                    
                                                   }
         }
 
@@ -80,29 +80,29 @@ def Optimization(X_coordinates, Y_coordinates, loop_over = 'even' , kernel_metho
 
     optimized_values = {
         'gp_fit_regpar_optimized'      : {'regularaiztion'  : 0,
-                                          'lower' : 0,
-                                          'mid'   : 0,
-                                          'upper' : 0                                    
+                                          'amp' : 0,
+                                          'ls'   : 0,
+                                          'alpha' : 0                                    
                                           },
         'hsgp_fit_regpar_optimized'    : {'regularaiztion'  : 0,
-                                          'lower' : 0,
-                                          'mid'   : 0,
-                                          'upper' : 0                                    
+                                          'amp' : 0,
+                                          'ls'   : 0,
+                                          'alpha' : 0                                    
                                           },
         'nigp_fit_regpar_optimized'      : {'regularaiztion'        : 0,
-                                            'lower'       : 0,
-                                            'mid'         : 0,
-                                            'upper'       : 0                                    
+                                            'amp'       : 0,
+                                            'ls'         : 0,
+                                            'alpha'       : 0                                    
                                             },
         'hsgp_error_fit_regpar_optimized'      : {'regularaiztion'  : 0,
-                                                  'lower' : 0,
-                                                  'mid'   : 0,
-                                                  'upper' : 0                                    
+                                                  'amp' : 0,
+                                                  'ls'   : 0,
+                                                  'alpha' : 0                                    
                                                   },
         'nigp_error_fit_regpar_optimized'      : {'regularaiztion'  : 0,
-                                                  'lower' : 0,
-                                                  'mid'   : 0,
-                                                  'upper' : 0                                    
+                                                  'amp' : 0,
+                                                  'ls'   : 0,
+                                                  'alpha' : 0                                    
                                                   }
         }
     
@@ -155,9 +155,9 @@ def Optimization(X_coordinates, Y_coordinates, loop_over = 'even' , kernel_metho
         (gp_kernel_name,gp_kernel_hyppars,gp_fit_regpar) = gpr_object.get_gp_kernel_details()
         
         optimized_config['gp_fit_regpar_optimized']['regularaiztion'].append(gp_fit_regpar)
-        optimized_config['gp_fit_regpar_optimized']['lower'].append(gp_kernel_hyppars[0])
-        optimized_config['gp_fit_regpar_optimized']['mid'].append(gp_kernel_hyppars[1])
-        optimized_config['gp_fit_regpar_optimized']['upper'].append(gp_kernel_hyppars[2])
+        optimized_config['gp_fit_regpar_optimized']['amp'].append(gp_kernel_hyppars[0])
+        optimized_config['gp_fit_regpar_optimized']['ls'].append(gp_kernel_hyppars[1])
+        optimized_config['gp_fit_regpar_optimized']['alpha'].append(gp_kernel_hyppars[2])
 
         
 
@@ -183,13 +183,13 @@ def Optimization(X_coordinates, Y_coordinates, loop_over = 'even' , kernel_metho
 
 
         optimized_config['hsgp_fit_regpar_optimized']['regularaiztion'].append(hsgp_fit_regpar)
-        optimized_config['hsgp_fit_regpar_optimized']['lower'].append(hsgp_kernel_hyppars[0])
-        optimized_config['hsgp_fit_regpar_optimized']['mid'].append(hsgp_kernel_hyppars[1])
-        optimized_config['hsgp_fit_regpar_optimized']['upper'].append(hsgp_kernel_hyppars[2])
+        optimized_config['hsgp_fit_regpar_optimized']['amp'].append(hsgp_kernel_hyppars[0])
+        optimized_config['hsgp_fit_regpar_optimized']['ls'].append(hsgp_kernel_hyppars[1])
+        optimized_config['hsgp_fit_regpar_optimized']['alpha'].append(hsgp_kernel_hyppars[2])
         optimized_config['hsgp_error_fit_regpar_optimized']['regularaiztion'].append(hsgp_fit_regpar)
-        optimized_config['hsgp_error_fit_regpar_optimized']['lower'].append(hsgp_kernel_hyppars[0])
-        optimized_config['hsgp_error_fit_regpar_optimized']['mid'].append(hsgp_kernel_hyppars[1])
-        optimized_config['hsgp_error_fit_regpar_optimized']['upper'].append(hsgp_kernel_hyppars[2])
+        optimized_config['hsgp_error_fit_regpar_optimized']['amp'].append(hsgp_kernel_hyppars[0])
+        optimized_config['hsgp_error_fit_regpar_optimized']['ls'].append(hsgp_kernel_hyppars[1])
+        optimized_config['hsgp_error_fit_regpar_optimized']['alpha'].append(hsgp_kernel_hyppars[2])
 
 
 
@@ -214,35 +214,35 @@ def Optimization(X_coordinates, Y_coordinates, loop_over = 'even' , kernel_metho
 
 
         optimized_config['nigp_fit_regpar_optimized']['regularaiztion'].append(nigp_fit_regpar)
-        optimized_config['nigp_fit_regpar_optimized']['lower'].append(nigp_kernel_hyppars[0])
-        optimized_config['nigp_fit_regpar_optimized']['mid'].append(nigp_kernel_hyppars[1])
-        optimized_config['nigp_fit_regpar_optimized']['upper'].append(nigp_kernel_hyppars[2])
+        optimized_config['nigp_fit_regpar_optimized']['amp'].append(nigp_kernel_hyppars[0])
+        optimized_config['nigp_fit_regpar_optimized']['ls'].append(nigp_kernel_hyppars[1])
+        optimized_config['nigp_fit_regpar_optimized']['alpha'].append(nigp_kernel_hyppars[2])
         optimized_config['nigp_error_fit_regpar_optimized']['regularaiztion'].append(nigp_fit_regpar)
-        optimized_config['nigp_error_fit_regpar_optimized']['lower'].append(nigp_kernel_hyppars[0])
-        optimized_config['nigp_error_fit_regpar_optimized']['mid'].append(nigp_kernel_hyppars[1])
-        optimized_config['nigp_error_fit_regpar_optimized']['upper'].append(nigp_kernel_hyppars[2])
+        optimized_config['nigp_error_fit_regpar_optimized']['amp'].append(nigp_kernel_hyppars[0])
+        optimized_config['nigp_error_fit_regpar_optimized']['ls'].append(nigp_kernel_hyppars[1])
+        optimized_config['nigp_error_fit_regpar_optimized']['alpha'].append(nigp_kernel_hyppars[2])
 
 
 
     optimized_values['gp_fit_regpar_optimized']['regularaiztion']                 = np.mean(optimized_config['gp_fit_regpar_optimized']['regularaiztion'])
-    optimized_values['gp_fit_regpar_optimized']['lower']                          = np.mean(optimized_config['gp_fit_regpar_optimized']['lower'])
-    optimized_values['gp_fit_regpar_optimized']['mid']                            = np.mean(optimized_config['gp_fit_regpar_optimized']['mid'])
-    optimized_values['gp_fit_regpar_optimized']['upper']                          = np.mean(optimized_config['gp_fit_regpar_optimized']['upper'])
+    optimized_values['gp_fit_regpar_optimized']['amp']                          = np.mean(optimized_config['gp_fit_regpar_optimized']['amp'])
+    optimized_values['gp_fit_regpar_optimized']['ls']                            = np.mean(optimized_config['gp_fit_regpar_optimized']['ls'])
+    optimized_values['gp_fit_regpar_optimized']['alpha']                          = np.mean(optimized_config['gp_fit_regpar_optimized']['alpha'])
     optimized_values['hsgp_fit_regpar_optimized']['regularaiztion']               = np.mean(optimized_config['hsgp_fit_regpar_optimized']['regularaiztion'])
-    optimized_values['hsgp_fit_regpar_optimized']['lower']                        = np.mean(optimized_config['hsgp_fit_regpar_optimized']['lower'])
-    optimized_values['hsgp_fit_regpar_optimized']['mid']                          = np.mean(optimized_config['hsgp_fit_regpar_optimized']['mid'])
-    optimized_values['hsgp_fit_regpar_optimized']['upper']                        = np.mean(optimized_config['hsgp_fit_regpar_optimized']['upper'])
+    optimized_values['hsgp_fit_regpar_optimized']['amp']                        = np.mean(optimized_config['hsgp_fit_regpar_optimized']['amp'])
+    optimized_values['hsgp_fit_regpar_optimized']['ls']                          = np.mean(optimized_config['hsgp_fit_regpar_optimized']['ls'])
+    optimized_values['hsgp_fit_regpar_optimized']['alpha']                        = np.mean(optimized_config['hsgp_fit_regpar_optimized']['alpha'])
     optimized_values['hsgp_error_fit_regpar_optimized']['regularaiztion']         = np.mean(optimized_config['hsgp_error_fit_regpar_optimized']['regularaiztion'])
-    optimized_values['hsgp_error_fit_regpar_optimized']['lower']                  = np.mean(optimized_config['hsgp_error_fit_regpar_optimized']['lower'])
-    optimized_values['hsgp_error_fit_regpar_optimized']['mid']                    = np.mean(optimized_config['hsgp_error_fit_regpar_optimized']['mid'])
-    optimized_values['hsgp_error_fit_regpar_optimized']['upper']                  = np.mean(optimized_config['hsgp_error_fit_regpar_optimized']['upper'])
+    optimized_values['hsgp_error_fit_regpar_optimized']['amp']                  = np.mean(optimized_config['hsgp_error_fit_regpar_optimized']['amp'])
+    optimized_values['hsgp_error_fit_regpar_optimized']['ls']                    = np.mean(optimized_config['hsgp_error_fit_regpar_optimized']['ls'])
+    optimized_values['hsgp_error_fit_regpar_optimized']['alpha']                  = np.mean(optimized_config['hsgp_error_fit_regpar_optimized']['alpha'])
     optimized_values['nigp_fit_regpar_optimized']['regularaiztion']               = np.mean(optimized_config['nigp_fit_regpar_optimized']['regularaiztion'])
-    optimized_values['nigp_fit_regpar_optimized']['lower']                        = np.mean(optimized_config['nigp_fit_regpar_optimized']['lower'])
-    optimized_values['nigp_fit_regpar_optimized']['mid']                          = np.mean(optimized_config['nigp_fit_regpar_optimized']['mid'])
-    optimized_values['nigp_fit_regpar_optimized']['upper']                        = np.mean(optimized_config['nigp_fit_regpar_optimized']['upper'])
+    optimized_values['nigp_fit_regpar_optimized']['amp']                        = np.mean(optimized_config['nigp_fit_regpar_optimized']['amp'])
+    optimized_values['nigp_fit_regpar_optimized']['ls']                          = np.mean(optimized_config['nigp_fit_regpar_optimized']['ls'])
+    optimized_values['nigp_fit_regpar_optimized']['alpha']                        = np.mean(optimized_config['nigp_fit_regpar_optimized']['alpha'])
     optimized_values['nigp_error_fit_regpar_optimized']['regularaiztion']         = np.mean(optimized_config['nigp_error_fit_regpar_optimized']['regularaiztion'])
-    optimized_values['nigp_error_fit_regpar_optimized']['lower']                  = np.mean(optimized_config['nigp_error_fit_regpar_optimized']['lower'])
-    optimized_values['nigp_error_fit_regpar_optimized']['mid']                    = np.mean(optimized_config['nigp_error_fit_regpar_optimized']['mid'])
-    optimized_values['nigp_error_fit_regpar_optimized']['upper']                  = np.mean(optimized_config['nigp_error_fit_regpar_optimized']['upper'])
+    optimized_values['nigp_error_fit_regpar_optimized']['amp']                  = np.mean(optimized_config['nigp_error_fit_regpar_optimized']['amp'])
+    optimized_values['nigp_error_fit_regpar_optimized']['ls']                    = np.mean(optimized_config['nigp_error_fit_regpar_optimized']['ls'])
+    optimized_values['nigp_error_fit_regpar_optimized']['alpha']                  = np.mean(optimized_config['nigp_error_fit_regpar_optimized']['alpha'])
     
     return optimized_values
