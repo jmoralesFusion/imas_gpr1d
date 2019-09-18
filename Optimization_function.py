@@ -43,7 +43,7 @@ default_configuartion = {
 
 
 
-def fit_data1(X_coordinates, Y_coordinates, hyp_param = '0' , kernel_method='RQ_Kernel'):
+def Optimization(X_coordinates, Y_coordinates, loop_over = 'even' , kernel_method='RQ_Kernel', ):
 
 
     optimized_config = {
@@ -111,20 +111,23 @@ def fit_data1(X_coordinates, Y_coordinates, hyp_param = '0' , kernel_method='RQ_
     
     
     
-    import secrets
-    print(secrets.choice(Y_coordinates[1]))
-    print(secrets.randbelow(len(Y_coordinates[1])))
+    #import secrets
+    #print(secrets.choice(Y_coordinates[1]))
+    #print(secrets.randbelow(len(Y_coordinates[1])))
     ###################################################################################################
     
     
-    
-    #for i in range(0,len(Y_coordinates[1])):
+    #for i in range(0,len(Y_coordinates[1]), int(len(Y_coordinates[1])/500)):
     for i in range(3):
         even = 2*i
         odd = 2*i +1 
-    
-        Y_reduced = Y_coordinates[ :,i]
-        X_reduced = (X_coordinates)[:,i]
+        if loop_over == odd :
+            Y_reduced = Y_coordinates[ :,odd]
+            X_reduced = (X_coordinates)[:,odd]
+            
+        else:
+            Y_reduced = Y_coordinates[ :,even]
+            X_reduced = (X_coordinates)[:,even]
 
         Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
         minimum = X_reduced.min()
@@ -163,7 +166,6 @@ def fit_data1(X_coordinates, Y_coordinates, hyp_param = '0' , kernel_method='RQ_
 
 
         # GPR fit rigourously accounting only for y-errors (this is the recommended option)
-        #     Procedure is nearly identical to above, except for the addition of an error kernel
         hsgpr_object = GPR1D.GaussianProcessRegression1D()
         hsgpr_object.set_kernel(kernel=kernel)
         hsgpr_object.set_error_kernel(kernel=error_kernel)
@@ -195,7 +197,6 @@ def fit_data1(X_coordinates, Y_coordinates, hyp_param = '0' , kernel_method='RQ_
 
        
         # GPR fit rigourously accounting for y-errors AND x-errors
-        #     Procedure is nearly identical to above, except for the addition of an extra option
         nigpr_object = GPR1D.GaussianProcessRegression1D()
         nigpr_object.set_kernel(kernel=kernel)
         nigpr_object.set_error_kernel(kernel=error_kernel)
@@ -243,12 +244,5 @@ def fit_data1(X_coordinates, Y_coordinates, hyp_param = '0' , kernel_method='RQ_
     optimized_values['nigp_error_fit_regpar_optimized']['lower']                  = np.mean(optimized_config['nigp_error_fit_regpar_optimized']['lower'])
     optimized_values['nigp_error_fit_regpar_optimized']['mid']                    = np.mean(optimized_config['nigp_error_fit_regpar_optimized']['mid'])
     optimized_values['nigp_error_fit_regpar_optimized']['upper']                  = np.mean(optimized_config['nigp_error_fit_regpar_optimized']['upper'])
-    
-  
-    
-    print(optimized_values['gp_fit_regpar_optimized']['regularaiztion'])
-    print(optimized_values['gp_fit_regpar_optimized']['lower'])
-    print(optimized_values['gp_fit_regpar_optimized']['mid'])
-    print(optimized_values['gp_fit_regpar_optimized']['upper'])
     
     return optimized_values

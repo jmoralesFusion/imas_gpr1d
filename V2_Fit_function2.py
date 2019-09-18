@@ -108,7 +108,7 @@ def main():
     rho_pol_norm, electron_density = get_data(54095, 0, 0, 'MK260524', 'west', 0, 0, 'imas_public', 'west', 'reflectometer_profile')
     
     #fit_data( rho_pol_norm, electron_density, 'RQ_Kernel')
-    fit_data1( rho_pol_norm, electron_density, '0', 'RQ_Kernel')
+    fit_data1( rho_pol_norm, electron_density, 'even', 'RQ_Kernel')
 
 main()
    

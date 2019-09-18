@@ -14,7 +14,6 @@ import warnings
 import GPR1D
 import imas
 import pywed as pw
-
 '''
     GPR1D fit data function
 '''
@@ -122,6 +121,9 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel'):
         file.write(str(X_coordinates[:,10][index]) + " " + str(Y_coordinates[:,10][index]) + " " + str(np.full(Y_coordinates[:,10].shape,100)[index])+ "\n")
     file.close()
     '''
+    
+
+
 
     nbr_pts  = 100
     nbr_time = Y_coordinates.shape[1]
