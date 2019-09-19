@@ -3,6 +3,7 @@ import os
 import sys
 import re
 #import pdb; pdb.set_trace()
+import time
 
 import getpass
 
@@ -109,6 +110,4 @@ def main():
     
     fit_data( rho_pol_norm, electron_density, 'RQ_Kernel')
     #fit_data1( rho_pol_norm, electron_density, 'even', 'RQ_Kernel')
-
 main()
-   

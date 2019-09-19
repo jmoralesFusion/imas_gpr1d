@@ -9,7 +9,7 @@ import os
 import re
 import sys
 import warnings
-
+import time
 # Local modules
 import GPR1D
 import imas
@@ -123,9 +123,11 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel'):
     file.close()
     '''
     #grab the obtimized values and use them in the fitting routine:
+    print('computing the time of 10 slices')
+    start_time = time.time()
     optimized_values = Optimization(X_coordinates, Y_coordinates, 'even',  kernel_method='RQ_Kernel')
-    print('bla bla bla bla nla balahiasho :' , optimized_values['gp_fit_regpar_optimized']['regularaiztion'])
-
+    print("--- %s seconds ---" % (time.time() - start_time))
+    
     nbr_pts  = 100
     nbr_time = Y_coordinates.shape[1]
 
