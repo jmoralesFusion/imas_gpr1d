@@ -35,19 +35,10 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         idd_in.reflectometer_profile.get()
         
         R_real = idd_in.reflectometer_profile.channel[0].position.r.data
-        #print(idd_in.reflectometer_profile.channel[0].position.r.data)
-        print(R_real.shape)
         
         electron_density = idd_in.reflectometer_profile.channel[0].n_e.data
         
-        #print(idd_in.reflectometer_profile.channel[0].n_e.data)
-        #print(idd_in.reflectometer_profile.channel[0].n_e.data.shape) #(100,3177)
-        
         import matplotlib.pyplot as plt
-        
-        #plt.plot(idd_in.reflectometer_profile.channel[0].position.r.data, idd_in.reflectometer_profile.channel[0].n_e.data)
-        #plt.show()
-        
         import equimap
         
         Time = idd_in.reflectometer_profile.time
@@ -68,23 +59,59 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_pol_norm.shape
         for ii in range(rho_pol_norm_base.shape[1]):
             rho_pol_norm[:, ii] = np.interp(R_real[:, ii], R_base, rho_pol_norm_base[:, ii])
-        '''plt.plot(rho_pol_norm, idd_in.reflectometer_profile.channel[0].n_e.data)
-        plt.show()
-        plt.figure() 
-        plt.plot(rho_pol_norm[:, 1000], idd_in.reflectometer_profile.channel[0].n_e.data[:, 1000])
-        plt.show()
-        '''
-        
-        print(' rho_pol_norm.shape : ' , rho_pol_norm.shape)
-        print('density.shape : ', electron_density.shape)
-        print('Time shape : ',Time.shape)
-        print('R shape: ',R_base.shape)
-        print('Phi shape : ' , Phi.shape)
-        print('Z shape : ',Z.shape)
-
 
         return rho_pol_norm, electron_density
     
+
+
+    
+    if datatype == 'ece':
+        
+        idd_in.ece.get()
+        
+        idd_in.ece.channel[0].position.r.data
+        print(idd_in.ece.channel[0].position.r.data)
+        print(idd_in.ece.channel[0].position.r.data.shape)
+        
+        idd_in.ece.channel[0].t_e.data
+        
+        print(idd_in.ece.channel[0].t_e.data)
+        print(idd_in.ece.channel[0].t_e.data.shape) #(100,3177)
+        
+        import matplotlib.pyplot as plt
+        '''
+        #from matplotlib import style
+        #style.use('ggplot')
+        for ii in range (len(idd_in.ece.channel)):
+            for jj in range (len(idd_in.ece.channel[ii].position.r.data)):
+                for kk in range(len(idd_in.ece.channel[ii].t_e.validity_timed)):
+                    if (idd_in.ece.channel[ii].t_e.validity_timed[kk] > 0):
+                        plt.plot(idd_in.ece.channel[ii].position.r.data[jj], idd_in.ece.channel[ii].t_e.data[jj],label='temperature versus raduis')#, linewidth=4,color='red')
+                        plt.legend()
+                        plt.show()
+        '''
+        print(type(idd_in.ece.channel[0].position.r.data[idd_in.ece.channel[0].t_e.data>0]))
+        print(idd_in.ece.channel[0].t_e.data[idd_in.ece.channel[0].t_e.data>0])
+        print(idd_in.ece.channel[0].t_e.validity_timed[idd_in.ece.channel[0].t_e.data>0])
+        import collections
+        print(collections.Counter(idd_in.ece.channel[0].t_e.validity_timed))
+        
+        for kk in range(len(idd_in.ece.channel)):
+            plt.plot(idd_in.ece.channel[kk].position.r.data[idd_in.ece.channel[0].t_e.validity_timed==0], idd_in.ece.channel[kk].t_e.data[idd_in.ece.channel[0].t_e.validity_timed==0],label='temperature versus raduis')#, linewidth=4,color='red')
+            plt.legend()
+            plt.show()
+        else : print('nothing positive')
+        #for ii in range(len(idd_in.ece.channel[0].position.r.data)):
+        #    plt.plot(idd_in.ece.channel[0].position.r.data[ii], idd_in.ece.channel[0].t_e.data[ii],label='temperature versus raduis', linewidth=4,color='red')
+        #    plt.legend()
+        #    plt.show()
+            
+        
+        density = idd_in.ece.channel[0].t_e.data
+        return rho_pol_norm, electron_density
+    
+            
+
             
     #####################################################################################################
     ### save the output to the edge profiles as a start
@@ -109,5 +136,4 @@ def main():
     rho_pol_norm, electron_density = get_data(54095, 0, 0, 'MK260524', 'west', 0, 0, 'imas_public', 'west', 'reflectometer_profile')
     
     fit_data( rho_pol_norm, electron_density, 'RQ_Kernel')
-    #fit_data1( rho_pol_norm, electron_density, 'even', 'RQ_Kernel')
 main()

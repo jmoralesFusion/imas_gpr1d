@@ -14,48 +14,37 @@ import GPR1D
 
 
 def get_data(shot, run_in, occ_in, user_in, machine_in, datatype):
-    Data_typelist = ['reflectometer_profile', 'ece', 'interferometer']
 
-    print('Printing the list of data type that should be used: ')
-    print(Data_typelist)
-    if datatype in Data_typelist:
-        print('The chosen type of data  is : ',datatype)
-    else:
-        raise ValueError("The data type is not know, please provide an valid type from the List")
-        return
-
-    
     idd_in = imas.ids(shot, run_in)
     idd_in.open_env(user_in, machine_in, '3')
         
     if datatype == 'ece':
 
         idd_in.ece.get()
-        
         idd_in.ece.channel[0].position.r.data
         print(idd_in.ece.channel[0].position.r.data)
         print(idd_in.ece.channel[0].position.r.data.shape)
-        
+            
         idd_in.ece.channel[0].t_e.data
-        
         print(idd_in.ece.channel[0].t_e.data)
         print(idd_in.ece.channel[0].t_e.data.shape) #(100,3177)
+
+        nbr_channels = len(idd_in.ece.channel)
+        nbr_pts =len(idd_in.ece.channel[0].position.r.data)
+        nbr_time =  len(idd_in.ece.channel[0].t_e.data)
         
+        matrix = np.full((nbr_pts, nbr_time), np.nan)
+        matrix_time = np.full((nbr_pts, nbr_time), np.nan)
+        
+        print(idd_in.ece.channel[0].t_e.data[1], idd_in.ece.channel[0].position.r.data[1])
+        
+        for channel in range(len(idd_in.ece.channel)):
+            for time in range(len(idd_in.ece.channel[channel].t_e.data)):
+                for raduis in range(len(idd_in.ece.channel[channel].position.r.data)):
+                    matrix[raduis,time].append(idd_in.ece.channel[channel].position.r.data[raduis], idd_in.ece.channel[channel].t_e.data[time])
+            
         import matplotlib.pyplot as plt
-        '''
-        #from matplotlib import style
-        #style.use('ggplot')
-        for ii in range (len(idd_in.ece.channel)):
-            for jj in range (len(idd_in.ece.channel[ii].position.r.data)):
-                for kk in range(len(idd_in.ece.channel[ii].t_e.validity_timed)):
-                    if (idd_in.ece.channel[ii].t_e.validity_timed[kk] > 0):
-                        plt.plot(idd_in.ece.channel[ii].position.r.data[jj], idd_in.ece.channel[ii].t_e.data[jj],label='temperature versus raduis')#, linewidth=4,color='red')
-                        plt.legend()
-                        plt.show()
-        '''
-        print(type(idd_in.ece.channel[0].position.r.data[idd_in.ece.channel[0].t_e.data>0]))
-        print(idd_in.ece.channel[0].t_e.data[idd_in.ece.channel[0].t_e.data>0])
-        print(idd_in.ece.channel[0].t_e.validity_timed[idd_in.ece.channel[0].t_e.data>0])
+
         import collections
         print(collections.Counter(idd_in.ece.channel[0].t_e.validity_timed))
         
@@ -63,13 +52,7 @@ def get_data(shot, run_in, occ_in, user_in, machine_in, datatype):
             plt.plot(idd_in.ece.channel[kk].position.r.data[idd_in.ece.channel[0].t_e.validity_timed==0], idd_in.ece.channel[kk].t_e.data[idd_in.ece.channel[0].t_e.validity_timed==0],label='temperature versus raduis')#, linewidth=4,color='red')
             plt.legend()
             plt.show()
-        else : print('nothing positive')
-        #for ii in range(len(idd_in.ece.channel[0].position.r.data)):
-        #    plt.plot(idd_in.ece.channel[0].position.r.data[ii], idd_in.ece.channel[0].t_e.data[ii],label='temperature versus raduis', linewidth=4,color='red')
-        #    plt.legend()
-        #    plt.show()
             
-        
         density = idd_in.ece.channel[0].t_e.data
         return rho_pol_norm, np.transpose(density)
 
@@ -87,51 +70,13 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
     import GPR1D
 
     #####################################################################################################
-    kernel_methodlist=['Constant_Kernel', 'Noise_Kernel', 'Linear_Kernel', 'Poly_Order_Kernel', 'SE_Kernel', 'RQ_Kernel',
-                       'Matern_HI_Kernel', 'NN_Kernel', 'Gibbs_Kernel']
-    print('Printing the list of kernel methods that should be used: ')
-    print(kernel_methodlist)
-    if kernel_method in kernel_methodlist:
-        print('The chosed method is : ',kernel_method)
-    else:
-        raise ValueError("The Fit method is not know, please provide an method from the List")
-        return
-    
-    #np.savetxt('y.txt', density[:,10])
-    #np.savetxt('x_y_eror.txt',(rho_pol_norm[:,10],density[:,10],np.full(density[:,10].shape,100)))
-    
-    file = open("sample_0.txt", "w")
-    for index in range(len(rho_pol_norm[:,0])):
-        file.write(str(rho_pol_norm[:,0][index]) + " " + str(density[:,0][index]) + " " + str(np.full(density[:,0].shape,100)[index])+ "\n")
-    file.close()
-    
-    file = open("sample_1.txt", "w")
-    for index in range(len(rho_pol_norm[:,1])):
-        file.write(str(rho_pol_norm[:,1][index]) + " " + str(density[:,1][index]) + " " + str(np.full(density[:,1].shape,100)[index])+ "\n")
-    file.close()
-    '''
-    file = open("sample_0.txt", "w")
-    for index in range(len(rho_pol_norm[:,1])):
-        file.write(str(rho_pol_norm[:,0][index]) + " " + str(density[:,0][index]) + " " + str(np.full(density[:,0].shape,100)[index])+ "\n")
-    file.close()
-    '''
-    #print(np.linalg.eigvals(rho_pol_norm[10:10]))
-    #print(np.linalg.eigvals(density[10:10]))
+   
     for i in range(len(density)):
         Te_reduced = density[ :,i]
         rho_tor_norm_reduced = (rho_pol_norm)[:,i]
         
         print(type(Te_reduced))
         print(type(rho_tor_norm_reduced))
-
-        print('------------------> check if we have NaNs or Infs ')
-        print(np.isnan(rho_tor_norm_reduced).any())
-        print(np.isnan(Te_reduced).any())
-        
-        print(np.isinf(rho_tor_norm_reduced).any())
-        print(np.isinf(Te_reduced).any())
-        print('------------------> check is finished ')
-
 
 
         
@@ -149,8 +94,8 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         fit_x_values = np.linspace(min,max,100)
         # Define a kernel to fit the data itself
         #     Rational quadratic kernel is usually robust enough for general fitting
-        #kernel = GPR1D.RQ_Kernel()
-        kernel = GPR1D.Matern_HI_Kernel()
+        kernel = GPR1D.RQ_Kernel()
+        #kernel = GPR1D.Matern_HI_Kernel()
         #kernel = GPR1D.Linear_Kernel()
         #kernel = GPR1D.Poly_Order_Kernel()
 
@@ -160,8 +105,8 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         # Define a kernel to fit the given y-errors, needed for rigourous estimation of fit error including data error
         #     Typically a simple rational quadratic kernel is sufficient given a high regularization parameter (specified later)
         #     Here, the RQ kernel is summed with a noise kernel for extra robustness and to demonstrate how to use operator kernels
-        #error_kernel = GPR1D.RQ_Kernel()
-        error_kernel = GPR1D.Matern_HI_Kernel()
+        error_kernel = GPR1D.RQ_Kernel()
+        #error_kernel = GPR1D.Matern_HI_Kernel()
         #error_kernel = GPR1D.Linear_Kernel()
         #error_kernel = GPR1D.Poly_Order_Kernel()
 
@@ -318,38 +263,14 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         # Samples the fit distribution - smooth noise representation
         sample_array = hsgpr_object.sample_GP(num_samples,actual_noise=False)
 
-        print('------------------> check if we have NaNs or Infs ')
-        print(np.isnan(sample_array).any())
-        
-        print(np.isinf(sample_array).any())
-        print('------------------> check is finished ')
-
         # Calculates the derivatives of the sampled fit distributions
         dfit_x_values = (fit_x_values[1:] + fit_x_values[:-1]) / 2.0
         deriv_array = (sample_array[:,1:] - sample_array[:,:-1]) / (fit_x_values[1:] - fit_x_values[:-1])
 
-        print('------------------> check if we have NaNs or Infs ')
-        print(np.isnan(dfit_x_values).any())
-        print(np.isnan(deriv_array).any())
-
-        print(np.isinf(dfit_x_values).any())
-        print(np.isinf(deriv_array).any())
-
-        print('------------------> check is finished ')
-
-        print('123654')
-        
+           
         # Samples the derivative distribution - smooth noise representation
         dsample_array = hsgpr_object.sample_GP_derivative(num_samples,actual_noise=False)
-        print('------------------> check if we have NaNs or Infs ')
-        print(np.isnan(dsample_array).any())
-        
-        print(np.isinf(dsample_array).any())
-        print('------------------> check is finished ')
-
-
-        print('123654')
-        
+             
         # Calculates the integrals of the sampled derivative distributions
         ifit_x_values = dfit_x_values.copy()
         integ_array = dsample_array[:,1] * (ifit_x_values[0] - fit_x_values[0]) # + raw_intercept
@@ -365,7 +286,6 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         for ii in np.arange(0,num_samples):
             sint_mean = np.nanmean(integ_array[ii,:])
             integ_array[ii,:] = integ_array[ii,:] - sint_mean + orig_mean
-        print('123654')
 
         # Samples the fit distribution - true noise representation
         nsample_array = hsgpr_object.sample_GP(num_samples,actual_noise=True)
@@ -382,7 +302,6 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         # Samples the derivative distribution - zero noise representation
         #    Note that zero noise is only different from smooth noise if an error kernel is used
         zdsample_array = hsgpr_object.sample_GP_derivative(num_samples,without_noise=True)
-        print('123654')
 
         # Calculates the integrals of the sampled derivative distributions - zero noise representation
         zinteg_array = zdsample_array[:,1] * (ifit_x_values[0] - fit_x_values[0]) # + raw_intercept
@@ -419,7 +338,6 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         zdsample_std = np.nanstd(zdsample_array,axis=0)
         zinteg_std = np.nanstd(zinteg_array,axis=0)
 
-        print('123654')
 
 
 
@@ -498,7 +416,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
        
         ### Some basic setup
 
-        plot_save_directory = './bebe' + str(i) 
+        plot_save_directory = './ece' + str(i) 
         if not plot_save_directory.endswith('/'):
             plot_save_directory = plot_save_directory+'/'
         if not os.path.isdir(plot_save_directory):

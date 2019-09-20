@@ -43,7 +43,7 @@ default_configuartion = {
 
 
 
-def Optimization(X_coordinates, Y_coordinates, loop_over = 'even' , kernel_method='RQ_Kernel' ):
+def Optimization(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel' ):
 
 
     optimized_config = {
@@ -107,17 +107,10 @@ def Optimization(X_coordinates, Y_coordinates, loop_over = 'even' , kernel_metho
     ###################################################################################################
     
     
-    #for i in range(0,len(Y_coordinates[1]), int(len(Y_coordinates[1])/500)):
+    #for i in range(0,len(Y_coordinates[1]), int(len(Y_coordinates[1])/10)):
     for i in range(10):
-        even = 2*i
-        odd = 2*i +1 
-        if loop_over == odd :
-            Y_reduced = Y_coordinates[ :,odd]
-            X_reduced = (X_coordinates)[:,odd]
-            
-        else:
-            Y_reduced = Y_coordinates[ :,even]
-            X_reduced = (X_coordinates)[:,even]
+        Y_reduced = Y_coordinates[ :,i]
+        X_reduced = (X_coordinates)[:,i]
 
         Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
         minimum = X_reduced.min()
