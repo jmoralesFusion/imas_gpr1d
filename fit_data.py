@@ -42,7 +42,7 @@ default_configuartion = {
 
 
 
-def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat = False, plot_fit =False):
+def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat = False, plot_fit =False, slices_nbr = 10):
     '''
     Fit Y profile as a function of X quantity
 
@@ -143,9 +143,9 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
                 'x_error': np.full((nbr_pts, nbr_time), np.nan), \
                 'y_error': np.full((nbr_pts, nbr_time), np.nan), \
                }
-    #for i in range(Y_coordinates.shape[1]):
+    for i in range( 0, Y_coordinates.shape[1], int((Y_coordinates.shape[1])/(slices_nbr))):
 
-    for i in range(1000):
+    #for i in range(1000):
         print('slice number : ', i)
         Y_reduced = Y_coordinates[ :,i]
         X_reduced = (X_coordinates)[:,i]
@@ -191,9 +191,9 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
         gpr_object.set_error_search_parameters(epsilon=1.0e-1)
         #     Default optimizer is gradient ascent / descent - extremely robust but slow
         #     Uncomment any of the following lines to test the recommended optimizers
-        # gpr_object.set_search_parameters(epsilon=1.0e-2,method='adam',spars=[1.0e-1,0.4,0.8])
-        # gpr_object.set_error_search_parameters(epsilon=1.0e-1,method='adam',spars=[1.0e-1,0.4,0.8])
-
+        #gpr_object.set_search_parameters(epsilon=1.0e-2,method='adam',spars=[1.0e-1,0.4,0.8])
+        #gpr_object.set_error_search_parameters(epsilon=1.0e-1,method='adam',spars=[1.0e-1,0.4,0.8])
+        
         #     Perform the fit with kernel restarts
         gpr_object.GPRFit(fit_x_values,hsgp_flag=False,nrestarts=5)
 
