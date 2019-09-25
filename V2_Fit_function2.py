@@ -31,11 +31,9 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
     idd_in.open_env(user_in, machine_in, '3')
     
     if datatype == 'reflectometer_profile':
-        
         idd_in.reflectometer_profile.get()
         
-        R_real = idd_in.reflectometer_profile.channel[0].position.r.data
-        
+        R_real= idd_in.reflectometer_profile.channel[0].position.r.data
         electron_density = idd_in.reflectometer_profile.channel[0].n_e.data
         
         import matplotlib.pyplot as plt
@@ -48,7 +46,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         
         
         
-        rho_pol_norm_base = equimap.get(shot, idd_in.reflectometer_profile.time,R_base ,Phi, Z, 'rho_pol_norm')
+        rho_pol_norm_base = equimap.get(shot, Time, R_base, Phi, Z, 'rho_pol_norm')
         if rho_pol_norm_base.shape != electron_density.shape :
             rho_pol_norm_base = rho_pol_norm_base.T
         else :
@@ -59,7 +57,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_pol_norm.shape
         for ii in range(rho_pol_norm_base.shape[1]):
             rho_pol_norm[:, ii] = np.interp(R_real[:, ii], R_base, rho_pol_norm_base[:, ii])
-
+        print(rho_pol_norm.shape, electron_density.shape)
         return rho_pol_norm, electron_density
     
 
