@@ -62,44 +62,46 @@ def get_data(shot, run_in, occ_in, user_in, machine_in, datatype):
         Time = idd_in.ece.time[mask_eq_time]
         R_real = matrix_position[mask_eq_time]
         electron_temperature = matrix_temperature[mask_eq_time]
-        electron_temperature[electron_temperature < 0] = 0
+        electron_temperature[electron_temperature < 0] = np.nan
         
-        R_real[electron_temperature == np.nan] = 0
-        R_base = np.linspace(R_real.min(), R_real.max(), 1000)
+        R_real[np.isnan(electron_temperature)] = np.nan
+        R_base = np.linspace(np.nanmin(R_real), np.nanmax(R_real), 1000)
         
-        Phi_real = matrix_phi[mask_eq_time]
-        Z_real = matrix_zed[mask_eq_time]
+        Phi = np.zeros(1000)#read the data
+        Z   = np.zeros(1000)
         
-        Phi = np.linspace(Phi_real.min(), Phi_real.max(), 1000)
-        Z = np.linspace(Z_real.min(), Z_real.max(), 1000)
-        #Phi = np.zeros(1000)#read the data
-        #Z = np.zeros(1000)
         print(R_real.shape)
         print(electron_temperature.shape)
         print(R_base.shape)
-        #import ipdb; ipdb.set_trace()
         
         import matplotlib.pyplot as plt
         import equimap
         rho_pol_norm_base = equimap.get(shot, Time, R_base , Phi, Z, 'rho_pol_norm')
         
-        rho_pol_norm = np.full(R_real.shape, np.nan)
-        
+        rho_pol_norm           = [None]*R_real.shape[0]
+        electron_temperature_2 = [None]*R_real.shape[0]
+
+        #import ipdb; ipdb.set_trace()
+        for ii in range(rho_pol_norm_base.shape[0]):
+            rho_pol_norm[ii] = np.interp(R_real[ii, :][~np.isnan(R_real[ii, :])], \
+                                         R_base, rho_pol_norm_base[ii, :])
+            electron_temperature_2[ii] = electron_temperature[ii, :][~np.isnan(electron_temperature[ii, :])]
+
+        rho_pol_norm           = np.asarray(rho_pol_norm)
+        electron_temperature_2 = np.asarray(electron_temperature_2)
         print(rho_pol_norm.shape)
         print(rho_pol_norm_base.shape)
-        for ii in range(0,rho_pol_norm_base.shape[0]):
-            rho_pol_norm[ii, :] = np.interp(R_real[ii, :][~np.isnan(R_real[ii, :])], \
-                                            R_base, rho_pol_norm_base[ii, :])
-        
-        plt.plot(rho_pol_norm[2000], electron_temperature[2000])
+        plt.plot(rho_pol_norm[1000], electron_temperature_2[1000])
+        plt.plot(rho_pol_norm[500], electron_temperature_2[500])
+        plt.plot(rho_pol_norm[200], electron_temperature_2[200])
         plt.show()
         
         rho_pol_norm_file = TemporaryFile()
         np.save(rho_pol_norm_file,rho_pol_norm)
         electron_temperature_file = TemporaryFile()
-        np.save(electron_temperature_file,electron_temperature)
+        np.save(electron_temperature_file, electron_temperature_2)
         
-        return rho_pol_norm, electron_temperature
+        return rho_pol_norm, electron_temperature_2
     
 
 
