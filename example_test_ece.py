@@ -21,40 +21,65 @@ def get_data(shot, run_in, occ_in, user_in, machine_in, datatype):
     if datatype == 'ece':
 
         idd_in.ece.get()
-        idd_in.ece.channel[0].position.r.data
-        print(idd_in.ece.channel[0].position.r.data)
-        print(idd_in.ece.channel[0].position.r.data.shape)
-            
-        idd_in.ece.channel[0].t_e.data
-        print(idd_in.ece.channel[0].t_e.data)
-        print(idd_in.ece.channel[0].t_e.data.shape) #(100,3177)
+        idd_in.equilibrium.get()
+
+        mask_eq = np.asarray(idd_in.equilibrium.code.output_flag) > -1
 
         nbr_channels = len(idd_in.ece.channel)
         nbr_pts =len(idd_in.ece.channel[0].position.r.data)
-        nbr_time =  len(idd_in.ece.channel[0].t_e.data)
+        nbr_temperature =  len(idd_in.ece.channel[0].t_e.data)
         
-        matrix = np.full((nbr_pts, nbr_time), np.nan)
-        matrix_time = np.full((nbr_pts, nbr_time), np.nan)
+        matrix_position = np.full((nbr_pts, nbr_channels), np.nan)
+        matrix_temperature = np.full((nbr_temperature, nbr_channels), np.nan)
         
-        print(idd_in.ece.channel[0].t_e.data[1], idd_in.ece.channel[0].position.r.data[1])
         
         for channel in range(len(idd_in.ece.channel)):
-            for time in range(len(idd_in.ece.channel[channel].t_e.data)):
-                for raduis in range(len(idd_in.ece.channel[channel].position.r.data)):
-                    matrix[raduis,time].append(idd_in.ece.channel[channel].position.r.data[raduis], idd_in.ece.channel[channel].t_e.data[time])
-            
-        import matplotlib.pyplot as plt
+            for raduis in range(len(idd_in.ece.channel[channel].position.r.data)):
+                matrix_position[raduis][channel] = idd_in.ece.channel[channel].position.r.data[raduis]
+            for temperature in range(len(idd_in.ece.channel[channel].t_e.data)):
+                matrix_temperature[temperature][channel] = idd_in.ece.channel[channel].t_e.data[temperature]
 
-        import collections
-        print(collections.Counter(idd_in.ece.channel[0].t_e.validity_timed))
+
+        mask_eq_time = (idd_in.ece.time > idd_in.equilibrium.time[mask_eq][0]) \
+                     & (idd_in.ece.time < idd_in.equilibrium.time[mask_eq][-1]) \
+
+        Time                                            = idd_in.ece.time[mask_eq_time]
+        R_real                                          = matrix_position[mask_eq_time]
+        electron_temperature                            = matrix_temperature[mask_eq_time]
+        electron_temperature[electron_temperature < 0]  = np.nan
         
-        for kk in range(len(idd_in.ece.channel)):
-            plt.plot(idd_in.ece.channel[kk].position.r.data[idd_in.ece.channel[0].t_e.validity_timed==0], idd_in.ece.channel[kk].t_e.data[idd_in.ece.channel[0].t_e.validity_timed==0],label='temperature versus raduis')#, linewidth=4,color='red')
-            plt.legend()
-            plt.show()
-            
-        density = idd_in.ece.channel[0].t_e.data
-        return rho_pol_norm, np.transpose(density)
+        R_real[np.isnan(electron_temperature)] = np.nan
+        R_base = np.linspace(np.nanmin(R_real), np.nanmax(R_real), 1000)
+        
+        Phi = np.zeros(1000)
+        Z   = np.zeros(1000)
+        
+        import matplotlib.pyplot as plt
+        import equimap
+        rho_pol_norm_base = equimap.get(shot, Time, R_base , Phi, Z, 'rho_pol_norm')
+        
+        rho_pol_norm           = [None]*R_real.shape[0]
+        electron_temperature_2 = [None]*R_real.shape[0]
+
+        #import ipdb; ipdb.set_trace()
+        for ii in range(rho_pol_norm_base.shape[0]):
+            rho_pol_norm[ii] = np.interp(R_real[ii, :][~np.isnan(R_real[ii, :])], \
+                                         R_base, rho_pol_norm_base[ii, :])
+            electron_temperature_2[ii] = electron_temperature[ii, :][~np.isnan(electron_temperature[ii, :])]
+
+        rho_pol_norm           = np.asarray(rho_pol_norm)
+        electron_temperature_2 = np.asarray(electron_temperature_2)
+        
+        
+        #plt.plot(rho_pol_norm[1000], electron_temperature_2[1000])
+        #plt.plot(rho_pol_norm[500], electron_temperature_2[500])
+        #plt.plot(rho_pol_norm[200], electron_temperature_2[200])
+        plt.show()
+        
+        return rho_pol_norm, electron_temperature_2
+    
+
+
 
     
             
@@ -71,9 +96,11 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
 
     #####################################################################################################
    
-    for i in range(len(density)):
-        Te_reduced = density[ :,i]
-        rho_tor_norm_reduced = (rho_pol_norm)[:,i]
+    #for i in range(len(density)):
+    for i in range(999,1003):
+
+        Te_reduced = density[i]
+        rho_tor_norm_reduced = (rho_pol_norm)[i]
         
         print(type(Te_reduced))
         print(type(rho_tor_norm_reduced))
@@ -83,15 +110,12 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
         plt.plot(rho_tor_norm_reduced, Te_reduced)
         plt.show()
         Te_errors = np.full(Te_reduced.shape,100)
-        min = rho_tor_norm_reduced.min() - 0.025
-        max = rho_tor_norm_reduced.max() + 0.025
-        print('Te_reduced.shape = ' , Te_reduced.shape)
-        print('Te_errors.shape = ',Te_errors.shape)
+        minimum = rho_tor_norm_reduced.min() - 0.025
+        maximum = rho_tor_norm_reduced.max() + 0.025
         rho_errors =  np.full(rho_tor_norm_reduced.shape,0.0091)
-        print('rho_errors.shape = ', rho_errors.shape)
        
  
-        fit_x_values = np.linspace(min,max,100)
+        fit_x_values = np.linspace(minimum,maximum,100)
         # Define a kernel to fit the data itself
         #     Rational quadratic kernel is usually robust enough for general fitting
         kernel = GPR1D.RQ_Kernel()
@@ -454,7 +478,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             plot_hs_fit_y_lower = hs_fit_y_values - plot_sigma * hs_fit_y_errors
             plot_hs_fit_y_upper = hs_fit_y_values + plot_sigma * hs_fit_y_errors
             ax.fill_between(fit_x_values,plot_hs_fit_y_lower,plot_hs_fit_y_upper,facecolor='r',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'gp_data.png')
             plt.close(fig)
 
@@ -466,7 +490,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             plot_hs_fit_dydx_lower = hs_fit_dydx_values - plot_sigma * hs_fit_dydx_errors
             plot_hs_fit_dydx_upper = hs_fit_dydx_values + plot_sigma * hs_fit_dydx_errors
             ax.fill_between(fit_x_values,plot_hs_fit_dydx_lower,plot_hs_fit_dydx_upper,facecolor='r',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'gp_derivative_data.png')
             plt.close(fig)
 
@@ -492,7 +516,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             ax.plot(fit_x_values,plot_ni_fit_y_lower,color='b',ls='--')
             ax.plot(fit_x_values,plot_ni_fit_y_upper,color='b',ls='--')
             ax.fill_between(fit_x_values,plot_ni_fit_y_lower,plot_ni_fit_y_upper,facecolor='b',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'gp_options_test.png')
             plt.close(fig)
 
@@ -516,7 +540,7 @@ def fit_data(rho_pol_norm,density, kernel_method='RQ_Kernel'):
             ax.plot(fit_x_values,plot_ni_fit_dydx_lower,color='b',ls='--')
             ax.plot(fit_x_values,plot_ni_fit_dydx_upper,color='b',ls='--')
             ax.fill_between(fit_x_values,plot_ni_fit_dydx_lower,plot_ni_fit_dydx_upper,facecolor='b',edgecolor='None',alpha=0.2)
-            ax.set_xlim(min,max)
+            ax.set_xlim(minimum,maximum)
             fig.savefig(plot_save_directory+'gp_options_dtest.png')
             plt.close(fig)
 

@@ -32,47 +32,27 @@ def get_data(shot, run_in, occ_in, user_in, machine_in, datatype):
         matrix_position = np.full((nbr_pts, nbr_channels), np.nan)
         matrix_temperature = np.full((nbr_temperature, nbr_channels), np.nan)
         
-        matrix_zed = np.full((nbr_pts, nbr_channels), np.nan)
-        matrix_phi = np.full((nbr_temperature, nbr_channels), np.nan)
-        
         
         for channel in range(len(idd_in.ece.channel)):
             for raduis in range(len(idd_in.ece.channel[channel].position.r.data)):
                 matrix_position[raduis][channel] = idd_in.ece.channel[channel].position.r.data[raduis]
-       
-        for channel in range(len(idd_in.ece.channel)):
             for temperature in range(len(idd_in.ece.channel[channel].t_e.data)):
                 matrix_temperature[temperature][channel] = idd_in.ece.channel[channel].t_e.data[temperature]
-
-
-        for channel in range(len(idd_in.ece.channel)):
-            for zed in range(len(idd_in.ece.channel[channel].position.z.data)):
-                matrix_zed[zed][channel] = idd_in.ece.channel[channel].position.z.data[zed]
-       
-        for channel in range(len(idd_in.ece.channel)):
-            for phi in range(len(idd_in.ece.channel[channel].position.phi.data)):
-                matrix_phi[phi][channel] = idd_in.ece.channel[channel].position.phi.data[phi]
-       
-       
 
 
         mask_eq_time = (idd_in.ece.time > idd_in.equilibrium.time[mask_eq][0]) \
                      & (idd_in.ece.time < idd_in.equilibrium.time[mask_eq][-1]) \
 
-        Time = idd_in.ece.time[mask_eq_time]
-        R_real = matrix_position[mask_eq_time]
-        electron_temperature = matrix_temperature[mask_eq_time]
-        electron_temperature[electron_temperature < 0] = np.nan
+        Time                                            = idd_in.ece.time[mask_eq_time]
+        R_real                                          = matrix_position[mask_eq_time]
+        electron_temperature                            = matrix_temperature[mask_eq_time]
+        electron_temperature[electron_temperature < 0]  = np.nan
         
         R_real[np.isnan(electron_temperature)] = np.nan
         R_base = np.linspace(np.nanmin(R_real), np.nanmax(R_real), 1000)
         
-        Phi = np.zeros(1000)#read the data
+        Phi = np.zeros(1000)
         Z   = np.zeros(1000)
-        
-        print(R_real.shape)
-        print(electron_temperature.shape)
-        print(R_base.shape)
         
         import matplotlib.pyplot as plt
         import equimap
@@ -89,11 +69,11 @@ def get_data(shot, run_in, occ_in, user_in, machine_in, datatype):
 
         rho_pol_norm           = np.asarray(rho_pol_norm)
         electron_temperature_2 = np.asarray(electron_temperature_2)
-        print(rho_pol_norm.shape)
-        print(rho_pol_norm_base.shape)
+        
+        
         plt.plot(rho_pol_norm[1000], electron_temperature_2[1000])
-        plt.plot(rho_pol_norm[500], electron_temperature_2[500])
-        plt.plot(rho_pol_norm[200], electron_temperature_2[200])
+        #plt.plot(rho_pol_norm[500], electron_temperature_2[500])
+        #plt.plot(rho_pol_norm[200], electron_temperature_2[200])
         plt.show()
         
         rho_pol_norm_file = TemporaryFile()
@@ -101,6 +81,15 @@ def get_data(shot, run_in, occ_in, user_in, machine_in, datatype):
         electron_temperature_file = TemporaryFile()
         np.save(electron_temperature_file, electron_temperature_2)
         
+        X_coordinates = rho_pol_norm
+        Y_coordinates = electron_temperature_2
+        Y_errors = np.full(Y_coordinates.shape, 100)
+        
+        '''
+        file = open("list.txt", "w")
+        file.write(str(X_coordinates[1000]) + " " + str(Y_coordinates[1000]) + " " + str(Y_errors[1000])+ "\n")
+        file.close()
+        '''
         return rho_pol_norm, electron_temperature_2
     
 
@@ -108,7 +97,6 @@ def get_data(shot, run_in, occ_in, user_in, machine_in, datatype):
 
         
 def main():
-    get_data(54095, 0, 0, 'imas_public', 'west', 'ece')
-
+    rho_pol_norm, electron_temperature_2=get_data(54095, 0, 0, 'imas_public', 'west', 'ece')
 main()
    
