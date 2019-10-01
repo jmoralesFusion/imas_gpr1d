@@ -60,55 +60,71 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         print(rho_pol_norm.shape, electron_density.shape)
         return rho_pol_norm, electron_density
     
-
-
-    
     if datatype == 'ece':
-        
+
         idd_in.ece.get()
+        idd_in.equilibrium.get()
+
+        mask_eq = np.asarray(idd_in.equilibrium.code.output_flag) > -1
+
+        nbr_channels = len(idd_in.ece.channel)
+        nbr_pts =len(idd_in.ece.channel[0].position.r.data)
+        nbr_temperature =  len(idd_in.ece.channel[0].t_e.data)
         
-        idd_in.ece.channel[0].position.r.data
-        print(idd_in.ece.channel[0].position.r.data)
-        print(idd_in.ece.channel[0].position.r.data.shape)
+        matrix_position = np.full((nbr_pts, nbr_channels), np.nan)
+        matrix_temperature = np.full((nbr_temperature, nbr_channels), np.nan)
         
-        idd_in.ece.channel[0].t_e.data
         
-        print(idd_in.ece.channel[0].t_e.data)
-        print(idd_in.ece.channel[0].t_e.data.shape) #(100,3177)
+        for channel in range(len(idd_in.ece.channel)):
+            for raduis in range(len(idd_in.ece.channel[channel].position.r.data)):
+                matrix_position[raduis][channel] = idd_in.ece.channel[channel].position.r.data[raduis]
+            for temperature in range(len(idd_in.ece.channel[channel].t_e.data)):
+                matrix_temperature[temperature][channel] = idd_in.ece.channel[channel].t_e.data[temperature]
+
+
+        mask_eq_time = (idd_in.ece.time > idd_in.equilibrium.time[mask_eq][0]) \
+                     & (idd_in.ece.time < idd_in.equilibrium.time[mask_eq][-1]) \
+
+        Time                                            = idd_in.ece.time[mask_eq_time]
+        R_real                                          = matrix_position[mask_eq_time]
+        electron_temperature                            = matrix_temperature[mask_eq_time]
+        electron_temperature[electron_temperature < 0]  = np.nan
+        
+        R_real[np.isnan(electron_temperature)] = np.nan
+        R_base = np.linspace(np.nanmin(R_real), np.nanmax(R_real), 1000)
+        
+        Phi = np.zeros(1000)
+        Z   = np.zeros(1000)
         
         import matplotlib.pyplot as plt
-        '''
-        #from matplotlib import style
-        #style.use('ggplot')
-        for ii in range (len(idd_in.ece.channel)):
-            for jj in range (len(idd_in.ece.channel[ii].position.r.data)):
-                for kk in range(len(idd_in.ece.channel[ii].t_e.validity_timed)):
-                    if (idd_in.ece.channel[ii].t_e.validity_timed[kk] > 0):
-                        plt.plot(idd_in.ece.channel[ii].position.r.data[jj], idd_in.ece.channel[ii].t_e.data[jj],label='temperature versus raduis')#, linewidth=4,color='red')
-                        plt.legend()
-                        plt.show()
-        '''
-        print(type(idd_in.ece.channel[0].position.r.data[idd_in.ece.channel[0].t_e.data>0]))
-        print(idd_in.ece.channel[0].t_e.data[idd_in.ece.channel[0].t_e.data>0])
-        print(idd_in.ece.channel[0].t_e.validity_timed[idd_in.ece.channel[0].t_e.data>0])
-        import collections
-        print(collections.Counter(idd_in.ece.channel[0].t_e.validity_timed))
+        import equimap
+        rho_pol_norm_base = equimap.get(shot, Time, R_base , Phi, Z, 'rho_pol_norm')
         
-        for kk in range(len(idd_in.ece.channel)):
-            plt.plot(idd_in.ece.channel[kk].position.r.data[idd_in.ece.channel[0].t_e.validity_timed==0], idd_in.ece.channel[kk].t_e.data[idd_in.ece.channel[0].t_e.validity_timed==0],label='temperature versus raduis')#, linewidth=4,color='red')
-            plt.legend()
-            plt.show()
-        else : print('nothing positive')
-        #for ii in range(len(idd_in.ece.channel[0].position.r.data)):
-        #    plt.plot(idd_in.ece.channel[0].position.r.data[ii], idd_in.ece.channel[0].t_e.data[ii],label='temperature versus raduis', linewidth=4,color='red')
-        #    plt.legend()
-        #    plt.show()
-            
+        rho_pol_norm           = [None]*R_real.shape[0]
+        electron_temperature_2 = [None]*R_real.shape[0]
+
+        #import ipdb; ipdb.set_trace()
+        for ii in range(rho_pol_norm_base.shape[0]):
+            rho_pol_norm[ii] = np.interp(R_real[ii, :][~np.isnan(R_real[ii, :])], \
+                                         R_base, rho_pol_norm_base[ii, :])
+            electron_temperature_2[ii] = electron_temperature[ii, :][~np.isnan(electron_temperature[ii, :])]
+
+        rho_pol_norm           = np.asarray(rho_pol_norm)
+        electron_temperature_2 = np.asarray(electron_temperature_2)
         
-        density = idd_in.ece.channel[0].t_e.data
-        return rho_pol_norm, electron_density
+        
+        #plt.plot(rho_pol_norm[1000], electron_temperature_2[1000])
+        #plt.plot(rho_pol_norm[500], electron_temperature_2[500])
+        #plt.plot(rho_pol_norm[200], electron_temperature_2[200])
+        plt.show()
+        
+        return rho_pol_norm, electron_temperature_2
     
-            
+
+
+
+ 
+
 
             
     #####################################################################################################
@@ -131,7 +147,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 def main():
   
-    rho_pol_norm, electron_density = get_data(54095, 0, 0, 'MK260524', 'west', 0, 0, 'imas_public', 'west', 'reflectometer_profile')
-    
-    fit_data( rho_pol_norm, electron_density, 'RQ_Kernel')
+    #rho_pol_norm, electron_density = get_data(54095, 0, 0, 'MK260524', 'west', 0, 0, 'imas_public', 'west', 'reflectometer_profile')
+    rho_pol_norm, electron_density = get_data(54095, 0, 0, 'MK260524', 'west', 0, 0, 'imas_public', 'west', 'ece')
+
+    fit_data(rho_pol_norm.T, electron_density.T, 'RQ_Kernel')
 main()

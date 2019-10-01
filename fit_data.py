@@ -15,6 +15,7 @@ import GPR1D
 import imas
 import pywed as pw
 from Optimization_function import Optimization
+from plot_data import plot_data
 '''
     GPR1D fit data function
 '''
@@ -129,7 +130,7 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
     print("--- %s seconds ---" % (time.time() - start_time))
     
     nbr_pts  = 100
-    nbr_time = Y_coordinates.shape[1]
+    nbr_time = Y_coordinates.shape[0]
 
     fit_data = {'fit_x': [np.nan]*nbr_time, \
                 'fit_y': [np.nan]*nbr_time, \
@@ -143,7 +144,7 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
                 'x_error': [np.nan]*nbr_time, \
                 'y_error': [np.nan]*nbr_time, \
                }
-    for i in range(0, Y_coordinates.shape[1], int((Y_coordinates.shape[1])/(slices_nbr))):
+    for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
 
     #for i in range(1000):
         print('slice number : ', i)
@@ -433,10 +434,8 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
 
             print(nigp_str)
 
-
-
-
         if plot_fit == True:
+
             ### Some basic setup
 
             plot_save_directory = './bebe' + str(i)
@@ -688,6 +687,7 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
                 print("   Module matplotlib not found. Skipping plotting of demonstration results.\n")
 
             print("Demonstration script successfully completed!\n")
+
 
         # Results
         # -------

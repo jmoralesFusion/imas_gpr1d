@@ -73,7 +73,7 @@ def get_data(shot, run_in, occ_in, user_in, machine_in, datatype):
         
         #plt.plot(rho_pol_norm[1000], electron_temperature_2[1000])
         #plt.plot(rho_pol_norm[500], electron_temperature_2[500])
-        #plt.plot(rho_pol_norm[200], electron_temperature_2[200])
+        plt.plot(rho_pol_norm[200], electron_temperature_2[200])
         plt.show()
         
         return rho_pol_norm, electron_temperature_2

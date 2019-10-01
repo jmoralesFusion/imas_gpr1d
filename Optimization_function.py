@@ -108,7 +108,6 @@ def Optimization(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel' ):
     
     
     for i in range(0,(Y_coordinates.shape[0]), int((Y_coordinates.shape[0])/5)):
-    #for i in range(10):
         Y_reduced = Y_coordinates[i]
         X_reduced = (X_coordinates)[i]
 
@@ -185,20 +184,20 @@ def Optimization(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel' ):
 
 
     optimized_values['hsgp_fit_regpar_optimized']['regularaiztion']               = np.median(optimized_config['hsgp_fit_regpar_optimized']['regularaiztion'])
-    optimized_values['hsgp_fit_regpar_optimized']['amp']                        = np.median(optimized_config['hsgp_fit_regpar_optimized']['amp'])
-    optimized_values['hsgp_fit_regpar_optimized']['ls']                          = np.median(optimized_config['hsgp_fit_regpar_optimized']['ls'])
+    optimized_values['hsgp_fit_regpar_optimized']['amp']                          = np.median(optimized_config['hsgp_fit_regpar_optimized']['amp'])
+    optimized_values['hsgp_fit_regpar_optimized']['ls']                           = np.median(optimized_config['hsgp_fit_regpar_optimized']['ls'])
     optimized_values['hsgp_fit_regpar_optimized']['alpha']                        = np.median(optimized_config['hsgp_fit_regpar_optimized']['alpha'])
     optimized_values['hsgp_error_fit_regpar_optimized']['regularaiztion']         = np.median(optimized_config['hsgp_error_fit_regpar_optimized']['regularaiztion'])
-    optimized_values['hsgp_error_fit_regpar_optimized']['amp']                  = np.median(optimized_config['hsgp_error_fit_regpar_optimized']['amp'])
-    optimized_values['hsgp_error_fit_regpar_optimized']['ls']                    = np.median(optimized_config['hsgp_error_fit_regpar_optimized']['ls'])
+    optimized_values['hsgp_error_fit_regpar_optimized']['amp']                    = np.median(optimized_config['hsgp_error_fit_regpar_optimized']['amp'])
+    optimized_values['hsgp_error_fit_regpar_optimized']['ls']                     = np.median(optimized_config['hsgp_error_fit_regpar_optimized']['ls'])
     optimized_values['hsgp_error_fit_regpar_optimized']['alpha']                  = np.median(optimized_config['hsgp_error_fit_regpar_optimized']['alpha'])
     optimized_values['nigp_fit_regpar_optimized']['regularaiztion']               = np.median(optimized_config['nigp_fit_regpar_optimized']['regularaiztion'])
-    optimized_values['nigp_fit_regpar_optimized']['amp']                        = np.median(optimized_config['nigp_fit_regpar_optimized']['amp'])
-    optimized_values['nigp_fit_regpar_optimized']['ls']                          = np.median(optimized_config['nigp_fit_regpar_optimized']['ls'])
+    optimized_values['nigp_fit_regpar_optimized']['amp']                          = np.median(optimized_config['nigp_fit_regpar_optimized']['amp'])
+    optimized_values['nigp_fit_regpar_optimized']['ls']                           = np.median(optimized_config['nigp_fit_regpar_optimized']['ls'])
     optimized_values['nigp_fit_regpar_optimized']['alpha']                        = np.median(optimized_config['nigp_fit_regpar_optimized']['alpha'])
     optimized_values['nigp_error_fit_regpar_optimized']['regularaiztion']         = np.median(optimized_config['nigp_error_fit_regpar_optimized']['regularaiztion'])
-    optimized_values['nigp_error_fit_regpar_optimized']['amp']                  = np.median(optimized_config['nigp_error_fit_regpar_optimized']['amp'])
-    optimized_values['nigp_error_fit_regpar_optimized']['ls']                    = np.median(optimized_config['nigp_error_fit_regpar_optimized']['ls'])
+    optimized_values['nigp_error_fit_regpar_optimized']['amp']                    = np.median(optimized_config['nigp_error_fit_regpar_optimized']['amp'])
+    optimized_values['nigp_error_fit_regpar_optimized']['ls']                     = np.median(optimized_config['nigp_error_fit_regpar_optimized']['ls'])
     optimized_values['nigp_error_fit_regpar_optimized']['alpha']                  = np.median(optimized_config['nigp_error_fit_regpar_optimized']['alpha'])
     
     return optimized_values
