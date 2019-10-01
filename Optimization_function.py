@@ -107,10 +107,10 @@ def Optimization(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel' ):
     ###################################################################################################
     
     
-    for i in range(0,(Y_coordinates.shape[1]), int((Y_coordinates.shape[1])/10)):
+    for i in range(0,(Y_coordinates.shape[0]), int((Y_coordinates.shape[0])/5)):
     #for i in range(10):
-        Y_reduced = Y_coordinates[ :,i]
-        X_reduced = (X_coordinates)[:,i]
+        Y_reduced = Y_coordinates[i]
+        X_reduced = (X_coordinates)[i]
 
         Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
         minimum = X_reduced.min()

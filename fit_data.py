@@ -42,7 +42,7 @@ default_configuartion = {
 
 
 
-def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat = False, plot_fit =False, slices_nbr = 10):
+def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat = False, plot_fit =True, slices_nbr = 10):
     '''
     Fit Y profile as a function of X quantity
 
@@ -131,24 +131,24 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
     nbr_pts  = 100
     nbr_time = Y_coordinates.shape[1]
 
-    fit_data = {'fit_x': np.full((nbr_pts, nbr_time), np.nan), \
-                'fit_y': np.full((nbr_pts, nbr_time), np.nan), \
-                'fit_x_error': np.full((nbr_pts, nbr_time), np.nan), \
-                'fit_y_error': np.full((nbr_pts, nbr_time), np.nan), \
-                'fit_dydx': np.full((nbr_pts, nbr_time), np.nan), \
-                'fit_dydx_x_error': np.full((nbr_pts, nbr_time), np.nan), \
-                'fit_dydy_y_error': np.full((nbr_pts, nbr_time), np.nan), \
+    fit_data = {'fit_x': [np.nan]*nbr_time, \
+                'fit_y': [np.nan]*nbr_time, \
+                'fit_x_error': [np.nan]*nbr_time, \
+                'fit_y_error': [np.nan]*nbr_time, \
+                'fit_dydx': [np.nan]*nbr_time, \
+                'fit_dydx_x_error': [np.nan]*nbr_time, \
+                'fit_dydy_y_error': [np.nan]*nbr_time, \
                 'x': X_coordinates, \
                 'y': Y_coordinates, \
-                'x_error': np.full((nbr_pts, nbr_time), np.nan), \
-                'y_error': np.full((nbr_pts, nbr_time), np.nan), \
+                'x_error': [np.nan]*nbr_time, \
+                'y_error': [np.nan]*nbr_time, \
                }
-    for i in range( 0, Y_coordinates.shape[1], int((Y_coordinates.shape[1])/(slices_nbr))):
+    for i in range(0, Y_coordinates.shape[1], int((Y_coordinates.shape[1])/(slices_nbr))):
 
     #for i in range(1000):
         print('slice number : ', i)
-        Y_reduced = Y_coordinates[ :,i]
-        X_reduced = (X_coordinates)[:,i]
+        Y_reduced = Y_coordinates[i]
+        X_reduced = (X_coordinates)[i]
 
         Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
         minimum = X_reduced.min()
@@ -691,12 +691,12 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
 
         # Results
         # -------
-        fit_data['fit_x'][:, i]            = fit_x_values
-        fit_data['fit_y'][:, i]            = hs_fit_y_values
-        fit_data['fit_x_error'][:, i]      = np.zeros(fit_x_values.size)
-        fit_data['fit_y_error'][:, i]      = hs_fit_y_errors
-        fit_data['fit_dydx'][:, i]         = fit_dydx_values
-        fit_data['fit_dydx_x_error'][:, i] = np.zeros(fit_x_values.size)
-        fit_data['fit_dydy_y_error'][:, i] = hs_fit_dydx_errors
+        fit_data['fit_x'][i]            = fit_x_values
+        fit_data['fit_y'][i]            = hs_fit_y_values
+        fit_data['fit_x_error'][i]      = np.zeros(fit_x_values.size)
+        fit_data['fit_y_error'][i]      = hs_fit_y_errors
+        fit_data['fit_dydx'][i]         = fit_dydx_values
+        fit_data['fit_dydx_x_error'][i] = np.zeros(fit_x_values.size)
+        fit_data['fit_dydy_y_error'][i] = hs_fit_dydx_errors
 
     return fit_data
