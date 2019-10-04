@@ -16,6 +16,7 @@ import imas
 import pywed as pw
 from Optimization_function import Optimization
 from plot_data import plot_data
+from print_data import print_data
 '''
     GPR1D fit data function
 '''
@@ -43,7 +44,7 @@ default_configuartion = {
 
 
 
-def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat = False, plot_fit =True, slices_nbr = 10):
+def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat = True, plot_fit =True, slices_nbr = 10):
     '''
     Fit Y profile as a function of X quantity
 
@@ -388,73 +389,32 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
 
         if print_stat == True:
             ### Printing
-
-            gp_str = "\n--- GPR Fit ---\n\n"
-            gp_str = gp_str + "Kernel name: %30s\n" % (gp_kernel_name)
-            gp_str = gp_str + "Regularization parameter: %17.4f\n" % (gp_fit_regpar)
-            gp_str = gp_str + "Optimized kernel hyperparameters:\n"
-            for hh in np.arange(0,gp_kernel_hyppars.size):
-                gp_str = gp_str + "%15.6e" % (gp_kernel_hyppars[hh])
-            gp_str = gp_str + "\n\n"
-            gp_str = gp_str + "Log-marginal-likelihood: %18.6f\n" % (fit_lml)
-
-            print(gp_str)
-
-            hsgp_str = "\n--- HSGPR Fit ---\n\n"
-            hsgp_str = hsgp_str + "Kernel name: %30s\n" % (hsgp_kernel_name)
-            hsgp_str = hsgp_str + "Regularization parameter: %17.4f\n" % (hsgp_fit_regpar)
-            hsgp_str = hsgp_str + "Optimized kernel hyperparameters:\n"
-            for hh in np.arange(0,hsgp_kernel_hyppars.size):
-                hsgp_str = hsgp_str + "%15.6e" % (hsgp_kernel_hyppars[hh])
-            hsgp_str = hsgp_str + "\n\n"
-            hsgp_str = hsgp_str + "Error kernel name: %24s\n" % (hsgp_error_kernel_name)
-            hsgp_str = hsgp_str + "Regularization parameter: %17.4f\n" % (hsgp_error_fit_regpar)
-            hsgp_str = hsgp_str + "Optimized error kernel hyperparameters:\n"
-            for hh in np.arange(0,hsgp_error_kernel_hyppars.size):
-                hsgp_str = hsgp_str + "%15.6e" % (hsgp_error_kernel_hyppars[hh])
-            hsgp_str = hsgp_str + "\n\n"
-            hsgp_str = hsgp_str + "Log-marginal-likelihood: %18.6f\n" % (hs_fit_lml)
-
-            print(hsgp_str)
-
-            nigp_str = "--- NIGPR Fit ---\n\n"
-            nigp_str = nigp_str + "Kernel name: %30s\n" % (nigp_kernel_name)
-            nigp_str = nigp_str + "Regularization parameter: %17.4f\n" % (nigp_fit_regpar)
-            nigp_str = nigp_str + "Optimized kernel hyperparameters:\n"
-            for hh in np.arange(0,nigp_kernel_hyppars.size):
-                nigp_str = nigp_str + "%15.6e" % (nigp_kernel_hyppars[hh])
-            nigp_str = nigp_str + "\n\n"
-            nigp_str = nigp_str + "Error kernel name: %24s\n" % (nigp_error_kernel_name)
-            nigp_str = nigp_str + "Regularization parameter: %17.4f\n" % (nigp_error_fit_regpar)
-            nigp_str = nigp_str + "Optimized error kernel hyperparameters:\n"
-            for hh in np.arange(0,nigp_error_kernel_hyppars.size):
-                nigp_str = nigp_str + "%15.6e" % (nigp_error_kernel_hyppars[hh])
-            nigp_str = nigp_str + "\n\n"
-            nigp_str = nigp_str + "Log-marginal-likelihood: %18.6f\n" % (ni_fit_lml)
-
-            print(nigp_str)
-
+            print_data(gp_kernel_name,gp_kernel_hyppars,gp_fit_regpar,fit_lml,\
+                           hsgp_kernel_name,hsgp_fit_regpar,hsgp_kernel_hyppars,\
+                           hsgp_error_kernel_name,hsgp_error_fit_regpar,hsgp_error_kernel_hyppars,hs_fit_lml,\
+                           nigp_kernel_name,nigp_fit_regpar,nigp_kernel_hyppars,\
+                           nigp_error_kernel_name,nigp_error_fit_regpar,nigp_error_kernel_hyppars,ni_fit_lml)
+           
         if plot_fit == True:
 
-            ### Some basic setup
-
-            plot_save_directory = './bebe' + str(i)
-            if not plot_save_directory.endswith('/'):
-                plot_save_directory = plot_save_directory+'/'
-            if not os.path.isdir(plot_save_directory):
-                os.makedirs(plot_save_directory)
-
-            ### Fitting
-            fig = plt.figure()
-            fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
-            ax = fig.add_subplot(111)
-            plt.plot(X_reduced, Y_reduced)
-            fig.savefig(plot_save_directory+'data.png')
-            plt.close(fig)
-
-
+            plot_data(i, fit_x_values, minimum, maximum, X_reduced, Y_reduced, Y_errors, X_errors, fit_y_values, fit_y_errors,  \
+                          hs_fit_y_values, hs_fit_y_errors,\
+                          fit_dydx_values, fit_dydx_errors, hs_fit_dydx_errors,hs_fit_dydx_values, \
+                          ni_fit_y_values, ni_fit_dydx_values,  ni_fit_y_errors, ni_fit_dydx_errors,\
+                          sample_array, sample_mean, sample_std, \
+                          deriv_array, deriv_mean, deriv_std,\
+                          dsample_mean, dsample_std,\
+                          integ_array, integ_mean, integ_std, ifit_x_values,\
+                          ndsample_array,dfit_x_values, deriv_array, \
+                          hs_zfit_y_values, hs_zfit_y_errors,\
+                          zsample_array, zsample_mean, zsample_std,\
+                          hs_zfit_dydx_values, hs_zfit_dydx_errors,\
+                          zderiv_array, zderiv_mean, zderiv_std,\
+                          zdsample_array, zdsample_mean, zdsample_std,\
+                          zinteg_array, zinteg_mean, zinteg_std)
+                          
             ### Plotting
-
+            '''
             plt = None
             try:
                 import matplotlib.pyplot as plt
@@ -462,6 +422,14 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
                 plt = None
 
             if plt is not None:
+                ###Fitting
+                fig = plt.figure()
+                fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+                ax = fig.add_subplot(111)
+                plt.plot(X_reduced, Y_reduced)
+                fig.savefig(plot_save_directory+'data.png')
+                plt.close(fig)
+
 
                 plot_num_samples = 10
                 plot_sigma = 2.0
@@ -687,8 +655,7 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
                 print("   Module matplotlib not found. Skipping plotting of demonstration results.\n")
 
             print("Demonstration script successfully completed!\n")
-
-
+            '''
         # Results
         # -------
         fit_data['fit_x'][i]            = fit_x_values
@@ -698,5 +665,5 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
         fit_data['fit_dydx'][i]         = fit_dydx_values
         fit_data['fit_dydx_x_error'][i] = np.zeros(fit_x_values.size)
         fit_data['fit_dydy_y_error'][i] = hs_fit_dydx_errors
-
+        
     return fit_data
