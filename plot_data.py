@@ -22,9 +22,8 @@ import imas
 def plot_data(i,fit_x_values, minimum, maximum, \
                   X_reduced, Y_reduced, \
                   Y_errors, X_errors, \
-                  fit_y_values, fit_y_errors,  \
                   hs_fit_y_values, hs_fit_y_errors,\
-                  fit_dydx_values, fit_dydx_errors, hs_fit_dydx_errors,hs_fit_dydx_values, \
+                  hs_fit_dydx_errors,hs_fit_dydx_values, \
                   ni_fit_y_values, ni_fit_dydx_values,  ni_fit_y_errors, ni_fit_dydx_errors,\
                   sample_array, sample_mean, sample_std, \
                   deriv_array, deriv_mean, deriv_std,\
@@ -36,8 +35,10 @@ def plot_data(i,fit_x_values, minimum, maximum, \
                   hs_zfit_dydx_values, hs_zfit_dydx_errors,\
                   zderiv_array, zderiv_mean, zderiv_std,\
                   zdsample_array, zdsample_mean, zdsample_std,\
-                  zinteg_array, zinteg_mean, zinteg_std):
-
+                  zinteg_array, zinteg_mean, zinteg_std, \
+                  nsample_array, \
+                  fit_y_values, fit_y_errors, \
+                  fit_dydx_values, fit_dydx_errors): 
  
     ###Some basic setup
     plot_save_directory = './bebe' + str(i)
@@ -57,22 +58,25 @@ def plot_data(i,fit_x_values, minimum, maximum, \
         plt = None
 
     if plt is not None:
+
+
+        plot_num_samples = 10
+        plot_sigma = 2.0
+        
         ###Fitting
+        #plotting the data as it is 
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Raw Data', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         plt.plot(X_reduced, Y_reduced)
         fig.savefig(plot_save_directory+'data.png')
         plt.close(fig)
 
 
-        plot_num_samples = 10
-        plot_sigma = 2.0
-        
         # Raw data with GPR fit and error, only accounting for y-errors
         plot_Y_errors = plot_sigma * Y_errors
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Raw data with GPR fit and error, only accounting for y-error', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         ax.errorbar(X_reduced,Y_reduced,yerr=plot_Y_errors,ls='',marker='.',color='b')
         ax.plot(fit_x_values,hs_fit_y_values,color='r')
@@ -85,8 +89,9 @@ def plot_data(i,fit_x_values, minimum, maximum, \
         
         # Derivative of GPR fit and error, only accounting for y-errors
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Derivative of GPR fit and error, only accounting for y-errors', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
+        #if (fit_dydx_values is not None):
         ax.plot(fit_x_values,fit_dydx_values,color='r')
         plot_hs_fit_dydx_lower = hs_fit_dydx_values - plot_sigma * hs_fit_dydx_errors
         plot_hs_fit_dydx_upper = hs_fit_dydx_values + plot_sigma * hs_fit_dydx_errors
@@ -98,9 +103,10 @@ def plot_data(i,fit_x_values, minimum, maximum, \
         # Raw data with GPR fit and error, comparison of using y-errors as weights, rigourously accounting for y-errors, and rigourously account for y-errors AND x-errors
         plot_X_errors = plot_sigma * X_errors
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Raw data with GPR fit and error, comparison of using y-errors as weights, rigourously accounting for y-errors, and rigourously account for y-errors AND x-errors', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         ax.errorbar(X_reduced,Y_reduced,xerr=plot_X_errors,yerr=plot_Y_errors,ls='',marker='.',color='k')
+        #if (fit_y_values is not None):
         ax.plot(fit_x_values,fit_y_values,color='g')
         plot_fit_y_lower = fit_y_values - plot_sigma * fit_y_errors
         plot_fit_y_upper = fit_y_values + plot_sigma * fit_y_errors
@@ -123,8 +129,9 @@ def plot_data(i,fit_x_values, minimum, maximum, \
 
         # Derivative of GPR fit and error, comparison of using y-errors as weights, rigourously accounting for y-errors, and rigourously account for y-errors AND x-errors
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Derivative of GPR fit and error, comparison of using y-errors as weights, rigourously accounting for y-errors, and rigourously account for y-errors AND x-errors', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
+        #if (fit_dydx_values is not None):
         ax.plot(fit_x_values,fit_dydx_values,color='g')
         plot_fit_dydx_lower = fit_dydx_values - plot_sigma * fit_dydx_errors
         plot_fit_dydx_upper = fit_dydx_values + plot_sigma * fit_dydx_errors
@@ -147,7 +154,7 @@ def plot_data(i,fit_x_values, minimum, maximum, \
         
         # Sampled fit curves (smooth noise) against GPR fit distribution
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Sampled fit curves (smooth noise) against GPR fit distribution', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         ax.fill_between(fit_x_values,plot_hs_fit_y_lower,plot_hs_fit_y_upper,facecolor='r',edgecolor='None',alpha=0.2)
         for ii in np.arange(0,plot_num_samples):
@@ -161,12 +168,11 @@ def plot_data(i,fit_x_values, minimum, maximum, \
         
         # Derivatives of sampled fit curves (smooth noise) against GPR fit derivative distribution
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Derivatives of sampled fit curves (smooth noise) against GPR fit derivative distribution', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         ax.fill_between(fit_x_values,plot_hs_fit_dydx_lower,plot_hs_fit_dydx_upper,facecolor='r',edgecolor='None',alpha=0.2)
-        print(dfit_x_values.shape,deriv_array.shape)
-        #for ii in np.arange(0,plot_num_samples):
-        ax.plot(dfit_x_values,deriv_array[ii,:],color='k',alpha=0.5)
+        for ii in np.arange(0,plot_num_samples):
+            ax.plot(dfit_x_values, deriv_array[ii, :], color='k', alpha=0.5)
         plot_hs_sample_dydx_lower = deriv_mean - plot_sigma * deriv_std
         plot_hs_sample_dydx_upper = deriv_mean + plot_sigma * deriv_std
         ax.fill_between(dfit_x_values,plot_hs_sample_dydx_lower,plot_hs_sample_dydx_upper,facecolor='b',edgecolor='None',alpha=0.2)
@@ -176,7 +182,7 @@ def plot_data(i,fit_x_values, minimum, maximum, \
         
         # Sampled fit derivative curves (smooth noise) against GPR fit derivative distribution
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Sampled fit derivative curves (smooth noise) against GPR fit derivative distribution', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         ax.fill_between(fit_x_values,plot_hs_fit_dydx_lower,plot_hs_fit_dydx_upper,facecolor='r',edgecolor='None',alpha=0.2)
         for ii in np.arange(0,plot_num_samples):
@@ -190,7 +196,7 @@ def plot_data(i,fit_x_values, minimum, maximum, \
         
         # Integrals of sampled fit derivative curves (smooth noise) against GPR fit distribution
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Integrals of sampled fit derivative curves (smooth noise) against GPR fit distribution', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         ax.fill_between(fit_x_values,plot_hs_fit_y_lower,plot_hs_fit_y_upper,facecolor='r',edgecolor='None',alpha=0.2)
         for ii in np.arange(0,plot_num_samples):
@@ -204,7 +210,7 @@ def plot_data(i,fit_x_values, minimum, maximum, \
         
         # Sampled fit curves (true noise) against GPR fit distribution
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Sampled fit curves (true noise) against GPR fit distribution', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         ax.fill_between(fit_x_values,plot_hs_fit_y_lower,plot_hs_fit_y_upper,facecolor='r',edgecolor='None',alpha=0.2)
         for ii in np.arange(0,plot_num_samples):
@@ -215,7 +221,7 @@ def plot_data(i,fit_x_values, minimum, maximum, \
 
         # Sampled fit derivative curves (true noise) against GPR fit derivative distribution
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Sampled fit derivative curves (true noise) against GPR fit derivative distribution', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         ax.fill_between(fit_x_values,plot_hs_fit_dydx_lower,plot_hs_fit_dydx_upper,facecolor='r',edgecolor='None',alpha=0.2)
         for ii in np.arange(0,plot_num_samples):
@@ -226,7 +232,7 @@ def plot_data(i,fit_x_values, minimum, maximum, \
         
         # Sampled fit curves (zero noise) against GPR fit distribution
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Sampled fit curves (zero noise) against GPR fit distribution', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         plot_hs_zfit_y_lower = hs_zfit_y_values - plot_sigma * hs_zfit_y_errors
         plot_hs_zfit_y_upper = hs_zfit_y_values + plot_sigma * hs_zfit_y_errors
@@ -242,23 +248,23 @@ def plot_data(i,fit_x_values, minimum, maximum, \
 
         # Derivatives of sampled fit curves (zero noise) against GPR fit derivative distribution
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Derivatives of sampled fit curves (zero noise) against GPR fit derivative distribution', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         plot_hs_zfit_dydx_lower = hs_zfit_dydx_values - plot_sigma * hs_zfit_dydx_errors
         plot_hs_zfit_dydx_upper = hs_zfit_dydx_values + plot_sigma * hs_zfit_dydx_errors
         ax.fill_between(fit_x_values,plot_hs_zfit_dydx_lower,plot_hs_zfit_dydx_upper,facecolor='r',edgecolor='None',alpha=0.2)
-        for ii in np.arange(0,plot_num_samples):
+        for ii in np.arange(0, plot_num_samples):
             ax.plot(dfit_x_values,zderiv_array[ii,:],color='k',alpha=0.5)
         plot_hs_zsample_dydx_lower = zderiv_mean - plot_sigma * zderiv_std
         plot_hs_zsample_dydx_upper = zderiv_mean + plot_sigma * zderiv_std
-        ax.fill_between(dfit_x_values,plot_hs_zsample_dydx_lower,plot_hs_zsample_dydx_upper,facecolor='b',edgecolor='None',alpha=0.2)
+        ax.fill_between(dfit_x_values[0], plot_hs_zsample_dydx_lower, plot_hs_zsample_dydx_upper, facecolor='b', edgecolor='None', alpha=0.2)
         ax.set_xlim(minimum,maximum)
         fig.savefig(plot_save_directory+'sample_gp_drv_no_noise_test.png')
         plt.close(fig)
 
         # Sampled fit derivative curves (zero noise) against GPR fit derivative distribution
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Sampled fit derivative curves (zero noise) against GPR fit derivative distribution', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         ax.fill_between(fit_x_values,plot_hs_zfit_dydx_lower,plot_hs_zfit_dydx_upper,facecolor='r',edgecolor='None',alpha=0.2)
         for ii in np.arange(0,plot_num_samples):
@@ -272,7 +278,7 @@ def plot_data(i,fit_x_values, minimum, maximum, \
         
         # Integrals of sampled fit derivative curves (zero noise) against GPR fit distribution
         fig = plt.figure()
-        fig.suptitle('My Title', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Integrals of sampled fit derivative curves (zero noise) against GPR fit distribution', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         ax.fill_between(fit_x_values,plot_hs_zfit_y_lower,plot_hs_zfit_y_upper,facecolor='r',edgecolor='None',alpha=0.2)
         for ii in np.arange(0,plot_num_samples):

@@ -25,7 +25,6 @@ def print_data(gp_kernel_name,gp_kernel_hyppars,gp_fit_regpar,fit_lml,\
                    nigp_kernel_name,nigp_fit_regpar,nigp_kernel_hyppars,\
                    nigp_error_kernel_name,nigp_error_fit_regpar,nigp_error_kernel_hyppars,ni_fit_lml):
     ###Printing
-    
     gp_str = "\n--- GPR Fit ---\n\n"
     gp_str = gp_str + "Kernel name: %30s\n" % (gp_kernel_name)
     gp_str = gp_str + "Regularization parameter: %17.4f\n" % (gp_fit_regpar)
