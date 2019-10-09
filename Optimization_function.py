@@ -110,7 +110,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
               'X_coordinates_errors', X_coordinates_errors.shape, \
               'Y_coordinates_errors', Y_coordinates_errors.shape, \
               )
-    
+
     #ndArray[ : , start_index: end_index] # to select columns
     #ndArray[start_index: end_index , :] #to selct raws
     for i in range(0,(Y_coordinates.shape[0]), int((Y_coordinates.shape[0])/5)):
