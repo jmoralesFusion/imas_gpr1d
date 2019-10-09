@@ -68,7 +68,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             
             
         rho_pol_norm = np.full(R_real.shape, np.nan)
-        rho_pol_norm.shape
         for ii in range(rho_pol_norm_base.shape[1]):
             rho_pol_norm[:, ii] = np.interp(R_real[:, ii], R_base, rho_pol_norm_base[:, ii])
             
@@ -82,10 +81,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         if (write_edge_profiles):
             #####################################################################################################
             ### save the output to the edge profiles as a start
-            #def put_data(shot, run_out, occ_out, user_out, machine_out):
             idd_out = imas.ids(shot,  run_out)
             idd_out.create_env(user_out, machine_out, '3')
-            #print(len(idd_out.core_profiles.profiles_1d))
             idd_out.edge_profiles.profiles_1d.resize(100)
             print('rho_pol_norm =', rho_pol_norm)
             idd_out.edge_profiles.profiles_1d[0].grid.rho_tor_norm = rho_pol_norm[0, :]
@@ -96,6 +93,9 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
             #####################################################################################################
 
+        #Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
+        #X_errors =  np.full(X_reduced.shape,0.0091)
+
         return rho_pol_norm, electron_density
 
     if datatype == 'ece':
@@ -105,23 +105,45 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         mask_eq = np.asarray(idd_in.equilibrium.code.output_flag) > -1
 
-        nbr_channels = len(idd_in.ece.channel)
-        nbr_pts =len(idd_in.ece.channel[0].position.r.data)
-        nbr_temperature =  len(idd_in.ece.channel[0].t_e.data)
+        mask_eq_time = (idd_in.ece.time > idd_in.equilibrium.time[mask_eq][0]) \
+                     & (idd_in.ece.time < idd_in.equilibrium.time[mask_eq][-1]) \
+
+        nbr_channels        = len(idd_in.ece.channel)
+        nbr_pts             = len(idd_in.ece.channel[0].position.r.data)
+        nbr_temperature     = len(idd_in.ece.channel[0].t_e.data)
+        nbr_errors_Up       = len(idd_in.ece.channel[0].t_e.data_error_upper)
+        nbr_errors_Low      = len(idd_in.ece.channel[0].t_e.data_error_lower)
         
         matrix_position = np.full((nbr_pts, nbr_channels), np.nan)
         matrix_temperature = np.full((nbr_temperature, nbr_channels), np.nan)
-        
-        
+
+        ####################################################################################
+        ## Get errors on the temperature 
+        error_upper_temp = np.full((nbr_errors_Up, nbr_channels), np.nan)
+        error_lower_temp = np.full((nbr_errors_Low, nbr_channels), np.nan)
+        error_max_temp   = np.full((nbr_errors_Low, nbr_channels), np.nan)
+           
+        for channel in range(len(idd_in.ece.channel)):
+            for error_up in range(len(idd_in.ece.channel[channel].t_e.data_error_upper)):
+                error_upper_temp[error_up][channel] = idd_in.ece.channel[channel].t_e.data_error_upper[error_up]
+            for error_low in range(len(idd_in.ece.channel[channel].t_e.data_error_lower)):
+                error_lower_temp[error_low][channel] = idd_in.ece.channel[channel].t_e.data_error_lower[error_low]
+                #choose the max of the upper and lower 
+                error_max_temp[error_low][channel] = max(error_upper_temp[error_low][channel],error_lower_temp[error_low][channel])
+                
+
+        #mask and filter error data according to equilibrium time:
+        error_upper_temp = error_upper_temp[mask_eq_time]
+        error_lower_temp = error_lower_temp[mask_eq_time]
+        temperature_error   = error_max_temp[mask_eq_time]
+        #####################################################################################
+
         for channel in range(len(idd_in.ece.channel)):
             for raduis in range(len(idd_in.ece.channel[channel].position.r.data)):
                 matrix_position[raduis][channel] = idd_in.ece.channel[channel].position.r.data[raduis]
             for temperature in range(len(idd_in.ece.channel[channel].t_e.data)):
                 matrix_temperature[temperature][channel] = idd_in.ece.channel[channel].t_e.data[temperature]
 
-
-        mask_eq_time = (idd_in.ece.time > idd_in.equilibrium.time[mask_eq][0]) \
-                     & (idd_in.ece.time < idd_in.equilibrium.time[mask_eq][-1]) \
 
         Time                                            = idd_in.ece.time[mask_eq_time]
         R_real                                          = matrix_position[mask_eq_time]
@@ -146,17 +168,28 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             rho_pol_norm[ii] = np.interp(R_real[ii, :][~np.isnan(R_real[ii, :])], \
                                          R_base, rho_pol_norm_base[ii, :])
             electron_temperature_2[ii] = electron_temperature[ii, :][~np.isnan(electron_temperature[ii, :])]
-
+            #temperature_error[ii] = temperature_error[ii, :][~np.isnan(temperature_error[ii, :])]
+        
         rho_pol_norm           = np.asarray(rho_pol_norm)
         electron_temperature_2 = np.asarray(electron_temperature_2)
         
+        temperature_error      = np.asarray(temperature_error)
+        #temperature_error      = np.asarray(temperature_error.shape, np.mean(temperature_error))
+
+        rho_pol_norm_error    = np.full(rho_pol_norm.shape, 0.0091)#np.mean(rho_pol_norm)*0.05)
         
+        print(temperature_error.shape)
+        
+        print(rho_pol_norm_error.shape)
+
+
         #plt.plot(rho_pol_norm[1000], electron_temperature_2[1000])
         #plt.plot(rho_pol_norm[500], electron_temperature_2[500])
         #plt.plot(rho_pol_norm[200], electron_temperature_2[200])
-        #plt.show()
+        #plt.show()reflectometer_profile
+        print(rho_pol_norm.shape,electron_temperature_2.shape)
         
-        return rho_pol_norm, electron_temperature_2
+        return rho_pol_norm, electron_temperature_2, rho_pol_norm_error, temperature_error
 
 
 
@@ -188,7 +221,7 @@ if __name__ == '__main__':
                         help='user_in, default=imas_public')
     parser.add_argument('machine_in', type=str, nargs='?', default='west', \
                         help='machine_in, default=west')
-    parser.add_argument('--ids', type=str, default='reflectometer_profile', \
+    parser.add_argument('--ids', type=str, default='ece', \
                         help='IDS source of data for profile fit, default=reflectometer_profile')
     parser.add_argument('-k', '--kernel', type=str, default='RQ_Kernel', \
                         help='Kernel to use for profile fit, default=RQ_Kernel')
@@ -198,9 +231,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Call wrapper function
-    x, y = get_data(args.shot, \
-             args.run_out, args.occurrence_out, args.user_out, args.machine_out, \
-             args.run_in, args.occurrence_in, args.user_in, args.machine_in, \
-             args.ids, args.write_edge_profiles)
-
-    fit_data(x, y, args.kernel)
+    x, y, ex, ey = get_data(args.shot, \
+                                args.run_out, args.occurrence_out, args.user_out, args.machine_out, \
+                                args.run_in, args.occurrence_in, args.user_in, args.machine_in, \
+                                args.ids, args.write_edge_profiles)
+    x  = x.T
+    y  = y.T
+    fit_data(x, y, ex, ey, args.kernel)

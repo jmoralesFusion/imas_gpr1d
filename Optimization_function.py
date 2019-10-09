@@ -43,7 +43,7 @@ default_configuartion = {
 
 
 
-def Optimization(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel' ):
+def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors, kernel_method='RQ_Kernel' ):
 
 
     optimized_config = {
@@ -105,16 +105,29 @@ def Optimization(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel' ):
     #print(secrets.choice(Y_coordinates[1]))
     #print(secrets.randbelow(len(Y_coordinates[1])))
     ###################################################################################################
+    print('Y_coordinates', Y_coordinates.shape, \
+              'X_coordinates', X_coordinates.shape, \
+              'X_coordinates_errors', X_coordinates_errors.shape, \
+              'Y_coordinates_errors', Y_coordinates_errors.shape, \
+              )
     
-    
+    #ndArray[ : , start_index: end_index] # to select columns
+    #ndArray[start_index: end_index , :] #to selct raws
     for i in range(0,(Y_coordinates.shape[0]), int((Y_coordinates.shape[0])/5)):
         Y_reduced = Y_coordinates[i]
-        X_reduced = (X_coordinates)[i]
+        X_reduced = X_coordinates[i]
 
-        Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
+        #Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
+        #X_errors =  np.full(X_reduced.shape,0.0091)
+        
+        Y_errors = Y_coordinates_errors[i]
+        print(Y_errors.shape)
+        
+        X_errors = X_coordinates_errors[i] 
+        #print(X_errors.shape)
+        
         minimum = X_reduced.min()
         maximum = X_reduced.max()
-        X_errors =  np.full(X_reduced.shape,0.0091)
         
         
         fit_x_values = np.linspace(minimum,maximum,100)

@@ -44,7 +44,7 @@ default_configuartion = {
 
 
 
-def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat = False, plot_fit =True, slices_nbr = 10):
+def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors, kernel_method='RQ_Kernel', print_stat = False, plot_fit =True, slices_nbr = 10):
     '''
     Fit Y profile as a function of X quantity
 
@@ -127,7 +127,7 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
     #grab the obtimized values and use them in the fitting routine:
     print('computing the time of 10 slices')
     start_time = time.time()
-    optimized_values = Optimization(X_coordinates, Y_coordinates,  kernel_method='RQ_Kernel')
+    optimized_values = Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors,  kernel_method='RQ_Kernel')
     print("--- %s seconds ---" % (time.time() - start_time))
     
     nbr_pts  = 100
@@ -142,20 +142,33 @@ def fit_data(X_coordinates, Y_coordinates, kernel_method='RQ_Kernel', print_stat
                 'fit_dydy_y_error': [np.nan]*nbr_time, \
                 'x': X_coordinates, \
                 'y': Y_coordinates, \
-                'x_error': [np.nan]*nbr_time, \
-                'y_error': [np.nan]*nbr_time, \
+                'x_error': X_coordinates_errors , \
+                'y_error': Y_coordinates_errors , \
                }
+    print('Y_coordinates', Y_coordinates.shape, \
+              'X_coordinates', X_coordinates.shape, \
+              'X_coordinates_errors', X_coordinates_errors.shape, \
+              'Y_coordinates_errors', Y_coordinates_errors.shape, \
+              )
+    
+    
     for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
 
     #for i in range(1000):
         print('slice number : ', i)
         Y_reduced = Y_coordinates[i]
-        X_reduced = (X_coordinates)[i]
+        X_reduced = X_coordinates[i]
 
-        Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
+        Y_errors = Y_coordinates_errors[i]#[i,:]#[ :,i]
+        print(Y_errors.shape)
+        X_errors = X_coordinates_errors[i] 
+        print(X_errors.shape)
+
+        #Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
+        #X_errors =  np.full(X_reduced.shape,0.0091)
+
         minimum = X_reduced.min()
         maximum = X_reduced.max()
-        X_errors =  np.full(X_reduced.shape,0.0091)
 
         fit_x_values = np.linspace(minimum,maximum,100)
         # Define a kernel to fit the data itself
