@@ -89,10 +89,10 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
             #####################################################################################################
 
-        #Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
-        #X_errors =  np.full(X_reduced.shape,0.0091)
+        electron_density_errors = np.full(electron_density.shape, np.mean(electron_density)*0.05)
+        rho_pol_norm_errors =  np.full(rho_pol_norm.shape, np.mean(rho_pol_norm)*0.005)
 
-        return rho_pol_norm, electron_density
+        return rho_pol_norm.T, electron_density.T, rho_pol_norm_errors.T, electron_density_errors.T
 
     if datatype == 'ece':
 
@@ -143,8 +143,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
                 error_max_temp[error_low][channel] = 2.0*(max(error_upper_temp[error_low][channel],error_lower_temp[error_low][channel]))
 
         #mask and filter error data according to equilibrium time:
-        #error_upper_temp   = error_upper_temp[mask_eq_time]
-        #error_lower_temp   = error_lower_temp[mask_eq_time]
         temperature_error  = error_max_temp[mask_eq_time]
         temperature_error[np.isnan(electron_temperature)] = np.nan
         
@@ -175,20 +173,14 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         electron_temperature_2 = np.asarray(electron_temperature_2)
         rho_pol_norm_error     = np.asarray(rho_pol_norm_error)
         temperature_error_2    = np.asarray(temperature_error_2)
-        #temperature_error      = np.asarray(temperature_error.shape, np.mean(temperature_error))
-        #rho_pol_norm_error    = np.full(rho_pol_norm.shape, 0.0091)#np.mean(rho_pol_norm)*0.05)
 
         print('')
         print('rho_pol_norm_error shape is :', rho_pol_norm_error.shape)
         print('rho_pol_norm shape is : ', rho_pol_norm.shape)
         print('electron_temperature_2 shape : ' , electron_temperature_2.shape)
         print('temperature_errors_2 shape is :', temperature_error_2.shape)
-        #plt.plot(rho_pol_norm[1000], electron_temperature_2[1000])
-        #plt.plot(rho_pol_norm[500], electron_temperature_2[500])
-        #plt.plot(rho_pol_norm[200], electron_temperature_2[200])
-        #plt.show()reflectometer_profile
         
-        return rho_pol_norm, electron_temperature_2, rho_pol_norm_error, temperature_error_2
+        return rho_pol_norm.T, electron_temperature_2.T, rho_pol_norm_error, temperature_error_2.T
 
 
 
@@ -215,7 +207,7 @@ if __name__ == '__main__':
                         help='user_in, default=imas_public')
     parser.add_argument('machine_in', type=str, nargs='?', default='west', \
                         help='machine_in, default=west')
-    parser.add_argument('--ids', type=str, default='ece', \
+    parser.add_argument('--ids', type=str, default='reflectometer_profile', \
                         help='IDS source of data for profile fit, default=reflectometer_profile')
     parser.add_argument('-k', '--kernel', type=str, default='RQ_Kernel', \
                         help='Kernel to use for profile fit, default=RQ_Kernel')
@@ -229,9 +221,11 @@ if __name__ == '__main__':
                                 args.run_out, args.occurrence_out, args.user_out, args.machine_out, \
                                 args.run_in, args.occurrence_in, args.user_in, args.machine_in, \
                                 args.ids, args.write_edge_profiles)
+    '''
     x   = x.T
     y   = y.T
+    ex = ex.T
     ey  = ey.T
-
+    '''
     fit_data(x, y, ex, ey, args.kernel)
 

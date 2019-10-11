@@ -106,12 +106,12 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_e
 
 
 
-    kernel_methodlist=['Constant_Kernel', 'Noise_Kernel', 'Linear_Kernel', 'Poly_Order_Kernel', 'SE_Kernel', 'RQ_Kernel',
-                       'Matern_HI_Kernel', 'NN_Kernel', 'Gibbs_Kernel']
+    kernel_methodlist=['Poly_Order_Kernel', 'SE_Kernel', 'RQ_Kernel','Matern_HI_Kernel', 'NN_Kernel', 'Gibbs_Kernel']
     print('Printing the list of kernel methods that should be used: ')
     print(kernel_methodlist)
     if kernel_method in kernel_methodlist:
         print('The chosed method is : ',kernel_method)
+       
     else:
         raise ValueError("The Fit method is not know, please provide an method from the List")
         return
@@ -127,7 +127,8 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_e
     #grab the obtimized values and use them in the fitting routine:
     print('computing the time of 10 slices')
     start_time = time.time()
-    optimized_values = Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors,  kernel_method='RQ_Kernel')
+    optimized_values = Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors,  kernel_method)#='RQ_Kernel')
+    print(kernel_method)
     print("--- %s seconds ---" % (time.time() - start_time))
     
     nbr_pts  = 100
@@ -160,9 +161,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_e
         X_reduced = X_coordinates[i]
 
         Y_errors = Y_coordinates_errors[i]#[i,:]#[ :,i]
-        print(Y_errors.shape)
         X_errors = X_coordinates_errors[i] 
-        print(X_errors.shape)
 
         #Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
         #X_errors =  np.full(X_reduced.shape,0.0091)

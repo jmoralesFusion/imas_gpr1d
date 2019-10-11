@@ -42,7 +42,7 @@ def plot_data(i, fit_x_values, minimum, maximum, \
                   fit_dydx_values, fit_dydx_errors): 
  
     ###Some basic setup
-    plot_save_directory = './bebe' + str(i)
+    plot_save_directory = './GPPlots' + str(i)
     if not plot_save_directory.endswith('/'):
         plot_save_directory = plot_save_directory+'/'
     if not os.path.isdir(plot_save_directory):
@@ -99,7 +99,7 @@ def plot_data(i, fit_x_values, minimum, maximum, \
         fig.suptitle('Derivative of GPR fit and error, only accounting for y-errors', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         #if (fit_dydx_values is not None):
-        ax.plot(fit_x_values, fit_dydx_values, color='r')
+        ax.plot(fit_x_values, hs_fit_dydx_values, color='r')
         plot_hs_fit_dydx_lower = hs_fit_dydx_values - plot_sigma * hs_fit_dydx_errors
         plot_hs_fit_dydx_upper = hs_fit_dydx_values + plot_sigma * hs_fit_dydx_errors
         ax.fill_between(fit_x_values, plot_hs_fit_dydx_lower, plot_hs_fit_dydx_upper, facecolor='r', edgecolor='None', alpha=0.2)

@@ -121,10 +121,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
         #X_errors =  np.full(X_reduced.shape,0.0091)
         
         Y_errors = Y_coordinates_errors[i]
-        print(Y_errors.shape)
-        
         X_errors = X_coordinates_errors[i] 
-        #print(X_errors.shape)
         
         minimum = X_reduced.min()
         maximum = X_reduced.max()
