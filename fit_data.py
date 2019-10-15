@@ -29,11 +29,6 @@ __all__ = ('fit_data',
            'default_config')
 
 default_configuartion = {
-    'Constant_Kernel' : GPR1D.Constant_Kernel(),
-    'Noise_Kernel'  : GPR1D.Noise_Kernel(),
-    'Linear_Kernel'   : GPR1D.Linear_Kernel(),
-    'Poly_Order_Kernel'   : GPR1D.Poly_Order_Kernel(),
-    'SE_Kernel'   : GPR1D.SE_Kernel(),
     'RQ_Kernel'  : GPR1D.RQ_Kernel(),
     'Matern_HI_Kernel'   : GPR1D.Matern_HI_Kernel(),
     'NN_Kernel'  : GPR1D.NN_Kernel(),

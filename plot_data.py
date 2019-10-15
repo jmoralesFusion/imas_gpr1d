@@ -11,8 +11,6 @@ import warnings
 import time
 #import pdb; pdb.set_trace()
 
-import getpass
-
 import numpy as np
 import matplotlib.pyplot as plt
 from textwrap import wrap
