@@ -2,7 +2,7 @@
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 # Also if needed: retab
 
-from __future__ import (unicode_literals, absolute_import,print_function, division)
+from __future__ import (unicode_literals, absolute_import,print_function, division, with_statement)
 # Standard python modules
 import numpy as np
 import os
@@ -465,7 +465,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_e
 
 
         if print_stat == True:
-            ### Printing
             print_data(gp_kernel_name,gp_kernel_hyppars,gp_fit_regpar,fit_lml,\
                            hsgp_kernel_name,hsgp_fit_regpar,hsgp_kernel_hyppars,\
                            hsgp_error_kernel_name,hsgp_error_fit_regpar,hsgp_error_kernel_hyppars,hs_fit_lml,\
@@ -473,27 +472,27 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_e
                            nigp_error_kernel_name,nigp_error_fit_regpar,nigp_error_kernel_hyppars,ni_fit_lml)
            
         if plot_fit == True:
-
             plot_data(i, fit_x_values, minimum, maximum, \
-                      X_reduced, Y_reduced, \
-                      Y_errors, X_errors, \
-                      hs_fit_y_values, hs_fit_y_errors,\
-                      hs_fit_dydx_errors,hs_fit_dydx_values, \
-                      ni_fit_y_values, ni_fit_dydx_values,  ni_fit_y_errors, ni_fit_dydx_errors,\
-                      sample_array, sample_mean, sample_std, \
-                      deriv_array, deriv_mean, deriv_std,\
-                      dsample_array, dsample_mean, dsample_std,\
-                      integ_array, integ_mean, integ_std, ifit_x_values,\
-                      ndsample_array, dfit_x_values,  \
-                      hs_zfit_y_values, hs_zfit_y_errors,\
-                      zsample_array, zsample_mean, zsample_std,\
-                      hs_zfit_dydx_values, hs_zfit_dydx_errors,\
-                      zderiv_array, zderiv_mean, zderiv_std,\
-                      zdsample_array, zdsample_mean, zdsample_std,\
-                      zinteg_array, zinteg_mean, zinteg_std, \
-                      nsample_array, \
-                      fit_y_values, fit_y_errors, \
-                      fit_dydx_values, fit_dydx_errors)
+                          X_reduced, Y_reduced, \
+                          Y_errors, X_errors, \
+                          hs_fit_y_values, hs_fit_y_errors,\
+                          hs_fit_dydx_errors,hs_fit_dydx_values, \
+                          ni_fit_y_values, ni_fit_dydx_values,  ni_fit_y_errors, ni_fit_dydx_errors,\
+                          sample_array, sample_mean, sample_std, \
+                          deriv_array, deriv_mean, deriv_std,\
+                          dsample_array, dsample_mean, dsample_std,\
+                          integ_array, integ_mean, integ_std, ifit_x_values,\
+                          ndsample_array, dfit_x_values,  \
+                          hs_zfit_y_values, hs_zfit_y_errors,\
+                          zsample_array, zsample_mean, zsample_std,\
+                          hs_zfit_dydx_values, hs_zfit_dydx_errors,\
+                          zderiv_array, zderiv_mean, zderiv_std,\
+                          zdsample_array, zdsample_mean, zdsample_std,\
+                          zinteg_array, zinteg_mean, zinteg_std, \
+                          nsample_array, \
+                          fit_y_values, fit_y_errors, \
+                          fit_dydx_values, fit_dydx_errors)
+            
         # Results
         # -------
         fit_data['fit_x'][i]            = fit_x_values

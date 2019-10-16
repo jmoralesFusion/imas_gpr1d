@@ -77,8 +77,33 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         if (write_edge_profiles):
             #####################################################################################################
             ### save the output to the edge profiles as a start
-            idd_out = imas.ids(shot,  run_out)
-            idd_out.create_env(user_out, machine_out, '3')
+            
+            # Create or open IDS
+            # ------------------
+            run_number = '{:04d}'.format(run_out)
+            shot_file  = os.path.expanduser('~' + user_out + '/public/imasdb/' \
+                                                + machine_out + '/3/0/' + 'ids_' + str(shot) \
+                                                + run_number + '.datafile')
+           
+            idd_out = imas.ids(shot, run_out)
+
+            if (os.path.isfile(shot_file)):
+                print('open the IDS')
+                idd_out.open_env(user_out, machine_out, '3')
+            else:
+                if (user_out == 'imas_public'):
+                    print('ERROR IDS file does not exist, the IDS file must be')
+                    print('created first for imas_public user_out')
+                    raise FileNotFoundError
+                else:
+                    print('Create the IDS')
+                    idd_out.create_env(user_out, machine_out, '3')
+
+            # Write data
+            # ----------
+            print(' ')
+            print('Write data')
+            print('----------')
             idd_out.edge_profiles.profiles_1d.resize(100)
             print('rho_pol_norm =', rho_pol_norm)
             idd_out.edge_profiles.profiles_1d[0].grid.rho_tor_norm = rho_pol_norm[0, :]
