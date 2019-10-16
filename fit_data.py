@@ -39,7 +39,8 @@ default_configuartion = {
 
 
 
-def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors, kernel_method='RQ_Kernel', print_stat = False, plot_fit =True, slices_nbr = 10):
+def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordinates_errors=None, \
+             kernel_method='RQ_Kernel', print_stat=False, plot_fit=True, slices_nbr=10):
     '''
     Fit Y profile as a function of X quantity
 

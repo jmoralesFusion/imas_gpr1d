@@ -40,7 +40,7 @@ def plot_data(i, fit_x_values, minimum, maximum, \
                   fit_dydx_values, fit_dydx_errors): 
  
     ###Some basic setup
-    plot_save_directory = './GPPlots' + str(i)
+    plot_save_directory = './Reflectometer_Gibbs_Kernel_GPPlots' + str(i)
     if not plot_save_directory.endswith('/'):
         plot_save_directory = plot_save_directory+'/'
     if not os.path.isdir(plot_save_directory):
