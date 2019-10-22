@@ -38,7 +38,7 @@ default_configuartion = {
 
 
 
-def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors, kernel_method='RQ_Kernel' ):
+def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors, kernel_method='RQ_Kernel', slices_optim_nbr=10):
     
 
 
@@ -118,7 +118,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             hsgpr_object.set_search_parameters(epsilon=1.0e-2)
             hsgpr_object.set_error_search_parameters(epsilon=1.0e-1)
             #     Perform the fit with kernel restarts
-            hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True,nrestarts=5)
+            hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True)#,nrestarts=5)
             (hsgp_kernel_name,hsgp_kernel_hyppars,hsgp_fit_regpar) = hsgpr_object.get_gp_kernel_details()
             (hsgp_error_kernel_name,hsgp_error_kernel_hyppars,hsgp_error_fit_regpar) = hsgpr_object.get_gp_error_kernel_details()
 
@@ -143,7 +143,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             nigpr_object.set_search_parameters(epsilon=1.0e-2)
             nigpr_object.set_error_search_parameters(epsilon=1.0e-1)
             #     Perform the fit with kernel restarts, here is the extra option to account for x-errors in fit
-            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True,nrestarts=5)
+            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True)#,nrestarts=5)
             (nigp_kernel_name,nigp_kernel_hyppars,nigp_fit_regpar) = nigpr_object.get_gp_kernel_details()
             (nigp_error_kernel_name,nigp_error_kernel_hyppars,nigp_error_fit_regpar) = nigpr_object.get_gp_error_kernel_details()
 
@@ -157,18 +157,18 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             optimized_config['nigp_error_fit_regpar_optimized']['alpha'].append(nigp_kernel_hyppars[1])
 
 
-        optimized_values['hsgp_fit_regpar_optimized']['regularaiztion']               = np.median(optimized_config['hsgp_fit_regpar_optimized']['regularaiztion'])
-        optimized_values['hsgp_fit_regpar_optimized']['amp']                          = np.median(optimized_config['hsgp_fit_regpar_optimized']['amp'])
-        optimized_values['hsgp_fit_regpar_optimized']['alpha']                        = np.median(optimized_config['hsgp_fit_regpar_optimized']['alpha'])
-        optimized_values['hsgp_error_fit_regpar_optimized']['regularaiztion']         = np.median(optimized_config['hsgp_error_fit_regpar_optimized']['regularaiztion'])
-        optimized_values['hsgp_error_fit_regpar_optimized']['amp']                    = np.median(optimized_config['hsgp_error_fit_regpar_optimized']['amp'])
-        optimized_values['hsgp_error_fit_regpar_optimized']['alpha']                  = np.median(optimized_config['hsgp_error_fit_regpar_optimized']['alpha'])
-        optimized_values['nigp_fit_regpar_optimized']['regularaiztion']               = np.median(optimized_config['nigp_fit_regpar_optimized']['regularaiztion'])
-        optimized_values['nigp_fit_regpar_optimized']['amp']                          = np.median(optimized_config['nigp_fit_regpar_optimized']['amp'])
-        optimized_values['nigp_fit_regpar_optimized']['alpha']                        = np.median(optimized_config['nigp_fit_regpar_optimized']['alpha'])
-        optimized_values['nigp_error_fit_regpar_optimized']['regularaiztion']         = np.median(optimized_config['nigp_error_fit_regpar_optimized']['regularaiztion'])
-        optimized_values['nigp_error_fit_regpar_optimized']['amp']                    = np.median(optimized_config['nigp_error_fit_regpar_optimized']['amp'])
-        optimized_values['nigp_error_fit_regpar_optimized']['alpha']                  = np.median(optimized_config['nigp_error_fit_regpar_optimized']['alpha'])
+        optimized_values['hsgp_fit_regpar_optimized']['regularaiztion']       = np.median(optimized_config['hsgp_fit_regpar_optimized']['regularaiztion'])
+        optimized_values['hsgp_fit_regpar_optimized']['amp']                  = np.median(optimized_config['hsgp_fit_regpar_optimized']['amp'])
+        optimized_values['hsgp_fit_regpar_optimized']['alpha']                = np.median(optimized_config['hsgp_fit_regpar_optimized']['alpha'])
+        optimized_values['hsgp_error_fit_regpar_optimized']['regularaiztion'] = np.median(optimized_config['hsgp_error_fit_regpar_optimized']['regularaiztion'])
+        optimized_values['hsgp_error_fit_regpar_optimized']['amp']            = np.median(optimized_config['hsgp_error_fit_regpar_optimized']['amp'])
+        optimized_values['hsgp_error_fit_regpar_optimized']['alpha']          = np.median(optimized_config['hsgp_error_fit_regpar_optimized']['alpha'])
+        optimized_values['nigp_fit_regpar_optimized']['regularaiztion']       = np.median(optimized_config['nigp_fit_regpar_optimized']['regularaiztion'])
+        optimized_values['nigp_fit_regpar_optimized']['amp']                  = np.median(optimized_config['nigp_fit_regpar_optimized']['amp'])
+        optimized_values['nigp_fit_regpar_optimized']['alpha']                = np.median(optimized_config['nigp_fit_regpar_optimized']['alpha'])
+        optimized_values['nigp_error_fit_regpar_optimized']['regularaiztion'] = np.median(optimized_config['nigp_error_fit_regpar_optimized']['regularaiztion'])
+        optimized_values['nigp_error_fit_regpar_optimized']['amp']            = np.median(optimized_config['nigp_error_fit_regpar_optimized']['amp'])
+        optimized_values['nigp_error_fit_regpar_optimized']['alpha']          = np.median(optimized_config['nigp_error_fit_regpar_optimized']['alpha'])
 
         return optimized_values
  
@@ -255,7 +255,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             hsgpr_object.set_search_parameters(epsilon=1.0e-2)
             hsgpr_object.set_error_search_parameters(epsilon=1.0e-1)
             #     Perform the fit with kernel restarts
-            hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True,nrestarts=5)
+            hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True)#,nrestarts=5)
             (hsgp_kernel_name,hsgp_kernel_hyppars,hsgp_fit_regpar) = hsgpr_object.get_gp_kernel_details()
             (hsgp_error_kernel_name,hsgp_error_kernel_hyppars,hsgp_error_fit_regpar) = hsgpr_object.get_gp_error_kernel_details()
 
@@ -285,7 +285,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             #nigpr_object.set_search_parameters(epsilon=1.0e-2,method='adam',spars=[1.0e-1,0.4,0.8])
             #nigpr_object.set_error_search_parameters(epsilon=1.0e-1,method='adam',spars=[1.0e-1,0.4,0.8])
             #     Perform the fit with kernel restarts, here is the extra option to account for x-errors in fit
-            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True,nrestarts=5)
+            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True)#,nrestarts=5)
             (nigp_kernel_name,nigp_kernel_hyppars,nigp_fit_regpar) = nigpr_object.get_gp_kernel_details()
             (nigp_error_kernel_name,nigp_error_kernel_hyppars,nigp_error_fit_regpar) = nigpr_object.get_gp_error_kernel_details()
 
@@ -402,7 +402,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             #hsgpr_object.set_search_parameters(epsilon=1.0e-2,method='adam',spars=[1.0e-1,0.4,0.8])
             #hsgpr_object.set_error_search_parameters(epsilon=1.0e-1,method='adam',spars=[1.0e-1,0.4,0.8])
             #     Perform the fit with kernel restarts
-            hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True,nrestarts=5)
+            hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True)#,nrestarts=5)
             (hsgp_kernel_name,hsgp_kernel_hyppars,hsgp_fit_regpar) = hsgpr_object.get_gp_kernel_details()
             (hsgp_error_kernel_name,hsgp_error_kernel_hyppars,hsgp_error_fit_regpar) = hsgpr_object.get_gp_error_kernel_details()
 
@@ -432,7 +432,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             #nigpr_object.set_search_parameters(epsilon=1.0e-2,method='adam',spars=[1.0e-1,0.4,0.8])
             #nigpr_object.set_error_search_parameters(epsilon=1.0e-1,method='adam',spars=[1.0e-1,0.4,0.8])
             #     Perform the fit with kernel restarts, here is the extra option to account for x-errors in fit
-            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True,nrestarts=5)
+            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True)#,nrestarts=5)
             (nigp_kernel_name,nigp_kernel_hyppars,nigp_fit_regpar) = nigpr_object.get_gp_kernel_details()
             (nigp_error_kernel_name,nigp_error_kernel_hyppars,nigp_error_fit_regpar) = nigpr_object.get_gp_error_kernel_details()
 

@@ -232,7 +232,7 @@ if __name__ == '__main__':
                         help='user_in, default=imas_public')
     parser.add_argument('machine_in', type=str, nargs='?', default='west', \
                         help='machine_in, default=west')
-    parser.add_argument('--ids', type=str, default='reflectometer_profile', \
+    parser.add_argument('-ids', '--ids', type=str, default='reflectometer_profile', \
                         help='IDS source of data for profile fit, default=reflectometer_profile')
     parser.add_argument('-k', '--kernel', type=str, default='RQ_Kernel', \
                         help='Kernel to use for profile fit, default=RQ_Kernel')
@@ -252,5 +252,7 @@ if __name__ == '__main__':
     ex = ex.T
     ey  = ey.T
     '''
-    fit_data(x, y, ex, ey, args.kernel)
+    out = fit_data(x, y, ex, ey, kernel_method=args.kernel, \
+                   optimise_all_params=False, slices_nbr=10, plot_fit=True)
+    #import ipdb; ipdb.set_trace()
 
