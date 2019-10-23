@@ -42,13 +42,9 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
     if datatype == 'reflectometer_profile':
         
         idd_in.reflectometer_profile.get()
-        
         R_real = idd_in.reflectometer_profile.channel[0].position.r.data
-        print(R_real.shape)
-        
         electron_density = idd_in.reflectometer_profile.channel[0].n_e.data
-        
-        
+                
         Time = idd_in.reflectometer_profile.time
         R_base = np.linspace(R_real.min(), R_real.max(), 1000)
         Phi = np.zeros(1000)
@@ -66,13 +62,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_pol_norm = np.full(R_real.shape, np.nan)
         for ii in range(rho_pol_norm_base.shape[1]):
             rho_pol_norm[:, ii] = np.interp(R_real[:, ii], R_base, rho_pol_norm_base[:, ii])
-            
-        print(' rho_pol_norm.shape : ' , rho_pol_norm.shape)
-        print('density.shape : ', electron_density.shape)
-        print('Time shape : ',Time.shape)
-        print('R shape: ',R_base.shape)
-        print('Phi shape : ' , Phi.shape)
-        print('Z shape : ',Z.shape)
 
         if (write_edge_profiles):
             #####################################################################################################
@@ -199,12 +188,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_pol_norm_error     = np.asarray(rho_pol_norm_error)
         temperature_error_2    = np.asarray(temperature_error_2)
 
-        print('')
-        print('rho_pol_norm_error shape is :', rho_pol_norm_error.shape)
-        print('rho_pol_norm shape is : ', rho_pol_norm.shape)
-        print('electron_temperature_2 shape : ' , electron_temperature_2.shape)
-        print('temperature_errors_2 shape is :', temperature_error_2.shape)
-        
         return rho_pol_norm.T, electron_temperature_2.T, rho_pol_norm_error, temperature_error_2.T
 
 

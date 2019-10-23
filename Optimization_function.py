@@ -38,10 +38,11 @@ default_configuartion = {
 
 
 
-def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors, kernel_method='RQ_Kernel', slices_optim_nbr=10):
+def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors, kernel_method='RQ_Kernel', slices_optim_nbr=10, dx_data=[0.0],dy_data=[0.0],dy_err=[0.0]):
     
-
-
+    if Y_coordinates.shape[0]<slices_optim_nbr:
+        slices_optim_nbr = Y_coordinates.shape[0]
+    print('slices_optim_nbr = ', slices_optim_nbr)
     if kernel_method == 'Gibbs_Kernel':
         optimized_config = {
             'hsgp_fit_regpar_optimized'    : {'regularaiztion'  : [],
@@ -89,7 +90,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
 
 
 
-        for i in range(0,(Y_coordinates.shape[0]), int((Y_coordinates.shape[0])/5)):
+        for i in range(0,(Y_coordinates.shape[0]), int((Y_coordinates.shape[0])/slices_optim_nbr)):
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
 
@@ -114,11 +115,11 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             hsgpr_object = GPR1D.GaussianProcessRegression1D()
             hsgpr_object.set_kernel(kernel=kernel)
             hsgpr_object.set_error_kernel(kernel=error_kernel)
-            hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, dxdata=[0.0],dydata=[0.0],dyerr=[0.0])     
+            hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, dxdata=dx_data,dydata=dy_data,dyerr=dy_err)     
             hsgpr_object.set_search_parameters(epsilon=1.0e-2)
             hsgpr_object.set_error_search_parameters(epsilon=1.0e-1)
             #     Perform the fit with kernel restarts
-            hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True)#,nrestarts=5)
+            hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True,nrestarts=3)
             (hsgp_kernel_name,hsgp_kernel_hyppars,hsgp_fit_regpar) = hsgpr_object.get_gp_kernel_details()
             (hsgp_error_kernel_name,hsgp_error_kernel_hyppars,hsgp_error_fit_regpar) = hsgpr_object.get_gp_error_kernel_details()
 
@@ -139,11 +140,11 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             nigpr_object = GPR1D.GaussianProcessRegression1D()
             nigpr_object.set_kernel(kernel=kernel)
             nigpr_object.set_error_kernel(kernel=error_kernel)
-            nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, dxdata=[0.0],dydata=[0.0],dyerr=[0.0])
+            nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, dxdata=dx_data,dydata=dy_data,dyerr=dy_err)
             nigpr_object.set_search_parameters(epsilon=1.0e-2)
             nigpr_object.set_error_search_parameters(epsilon=1.0e-1)
             #     Perform the fit with kernel restarts, here is the extra option to account for x-errors in fit
-            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True)#,nrestarts=5)
+            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True,nrestarts=3)
             (nigp_kernel_name,nigp_kernel_hyppars,nigp_fit_regpar) = nigpr_object.get_gp_kernel_details()
             (nigp_error_kernel_name,nigp_error_kernel_hyppars,nigp_error_fit_regpar) = nigpr_object.get_gp_error_kernel_details()
 
@@ -228,7 +229,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
 
 
 
-        for i in range(0,(Y_coordinates.shape[0]), int((Y_coordinates.shape[0])/5)):
+        for i in range(0,(Y_coordinates.shape[0]), int((Y_coordinates.shape[0])/slices_optim_nbr)):
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
             Y_errors = Y_coordinates_errors[i]
@@ -251,11 +252,11 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             hsgpr_object = GPR1D.GaussianProcessRegression1D()
             hsgpr_object.set_kernel(kernel=kernel)
             hsgpr_object.set_error_kernel(kernel=error_kernel)
-            hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, dxdata=[0.0],dydata=[0.0],dyerr=[0.0])     
+            hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, dxdata=dx_data,dydata=dy_data,dyerr=dy_err)     
             hsgpr_object.set_search_parameters(epsilon=1.0e-2)
             hsgpr_object.set_error_search_parameters(epsilon=1.0e-1)
             #     Perform the fit with kernel restarts
-            hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True)#,nrestarts=5)
+            hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True,nrestarts=3)
             (hsgp_kernel_name,hsgp_kernel_hyppars,hsgp_fit_regpar) = hsgpr_object.get_gp_kernel_details()
             (hsgp_error_kernel_name,hsgp_error_kernel_hyppars,hsgp_error_fit_regpar) = hsgpr_object.get_gp_error_kernel_details()
 
@@ -278,14 +279,14 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             nigpr_object = GPR1D.GaussianProcessRegression1D()
             nigpr_object.set_kernel(kernel=kernel)
             nigpr_object.set_error_kernel(kernel=error_kernel)
-            nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, dxdata=[0.0],dydata=[0.0],dyerr=[0.0])
+            nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, dxdata=dx_data,dydata=dy_data,dyerr=dy_err)
             nigpr_object.set_search_parameters(epsilon=1.0e-2)
             nigpr_object.set_error_search_parameters(epsilon=1.0e-1)
             #     Uncomment any of the following lines to test the recommended optimizers
             #nigpr_object.set_search_parameters(epsilon=1.0e-2,method='adam',spars=[1.0e-1,0.4,0.8])
             #nigpr_object.set_error_search_parameters(epsilon=1.0e-1,method='adam',spars=[1.0e-1,0.4,0.8])
             #     Perform the fit with kernel restarts, here is the extra option to account for x-errors in fit
-            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True)#,nrestarts=5)
+            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True,nrestarts=3)
             (nigp_kernel_name,nigp_kernel_hyppars,nigp_fit_regpar) = nigpr_object.get_gp_kernel_details()
             (nigp_error_kernel_name,nigp_error_kernel_hyppars,nigp_error_fit_regpar) = nigpr_object.get_gp_error_kernel_details()
 
@@ -372,7 +373,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             }
 
 
-        for i in range(0,(Y_coordinates.shape[0]), int((Y_coordinates.shape[0])/5)):
+        for i in range(0,(Y_coordinates.shape[0]), int((Y_coordinates.shape[0])/slices_optim_nbr)):
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
             Y_errors = Y_coordinates_errors[i]
@@ -394,7 +395,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             hsgpr_object = GPR1D.GaussianProcessRegression1D()
             hsgpr_object.set_kernel(kernel=kernel)
             hsgpr_object.set_error_kernel(kernel=error_kernel)
-            hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, dxdata=[0.0],dydata=[0.0],dyerr=[0.0])     
+            hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, dxdata=dx_data,dydata=dy_data,dyerr=dy_err)     
             hsgpr_object.set_search_parameters(epsilon=1.0e-2)
             hsgpr_object.set_error_search_parameters(epsilon=1.0e-1)
             #     Default optimizer is gradient ascent / descent - extremely robust but slow
@@ -402,7 +403,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             #hsgpr_object.set_search_parameters(epsilon=1.0e-2,method='adam',spars=[1.0e-1,0.4,0.8])
             #hsgpr_object.set_error_search_parameters(epsilon=1.0e-1,method='adam',spars=[1.0e-1,0.4,0.8])
             #     Perform the fit with kernel restarts
-            hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True)#,nrestarts=5)
+            hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True,nrestarts=3)
             (hsgp_kernel_name,hsgp_kernel_hyppars,hsgp_fit_regpar) = hsgpr_object.get_gp_kernel_details()
             (hsgp_error_kernel_name,hsgp_error_kernel_hyppars,hsgp_error_fit_regpar) = hsgpr_object.get_gp_error_kernel_details()
 
@@ -425,14 +426,14 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             nigpr_object = GPR1D.GaussianProcessRegression1D()
             nigpr_object.set_kernel(kernel=kernel)
             nigpr_object.set_error_kernel(kernel=error_kernel)
-            nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, dxdata=[0.0],dydata=[0.0],dyerr=[0.0])
+            nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, dxdata=dx_data,dydata=dy_data,dyerr=dy_err)
             nigpr_object.set_search_parameters(epsilon=1.0e-2)
             nigpr_object.set_error_search_parameters(epsilon=1.0e-1)
             #     Uncomment any of the following lines to test the recommended optimizers
             #nigpr_object.set_search_parameters(epsilon=1.0e-2,method='adam',spars=[1.0e-1,0.4,0.8])
             #nigpr_object.set_error_search_parameters(epsilon=1.0e-1,method='adam',spars=[1.0e-1,0.4,0.8])
             #     Perform the fit with kernel restarts, here is the extra option to account for x-errors in fit
-            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True)#,nrestarts=5)
+            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True,nrestarts=3)
             (nigp_kernel_name,nigp_kernel_hyppars,nigp_fit_regpar) = nigpr_object.get_gp_kernel_details()
             (nigp_error_kernel_name,nigp_error_kernel_hyppars,nigp_error_fit_regpar) = nigpr_object.get_gp_error_kernel_details()
 

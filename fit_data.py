@@ -27,16 +27,14 @@ __author__ = ['Mohamad Kozeiha', 'Jorge Morales']
 __date__ = '10/09/2018'
 __version__ = '$Revision: 1.10 $'
 
-__all__ = ('fit_data')#,
-          # 'default_config')
-
+__all__ = ('fit_data')
 
 
 
 
 def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordinates_errors=None, \
              kernel_method='RQ_Kernel', optimise_all_params=False, slices_optim_nbr=10, nbr_pts=100, \
-             slices_nbr=None, plot_fit=False):
+             slices_nbr=None, plot_fit=False, dx_data=[0.0], dy_data=[0.0], dy_err=[0.0]):
     '''
     Fit Y profile as a function of X quantity
 
@@ -130,17 +128,10 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
         return
 
 
-    #np.savetxt('x_y_eror.txt',(X_coordinates[:,10],Y_coordinates[:,10],np.full(Y_coordinates[:,10].shape,100)))
-    '''
-    file = open("list.txt", "w")
-    for index in range(len(X_coordinates[:,10])):
-        file.write(str(X_coordinates[:,10][index]) + " " + str(Y_coordinates[:,10][index]) + " " + str(np.full(Y_coordinates[:,10].shape,100)[index])+ "\n")
-    file.close()
-    '''
     #grab the obtimized values and use them in the fitting routine:
     start_time = time.time()
     if not optimise_all_params:
-        print('computing the time of 10 slices')
+        print('computing the time for optimisating the ' , slices_optim_nbr,  'slices')
         optimized_values = Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, \
                                         Y_coordinates_errors,  kernel_method, slices_optim_nbr)
         if kernel_method == 'RQ_Kernel': 
@@ -194,18 +185,11 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
         slices_nbr = Y_coordinates.shape[0]
 
     for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
-
-    #for i in range(1000):
         print('slice number : ', i)
         Y_reduced = Y_coordinates[i]
         X_reduced = X_coordinates[i]
-
-        Y_errors = Y_coordinates_errors[i]#[i,:]#[ :,i]
+        Y_errors = Y_coordinates_errors[i]
         X_errors = X_coordinates_errors[i] 
-
-        #Y_errors = np.full(Y_reduced.shape, np.mean(Y_reduced)*0.05)
-        #X_errors =  np.full(X_reduced.shape,0.0091)
-
         minimum = X_reduced.min()
         maximum = X_reduced.max()
 
@@ -223,11 +207,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
         # Again, this is only necessary if using kernel restart option on the error fitting
         error_kernel_hyppar_bounds = np.atleast_2d()
-
-        
-
-        
-        
+                
         if (plot_fit):
             # GPR fit using y-errors only as weights
             #     Create class object to store raw data, kernels, and settings
@@ -235,10 +215,9 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
             #     Define the kernel and regularization parameter to be used in the data fitting routine
             gpr_object.set_kernel(kernel=kernel)
-
             #     Define the raw data and associated errors to be fitted
             gpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
-                                        dxdata=[0.0],dydata=[0.0],dyerr=[0.0])     # Example of applying derivative constraints
+                                        dxdata=dx_data, dydata=dy_data, dyerr=dy_err )     # Example of applying derivative constraints
 
             #     Define the search criteria for data fitting routine and error fitting routine
             if optimise_all_params:
@@ -261,12 +240,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
             #     Grab the log-marginal-likelihood of fit
             fit_lml = gpr_object.get_gp_lml()
-        
-        
-
-
-        
-
+            
         if (X_coordinates_errors is None or plot_fit):
             # GPR fit rigourously accounting only for y-errors (this is the recommended option)
             #     Procedure is nearly identical to above, except for the addition of an error kernel
@@ -316,7 +290,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
             hsgpr_object = GPR1D.GaussianProcessRegression1D()
             hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
-                                      dxdata=[0.0],dydata=[0.0],dyerr=[0.0])
+                                      dxdata=dx_data, dydata=dy_data, dyerr=dy_err )
             
             if optimise_all_params:
             #     Default optimizer is gradient ascent / descent - extremely robust but slow
@@ -479,7 +453,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
             nigpr_object = GPR1D.GaussianProcessRegression1D()
             nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
-                                      dxdata=[0.0],dydata=[0.0],dyerr=[0.0])
+                                      dxdata=dx_data, dydata=dy_data, dyerr=dy_err )
             if optimise_all_params:
                 nigpr_object.set_kernel(kernel=kernel)
                 nigpr_object.set_error_kernel(kernel=error_kernel)

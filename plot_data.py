@@ -40,7 +40,7 @@ def plot_data(i, fit_x_values, minimum, maximum, \
                   fit_dydx_values, fit_dydx_errors): 
  
     ###Some basic setup
-    plot_save_directory = './Reflectometer_Gibbs_Kernel_GPPlots' + str(i)
+    plot_save_directory = './GPPlots' + str(i)
     if not plot_save_directory.endswith('/'):
         plot_save_directory = plot_save_directory+'/'
     if not os.path.isdir(plot_save_directory):
@@ -130,7 +130,6 @@ def plot_data(i, fit_x_values, minimum, maximum, \
         ax.plot(fit_x_values, plot_ni_fit_y_upper, color='b', ls='--')
         ax.fill_between(fit_x_values, plot_ni_fit_y_lower, plot_ni_fit_y_upper, facecolor='b', edgecolor='None', alpha=0.2, label = '2$\\sigma$ account for ey & ex')
         ax.set_xlim(minimum, maximum)
-        #plt.gca().legend(('gpr fit','-2 sigma region','+2 sigma region', 'y_errors region','-2 sigma region','+2 sigma region' , 'y_errors region','-2 sigma region','+2 sigma region','Raw data'), loc='best', ncol=2)
         plt.legend()
         fig.savefig(plot_save_directory+'gp_options_test.png')
         plt.close(fig)
@@ -139,7 +138,6 @@ def plot_data(i, fit_x_values, minimum, maximum, \
         fig = plt.figure()
         fig.suptitle("\n".join(wrap('Derivative of GPR fit and error, comparison of using y-errors as weights, rigourously accounting for y-errors, and rigourously account for y-errors AND x-errors')), fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
-        #if (fit_dydx_values is not None):
         ax.plot(fit_x_values, fit_dydx_values, color='g', label = 'der gpr fit')
         plot_fit_dydx_lower = fit_dydx_values - plot_sigma * fit_dydx_errors
         plot_fit_dydx_upper = fit_dydx_values + plot_sigma * fit_dydx_errors
@@ -242,7 +240,6 @@ def plot_data(i, fit_x_values, minimum, maximum, \
         plot_hs_zdsample_y_upper = zinteg_mean + plot_sigma * zinteg_std
         ax.fill_between(ifit_x_values, plot_hs_zdsample_y_lower, plot_hs_zdsample_y_upper, facecolor='b', edgecolor='None', alpha=0.2)
         ax.set_xlim(minimum, maximum)
-        #plt.gca().legend(('sample 1','sample 2 ','sample 3', 'y_errors region','-2 sigma region','+2 sigma region' , 'y_errors region'), loc='best', ncol=2)
         fig.savefig(plot_save_directory+'sample_gp_itg_no_noise_dtest.png')
         plt.close(fig)
         
