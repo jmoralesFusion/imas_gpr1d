@@ -24,7 +24,7 @@ from print_data import print_data
 '''
 
 __author__ = ['Mohamad Kozeiha', 'Jorge Morales']
-__date__ = '10/09/2018'
+__date__ = '10/09/2019'
 __version__ = '$Revision: 1.10 $'
 
 __all__ = ('fit_data')

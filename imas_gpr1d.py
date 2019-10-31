@@ -236,6 +236,6 @@ if __name__ == '__main__':
     ey  = ey.T
     '''
     out = fit_data(x, y, ex, ey, kernel_method=args.kernel, \
-                   optimise_all_params=False, slices_nbr=10, plot_fit=True)
+                   optimise_all_params=True, slices_nbr=10, plot_fit=True)
     #import ipdb; ipdb.set_trace()
 
