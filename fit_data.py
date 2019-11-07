@@ -16,9 +16,18 @@ import time
 import GPR1D
 import imas
 import pywed as pw
-from Optimization_function import Optimization
-from plot_data import plot_data
-from print_data import print_data
+try:
+    from .Optimization_function import Optimization
+except Exception as err:
+    from Optimization_function import Optimization
+try:
+    from .plot_data import plot_data
+except Exception as err:
+    from plot_data import plot_data
+try:
+    from .print_data import print_data
+except Exception as err:
+    from print_data import print_data
 '''
     GPR1D fit data function
 '''
@@ -129,42 +138,54 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
 
     #grab the obtimized values and use them in the fitting routine:
-    start_time = time.time()
-    if not optimise_all_params:
-        print('computing the time for optimisating the ' , slices_optim_nbr,  'slices')
-        optimized_values = Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, \
-                                        Y_coordinates_errors,  kernel_method, slices_optim_nbr)
-        if kernel_method == 'RQ_Kernel': 
+    if X_coordinates_errors is not None:#hyde kmn zedta w arrbt yalle t7t 
+        start_time = time.time()
+        print(start_time)
+        if not optimise_all_params:
+            print('computing the time for optimisating the ' , slices_optim_nbr,  'slices')
+            optimized_values = Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, \
+                                            Y_coordinates_errors,  kernel_method, slices_optim_nbr)
+            if kernel_method == 'RQ_Kernel': 
+                default_configuartion = {
+                    'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
+                    }
+
+            if kernel_method == 'Matern_HI_Kernel': 
+                default_configuartion = {
+                    'Matern_HI_Kernel' : GPR1D.Matern_HI_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
+                    }
+            if kernel_method == 'NN_Kernel':
+                default_configuartion = {
+                    'NN_Kernel'        : GPR1D.NN_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha']),
+                    }
+            if kernel_method == 'Gibbs_Kernel':
+                default_configuartion = {
+                    'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
+                    }
+
+        else :
+
             default_configuartion = {
-                'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
-                }
-            
-        if kernel_method == 'Matern_HI_Kernel': 
-            default_configuartion = {
-                'Matern_HI_Kernel' : GPR1D.Matern_HI_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
-                }
-        if kernel_method == 'NN_Kernel':
-            default_configuartion = {
-                'NN_Kernel'        : GPR1D.NN_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha']),
-                }
-        if kernel_method == 'Gibbs_Kernel':
-            default_configuartion = {
-                'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'], optimized_values['hsgp_fit_regpar_optimized']['alpha'])
+                'RQ_Kernel'  : GPR1D.RQ_Kernel(),
+                'Matern_HI_Kernel'   : GPR1D.Matern_HI_Kernel(),
+                'NN_Kernel'  : GPR1D.NN_Kernel(),
+                'Gibbs_Kernel'  : GPR1D.Gibbs_Kernel()
                 }
 
-    else :
-        
+
+        print(kernel_method)
+        print("--- %s seconds ---" % (time.time() - start_time))
+    #hon ane zdt hyde 
+    else:
+      
         default_configuartion = {
             'RQ_Kernel'  : GPR1D.RQ_Kernel(),
             'Matern_HI_Kernel'   : GPR1D.Matern_HI_Kernel(),
             'NN_Kernel'  : GPR1D.NN_Kernel(),
             'Gibbs_Kernel'  : GPR1D.Gibbs_Kernel()
             }
+        
 
-
-    print(kernel_method)
-    print("--- %s seconds ---" % (time.time() - start_time))
-    
 
     nbr_time = Y_coordinates.shape[0]
 
@@ -189,7 +210,12 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
         Y_reduced = Y_coordinates[i]
         X_reduced = X_coordinates[i]
         Y_errors = Y_coordinates_errors[i]
-        X_errors = X_coordinates_errors[i] 
+        
+        if X_coordinates_errors is not None:
+            X_errors = X_coordinates_errors[i] 
+        else:
+            X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
+
         minimum = X_reduced.min()
         maximum = X_reduced.max()
 
@@ -257,32 +283,32 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                                                                        optimized_values['hsgp_error_fit_regpar_optimized']['alpha']],\
                                                                        ])
                 elif kernel_method == 'Matern_HI_Kernel':
-                    hsgpr_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['nigp_fit_regpar_optimized']['amp'] ,\
-                                                                 optimized_values['nigp_fit_regpar_optimized']['ls'] ,\
-                                                                 optimized_values['nigp_fit_regpar_optimized']['alpha']],\
-                                                                [optimized_values['nigp_fit_regpar_optimized']['amp'] ,\
-                                                                 optimized_values['nigp_fit_regpar_optimized']['ls'] ,\
-                                                                 optimized_values['nigp_fit_regpar_optimized']['alpha']]])
-                    hsgpr_error_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['nigp_error_fit_regpar_optimized']['amp'] ,\
-                                                                       optimized_values['nigp_error_fit_regpar_optimized']['ls'] ,\
-                                                                       optimized_values['nigp_error_fit_regpar_optimized']['alpha']],\
-                                                                      [optimized_values['nigp_error_fit_regpar_optimized']['amp'] ,\
-                                                                       optimized_values['nigp_error_fit_regpar_optimized']['ls'] ,\
-                                                                       optimized_values['nigp_error_fit_regpar_optimized']['alpha']],\
+                    hsgpr_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['hsgp_fit_regpar_optimized']['amp'] ,\
+                                                                 optimized_values['hsgp_fit_regpar_optimized']['ls'] ,\
+                                                                 optimized_values['hsgp_fit_regpar_optimized']['alpha']],\
+                                                                [optimized_values['hsgp_fit_regpar_optimized']['amp'] ,\
+                                                                 optimized_values['hsgp_fit_regpar_optimized']['ls'] ,\
+                                                                 optimized_values['hsgp_fit_regpar_optimized']['alpha']]])
+                    hsgpr_error_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['hsgp_error_fit_regpar_optimized']['amp'] ,\
+                                                                       optimized_values['hsgp_error_fit_regpar_optimized']['ls'] ,\
+                                                                       optimized_values['hsgp_error_fit_regpar_optimized']['alpha']],\
+                                                                      [optimized_values['hsgp_error_fit_regpar_optimized']['amp'] ,\
+                                                                       optimized_values['hsgp_error_fit_regpar_optimized']['ls'] ,\
+                                                                       optimized_values['hsgp_error_fit_regpar_optimized']['alpha']],\
                                                                        ])
                 else : 
-                    hsgpr_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['nigp_fit_regpar_optimized']['amp'] ,\
-                                                                 optimized_values['nigp_fit_regpar_optimized']['ls'] ,\
-                                                                 optimized_values['nigp_fit_regpar_optimized']['alpha']],\
-                                                                [optimized_values['nigp_fit_regpar_optimized']['amp'] ,\
-                                                                 optimized_values['nigp_fit_regpar_optimized']['ls'] ,\
-                                                                 optimized_values['nigp_fit_regpar_optimized']['alpha']]])
-                    hsgpr_error_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['nigp_error_fit_regpar_optimized']['amp'] ,\
-                                                                       optimized_values['nigp_error_fit_regpar_optimized']['ls'] ,\
-                                                                       optimized_values['nigp_error_fit_regpar_optimized']['alpha']],\
-                                                                      [optimized_values['nigp_error_fit_regpar_optimized']['amp'] ,\
-                                                                       optimized_values['nigp_error_fit_regpar_optimized']['ls'] ,\
-                                                                       optimized_values['nigp_error_fit_regpar_optimized']['alpha']],\
+                    hsgpr_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['hsgp_fit_regpar_optimized']['amp'] ,\
+                                                                 optimized_values['hsgp_fit_regpar_optimized']['ls'] ,\
+                                                                 optimized_values['hsgp_fit_regpar_optimized']['alpha']],\
+                                                                [optimized_values['hsgp_fit_regpar_optimized']['amp'] ,\
+                                                                 optimized_values['hsgp_fit_regpar_optimized']['ls'] ,\
+                                                                 optimized_values['hsgp_fit_regpar_optimized']['alpha']]])
+                    hsgpr_error_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['hsgp_error_fit_regpar_optimized']['amp'] ,\
+                                                                       optimized_values['hsgp_error_fit_regpar_optimized']['ls'] ,\
+                                                                       optimized_values['hsgp_error_fit_regpar_optimized']['alpha']],\
+                                                                      [optimized_values['hsgp_error_fit_regpar_optimized']['amp'] ,\
+                                                                       optimized_values['hsgp_error_fit_regpar_optimized']['ls'] ,\
+                                                                       optimized_values['hsgp_error_fit_regpar_optimized']['alpha']],\
                                                                        ])
 
 
@@ -411,15 +437,15 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             if not optimise_all_params:
                 if kernel_method == 'Gibbs_Kernel':
 
-                    nigpr_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['hsgp_fit_regpar_optimized']['amp'] ,\
-                                                                 optimized_values['hsgp_fit_regpar_optimized']['alpha']],\
-                                                                 [optimized_values['hsgp_fit_regpar_optimized']['amp'] ,\
-                                                                  optimized_values['hsgp_fit_regpar_optimized']['alpha']],\
+                    nigpr_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['nigp_fit_regpar_optimized']['amp'] ,\
+                                                                 optimized_values['nigp_fit_regpar_optimized']['alpha']],\
+                                                                 [optimized_values['nigp_fit_regpar_optimized']['amp'] ,\
+                                                                  optimized_values['nigp_fit_regpar_optimized']['alpha']],\
                                                                   ])
-                    nigpr_error_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['hsgp_error_fit_regpar_optimized']['amp'] ,\
-                                                                       optimized_values['hsgp_error_fit_regpar_optimized']['alpha']],\
-                                                                      [optimized_values['hsgp_error_fit_regpar_optimized']['amp'] ,\
-                                                                       optimized_values['hsgp_error_fit_regpar_optimized']['alpha']],\
+                    nigpr_error_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['nigp_error_fit_regpar_optimized']['amp'] ,\
+                                                                       optimized_values['nigp_error_fit_regpar_optimized']['alpha']],\
+                                                                      [optimized_values['nigp_error_fit_regpar_optimized']['amp'] ,\
+                                                                       optimized_values['nigp_error_fit_regpar_optimized']['alpha']],\
                                                                        ])
                 elif kernel_method == 'Matern_HI_Kernel':
                     nigpr_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['nigp_fit_regpar_optimized']['amp'] ,\
@@ -469,24 +495,13 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
 
             #     Perform the fit with kernel restarts, here is the extra option to account for x-errors in fit
-            try:
-                nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True)#,nrestarts=5)
+            nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True)#,nrestarts=5)
                 # Grab outputs
-                (nigp_kernel_name,nigp_kernel_hyppars,nigp_fit_regpar) = nigpr_object.get_gp_kernel_details()
-                (nigp_error_kernel_name,nigp_error_kernel_hyppars,nigp_error_fit_regpar) = nigpr_object.get_gp_error_kernel_details()
-                (ni_fit_y_values,ni_fit_y_errors,ni_fit_dydx_values,ni_fit_dydx_errors) = nigpr_object.get_gp_results()
-                ni_fit_lml = nigpr_object.get_gp_lml()
-            except Exception as err:
-                print('')
-                print('Error:', err)
-                traceback.print_exc()
-                print('')
-
-        
-        
-
-
-
+            (nigp_kernel_name,nigp_kernel_hyppars,nigp_fit_regpar) = nigpr_object.get_gp_kernel_details()
+            (nigp_error_kernel_name,nigp_error_kernel_hyppars,nigp_error_fit_regpar) = nigpr_object.get_gp_error_kernel_details()
+            (ni_fit_y_values,ni_fit_y_errors,ni_fit_dydx_values,ni_fit_dydx_errors) = nigpr_object.get_gp_results()
+            ni_fit_lml = nigpr_object.get_gp_lml()
+ 
 
 
         if plot_fit:

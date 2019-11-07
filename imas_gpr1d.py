@@ -187,8 +187,46 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         electron_temperature_2 = np.asarray(electron_temperature_2)
         rho_pol_norm_error     = np.asarray(rho_pol_norm_error)
         temperature_error_2    = np.asarray(temperature_error_2)
+        '''if (write_core_profiles):
+            #####################################################################################################
+            ### save the output to the edge profiles as a start
+            
+            # Create or open IDS
+            # ------------------
+            run_number = '{:04d}'.format(run_out)
+            shot_file  = os.path.expanduser('~' + user_out + '/public/imasdb/' \
+                                                + machine_out + '/3/0/' + 'ids_' + str(shot) \
+                                                + run_number + '.datafile')
+           
+            idd_out = imas.ids(shot, run_out)
+
+            if (os.path.isfile(shot_file)):
+                print('open the IDS')
+                idd_out.open_env(user_out, machine_out, '3')
+            else:
+                if (user_out == 'imas_public'):
+                    print('ERROR IDS file does not exist, the IDS file must be')
+                    print('created first for imas_public user_out')
+                    raise FileNotFoundError
+                else:
+                    print('Create the IDS')
+                    idd_out.create_env(user_out, machine_out, '3')
+
+            # Write data
+            # ----------
+            print(' ')
+            print('Write data')
+            print('----------')
+            idd_out.core_profiles.profiles_1d.resize(100)
+            idd_out.edge_profiles.profiles_1d[0].grid.electron_temperature_2 = electron_temperature_2[0, :]
+            idd_out.edge_profiles.ids_properties.homogeneous_time = 0
+            idd_out.edge_profiles.put()
+            
+            idd_out.close()
+            '''
 
         return rho_pol_norm.T, electron_temperature_2.T, rho_pol_norm_error, temperature_error_2.T
+    
 
 
 
@@ -236,6 +274,6 @@ if __name__ == '__main__':
     ey  = ey.T
     '''
     out = fit_data(x, y, ex, ey, kernel_method=args.kernel, \
-                   optimise_all_params=True, slices_nbr=10, plot_fit=True)
+                   optimise_all_params=False, slices_nbr=10, plot_fit=True)
     #import ipdb; ipdb.set_trace()
 
