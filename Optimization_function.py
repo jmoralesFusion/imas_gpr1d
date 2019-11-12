@@ -13,7 +13,6 @@ import random
 import itertools
 # Local modules
 import GPR1D
-import imas
 import pywed as pw
 
 '''
@@ -93,14 +92,9 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
             Y_errors = Y_coordinates_errors[i]
-            #Y_errors = np.atleast_1d(Y_coordinates_errors[i])
-            #if X_coordinates_errors is not None:
             X_errors = X_coordinates_errors[i] 
-            #else:
-             #   X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
                 
 
-            #X_errors = X_coordinates_errors[i] 
 
             minimum = X_reduced.min()
             maximum = X_reduced.max()
@@ -232,13 +226,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
             Y_errors = Y_coordinates_errors[i]
-            '''if X_coordinates_errors is not None:
             X_errors = X_coordinates_errors[i] 
-            else:
-            X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
-            ''' 
-
-            #X_errors = X_coordinates_errors[i] 
 
             minimum = X_reduced.min()
             maximum = X_reduced.max()
@@ -377,33 +365,14 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             }
 
         #import pdb; pdb.set_trace()
-        #if (X_coordinates_errors is not None):
 
         for i in range(0,(Y_coordinates.shape[0]), int((Y_coordinates.shape[0])/slices_optim_nbr)):
-            print(Y_coordinates.shape[0])
-            print(Y_coordinates)
-
-            print(Y_coordinates_errors.shape)
-            print(Y_coordinates_errors)
-            
+ 
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
             
             Y_errors = Y_coordinates_errors[i]
-            
-            #Y_errors = np.atleast_2d(Y_coordinates_errors[i])
-            
-            if X_coordinates_errors is not None:
-                X_errors = X_coordinates_errors[i] 
-                print('hello in if')
-            else:
-                X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
-                print('hello in else')
-
-
-            
-            
-            #X_errors = X_coordinates_errors[i] 
+            X_errors = X_coordinates_errors[i] 
 
             minimum = X_reduced.min()
             maximum = X_reduced.max()

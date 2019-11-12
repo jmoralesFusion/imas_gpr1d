@@ -18,7 +18,7 @@ from textwrap import wrap
 import GPR1D
 import imas
 
-def plot_data(i, fit_x_values, minimum, maximum, \
+def plot_data(fit_x_values, minimum, maximum, \
                   X_reduced, Y_reduced, \
                   Y_errors, X_errors, \
                   hs_fit_y_values, hs_fit_y_errors, \
@@ -37,7 +37,8 @@ def plot_data(i, fit_x_values, minimum, maximum, \
                   zinteg_array, zinteg_mean, zinteg_std, \
                   nsample_array, \
                   fit_y_values, fit_y_errors, \
-                  fit_dydx_values, fit_dydx_errors): 
+                  fit_dydx_values, fit_dydx_errors,\
+                  i=0): 
  
     ###Some basic setup
     plot_save_directory = './GPPlots' + str(i)
