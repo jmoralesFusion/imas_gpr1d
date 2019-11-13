@@ -504,7 +504,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
             if X_coordinates_errors is not None:
                 X_errors = X_coordinates_errors[i] 
-            else:
+            elif plot_fit:
                 X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
 
             minimum = X_reduced.min()

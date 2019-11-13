@@ -218,7 +218,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             print('Write data')
             print('----------')
             idd_out.core_profiles.profiles_1d.resize(100)
-            idd_out.edge_profiles.profiles_1d[0].grid.electron_temperature_2 = electron_temperature_2[0, :]
+            #idd_out.edge_profiles.profiles_1d[0].grid.electron_temperature_2 = electron_temperature_2[0, :]
             idd_out.edge_profiles.ids_properties.homogeneous_time = 0
             idd_out.edge_profiles.put()
             
@@ -274,6 +274,6 @@ if __name__ == '__main__':
     ey  = ey.T
     '''
     out = fit_data(x, y, ex, ey, kernel_method=args.kernel, \
-                   optimise_all_params=False, slices_nbr=10, plot_fit=True)
-    #import ipdb; ipdb.set_trace()
+                   optimise_all_params=False, slices_nbr=10, plot_fit=False)
+    import ipdb; ipdb.set_trace()
 
