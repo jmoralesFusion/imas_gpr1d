@@ -241,10 +241,8 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 hsgpr_object.set_search_parameters(epsilon=1.0e-2)
                 hsgpr_object.set_error_search_parameters(epsilon=1.0e-1)
             else:
-                hsgpr_object.set_kernel(kernel=kernel,kbounds=hsgpr_kernel_hyppar_bounds,\
-                     regpar=1.0)
-                hsgpr_object.set_error_kernel(kernel=error_kernel,kbounds=hsgpr_error_kernel_hyppar_bounds,\
-                     regpar=1.0)
+                hsgpr_object.set_kernel(kernel=kernel,kbounds=hsgpr_kernel_hyppar_bounds,regpar=1.0)
+                hsgpr_object.set_error_kernel(kernel=error_kernel,kbounds=hsgpr_error_kernel_hyppar_bounds, regpar=1.0)
                 hsgpr_object.set_search_parameters(epsilon='None')
                 hsgpr_object.set_error_search_parameters(epsilon='None')
 
@@ -346,7 +344,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
 
 
-        if (X_coordinates_errors is not None or plot_fit):
+        if (X_coordinates_errors is not None):
             # GPR fit rigourously accounting for y-errors AND x-errors
             #     Procedure is nearly identical to above, except for the addition of an extra option
             nigpr_kernel_hyppar_bounds = np.atleast_2d()
@@ -376,7 +374,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
 
 
-        if plot_fit:
+        if (X_coordinates_errors is not None and plot_fit):
             print_data(gp_kernel_name,gp_kernel_hyppars,gp_fit_regpar,fit_lml,\
                            hsgp_kernel_name,hsgp_fit_regpar,hsgp_kernel_hyppars,\
                            hsgp_error_kernel_name,hsgp_error_fit_regpar,hsgp_error_kernel_hyppars,hs_fit_lml,\
@@ -433,24 +431,45 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             print('computing the time for optimisating the ' , slices_optim_nbr,  'slices')
             optimized_values = Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, \
                                             Y_coordinates_errors,  kernel_method, slices_optim_nbr)
-            if kernel_method == 'RQ_Kernel': 
-                default_configuartion = {
-                    'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
-                    }
-
-            if kernel_method == 'Matern_HI_Kernel': 
-                default_configuartion = {
-                    'Matern_HI_Kernel' : GPR1D.Matern_HI_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
-                    }
-            if kernel_method == 'NN_Kernel':
-                default_configuartion = {
-                    'NN_Kernel'        : GPR1D.NN_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha']),
-                    }
-            if kernel_method == 'Gibbs_Kernel':
-                default_configuartion = {
-                    'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
-                    }
-
+            if X_coordinates_errors is not None:
+                if kernel_method == 'RQ_Kernel': 
+                    default_configuartion = {
+                        'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
+                        }
+            
+                if kernel_method == 'Matern_HI_Kernel': 
+                    default_configuartion = {
+                        'Matern_HI_Kernel' : GPR1D.Matern_HI_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
+                        }
+                if kernel_method == 'NN_Kernel':
+                    default_configuartion = {
+                        'NN_Kernel'        : GPR1D.NN_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha']),
+                        }
+                if kernel_method == 'Gibbs_Kernel':
+                    default_configuartion = {
+                        'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
+                        }
+                    
+            elif X_coordinates_errors is None :
+                if kernel_method == 'RQ_Kernel': 
+                    default_configuartion = {
+                        'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'], optimized_values['hsgp_fit_regpar_optimized']['ls'], optimized_values['hsgp_fit_regpar_optimized']['alpha'])
+                        }
+            
+                if kernel_method == 'Matern_HI_Kernel': 
+                    default_configuartion = {
+                        'Matern_HI_Kernel' : GPR1D.Matern_HI_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'], optimized_values['hsgp_fit_regpar_optimized']['ls'], optimized_values['hsgp_fit_regpar_optimized']['alpha'])
+                        }
+                if kernel_method == 'NN_Kernel':
+                    default_configuartion = {
+                        'NN_Kernel'        : GPR1D.NN_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'], optimized_values['hsgp_fit_regpar_optimized']['ls'], optimized_values['hsgp_fit_regpar_optimized']['alpha']),
+                        }
+                if kernel_method == 'Gibbs_Kernel':
+                    default_configuartion = {
+                        'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'], optimized_values['hsgp_fit_regpar_optimized']['alpha'])
+                        }
+                
+            
         else :
 
             default_configuartion = {
@@ -722,7 +741,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
 
 
-            if (X_coordinates_errors is not None or plot_fit):
+            if (X_coordinates_errors is not None):
                 # GPR fit rigourously accounting for y-errors AND x-errors
                 #     Procedure is nearly identical to above, except for the addition of an extra option
                 if not optimise_all_params:
@@ -795,7 +814,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
 
 
-            if plot_fit:
+            if (X_coordinates_errors is not None and plot_fit):
                 print_data(gp_kernel_name,gp_kernel_hyppars,gp_fit_regpar,fit_lml,\
                                hsgp_kernel_name,hsgp_fit_regpar,hsgp_kernel_hyppars,\
                                hsgp_error_kernel_name,hsgp_error_fit_regpar,hsgp_error_kernel_hyppars,hs_fit_lml,\

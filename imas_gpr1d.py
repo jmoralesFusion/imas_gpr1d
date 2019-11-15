@@ -273,7 +273,7 @@ if __name__ == '__main__':
     ex = ex.T
     ey  = ey.T
     '''
-    out = fit_data(x, y, ex, ey, kernel_method=args.kernel, \
-                   optimise_all_params=False, slices_nbr=10, plot_fit=False)
-    import ipdb; ipdb.set_trace()
+    out = fit_data(x, y, ex , ey, kernel_method=args.kernel, \
+                   optimise_all_params=True, slices_nbr=10, plot_fit=True)
+    #import ipdb; ipdb.set_trace()
 
