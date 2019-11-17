@@ -15,8 +15,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from textwrap import wrap
 
-import GPR1D
-import imas
 
 def plot_data(fit_x_values, minimum, maximum, \
                   X_reduced, Y_reduced, \
