@@ -11,8 +11,8 @@ import sys
 import warnings
 import random
 import itertools
-# Local modules
-import pywed as pw
+
+# Project modules
 try:
     from .GPR1D import GPR1D
 except Exception as err:

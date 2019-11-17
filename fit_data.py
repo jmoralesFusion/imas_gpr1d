@@ -12,10 +12,6 @@ import traceback
 import warnings
 import time
 
-# Local modules
-import imas
-import pywed as pw
-
 # Project modules
 try:
     from .GPR1D import GPR1D
