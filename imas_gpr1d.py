@@ -46,13 +46,14 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         electron_density = idd_in.reflectometer_profile.channel[0].n_e.data
                 
         Time = idd_in.reflectometer_profile.time
+        print('Time Window : ', Time)
         R_base = np.linspace(R_real.min(), R_real.max(), 1000)
         Phi = np.zeros(1000)
         Z = np.zeros(1000)
         
         
         
-        rho_pol_norm_base = equimap.get(shot, idd_in.reflectometer_profile.time,R_base ,Phi, Z, 'rho_pol_norm')
+        rho_pol_norm_base = equimap.get(shot, Time, R_base, Phi, Z, 'rho_pol_norm')
         if rho_pol_norm_base.shape != electron_density.shape :
             rho_pol_norm_base = rho_pol_norm_base.T
         else :
@@ -167,7 +168,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         
         Phi = np.zeros(1000)
         Z   = np.zeros(1000)
-        
+        print('time window : ', Time)
         rho_pol_norm_base = equimap.get(shot, Time, R_base , Phi, Z, 'rho_pol_norm')
         
         rho_pol_norm           = [None]*R_real.shape[0]
@@ -225,9 +226,78 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             idd_out.close()
             '''
 
-        return rho_pol_norm.T, electron_temperature_2.T, rho_pol_norm_error, temperature_error_2.T
+        return rho_pol_norm, electron_temperature_2, rho_pol_norm_error, temperature_error_2
     
+    ###############################################################################################################
+    
+    if datatype == 'interferometer':
+        
+        idd_in.reflectometer_profile.get()
+        R_real = idd_in.reflectometer_profile.channel[0].position.r.data
+        electron_density = idd_in.reflectometer_profile.channel[0].n_e.data
+                
+        Time = idd_in.reflectometer_profile.time
+        R_base = np.linspace(R_real.min(), R_real.max(), 1000)
+        Phi = np.zeros(1000)
+        Z = np.zeros(1000)
+        
+        
+        
+        rho_pol_norm_base = equimap.get(shot, Time, R_base, Phi, Z, 'rho_pol_norm')
+        if rho_pol_norm_base.shape != electron_density.shape :
+            rho_pol_norm_base = rho_pol_norm_base.T
+        else :
+            rho_pol_norm_base = rho_pol_norm_base
+            
+            
+        rho_pol_norm = np.full(R_real.shape, np.nan)
+        for ii in range(rho_pol_norm_base.shape[1]):
+            rho_pol_norm[:, ii] = np.interp(R_real[:, ii], R_base, rho_pol_norm_base[:, ii])
 
+        if (write_edge_profiles):
+            #####################################################################################################
+            ### save the output to the edge profiles as a start
+            
+            # Create or open IDS
+            # ------------------
+            run_number = '{:04d}'.format(run_out)
+            shot_file  = os.path.expanduser('~' + user_out + '/public/imasdb/' \
+                                                + machine_out + '/3/0/' + 'ids_' + str(shot) \
+                                                + run_number + '.datafile')
+           
+            idd_out = imas.ids(shot, run_out)
+
+            if (os.path.isfile(shot_file)):
+                print('open the IDS')
+                idd_out.open_env(user_out, machine_out, '3')
+            else:
+                if (user_out == 'imas_public'):
+                    print('ERROR IDS file does not exist, the IDS file must be')
+                    print('created first for imas_public user_out')
+                    raise FileNotFoundError
+                else:
+                    print('Create the IDS')
+                    idd_out.create_env(user_out, machine_out, '3')
+
+            # Write data
+            # ----------
+            print(' ')
+            print('Write data')
+            print('----------')
+            idd_out.edge_profiles.profiles_1d.resize(100)
+            print('rho_pol_norm =', rho_pol_norm)
+            idd_out.edge_profiles.profiles_1d[0].grid.rho_tor_norm = rho_pol_norm[0, :]
+            idd_out.edge_profiles.ids_properties.homogeneous_time = 0
+            idd_out.edge_profiles.put()
+            
+            idd_out.close()
+
+            #####################################################################################################
+
+        electron_density_errors = np.full(electron_density.shape, np.mean(electron_density)*0.05)
+        rho_pol_norm_errors =  np.full(rho_pol_norm.shape, np.mean(rho_pol_norm)*0.005)
+
+        return rho_pol_norm.T, electron_density.T, rho_pol_norm_errors.T, electron_density_errors.T
 
 
 if __name__ == '__main__':
@@ -274,6 +344,6 @@ if __name__ == '__main__':
     ey  = ey.T
     '''
     out = fit_data(x, y, ex , ey, kernel_method=args.kernel, \
-                   optimise_all_params=True, slices_nbr=10, plot_fit=True)
+                   optimise_all_params=False , slices_nbr=10, plot_fit=True)
     #import ipdb; ipdb.set_trace()
 

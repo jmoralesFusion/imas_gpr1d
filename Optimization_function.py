@@ -38,10 +38,10 @@ default_configuartion = {
 
 def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors, \
                  kernel_method='RQ_Kernel', slices_optim_nbr=10, \
-                 dx_data=[0.0],dy_data=[0.0],dy_err=[0.0], plot_fit=True):
-    print('Please be reminded that you are in the newoptimization code')
+                 dx_data=[0.0],dy_data=[0.0],dy_err=[0.0], nbr_pts=100, plot_fit=True):
+    print('Please be reminded that you are in the new optimization code')
     import pdb;pdb.set_trace()
-    
+    print(plot_fit)
     if Y_coordinates.shape[0]<slices_optim_nbr:
         slices_optim_nbr = Y_coordinates.shape[0]
     print('slices_optim_nbr = ', slices_optim_nbr)
@@ -52,17 +52,19 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
         X_reduced = X_coordinates[i]
         Y_errors = Y_coordinates_errors[i]
         if X_coordinates_errors is not None:
-            X_errors = X_coordinates_errors[i] 
-        elif (plot_fit or X_coordinates_errors is None):
+            X_errors = X_coordinates_errors[i]
+            if not plot_fit:
+                raise RuntimeError('please make sure that argument plot_fit is set to True in fit_data, Optimization and imas_gpr1d')
+        elif (X_coordinates_errors is None and plot_fit):
             X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
+        elif (X_coordinates_errors is None):
+            X_errors =  None
 
-
-
+        print(X_errors)
         minimum = X_reduced.min()
         maximum = X_reduced.max()
-        
-        
-        fit_x_values = np.linspace(minimum,maximum,100)
+       
+        fit_x_values = np.linspace(minimum,maximum,nbr_pts)
         kernel =  default_configuartion.get(kernel_method)
         kernel_hyppar_bounds = np.atleast_2d()
         error_kernel = default_configuartion.get(kernel_method)
@@ -190,7 +192,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
 
 
             if (X_coordinates_errors is not None and plot_fit):
-                print('please be reminded that we are in the none and plot fit is true')
+                print('please be reminded that x_errors exsist and plot fit is true')
                 # GPR fit rigourously accounting for y-errors AND x-errors
                 nigpr_object = GPR1D.GaussianProcessRegression1D()
                 nigpr_object.set_kernel(kernel=kernel)
@@ -261,4 +263,3 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
 
         return optimized_values
 
-        #import pdb; pdb.set_trace()
