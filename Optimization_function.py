@@ -43,7 +43,6 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
                  kernel_method='RQ_Kernel', slices_optim_nbr=10, \
                  dx_data=[0.0],dy_data=[0.0],dy_err=[0.0], nbr_pts=100, plot_fit=True):
     print('Please be reminded that you are in the new optimization code')
-    import pdb;pdb.set_trace()
     print(plot_fit)
     if Y_coordinates.shape[0]<slices_optim_nbr:
         slices_optim_nbr = Y_coordinates.shape[0]
