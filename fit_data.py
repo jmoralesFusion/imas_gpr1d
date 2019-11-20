@@ -12,10 +12,11 @@ import traceback
 import warnings
 import time
 
-# Local modules
-import GPR1D
-import imas
-import pywed as pw
+# Project modules
+try:
+    from .GPR1D import GPR1D
+except Exception as err:
+    from GPR1D import GPR1D
 try:
     from .Optimization_function import Optimization
 except Exception as err:

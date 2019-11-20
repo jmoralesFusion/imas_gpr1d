@@ -1,0 +1,11 @@
+path_jenkins = /job/CRP/job/tools_dc/job/imas_gpr1d
+branch       = master
+git_folder   = imas_gpr1d
+
+shot        = 52316
+run         = 0
+occurrence  = 0
+out_user    = imas_private
+out_machine = west_tools
+ref_user    = imas_public
+ref_machine = west

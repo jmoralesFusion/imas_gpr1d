@@ -16,8 +16,6 @@ import getpass
 import numpy as np
 import matplotlib.pyplot as plt
 
-import GPR1D
-import imas
 
 def print_data(gp_kernel_name,gp_kernel_hyppars,gp_fit_regpar,fit_lml,\
                    hsgp_kernel_name,hsgp_fit_regpar,hsgp_kernel_hyppars,\

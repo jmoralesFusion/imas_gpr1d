@@ -11,9 +11,12 @@ import sys
 import warnings
 import random
 import itertools
-# Local modules
-import GPR1D
-import pywed as pw
+
+# Project modules
+try:
+    from .GPR1D import GPR1D
+except Exception as err:
+    from GPR1D import GPR1D
 
 '''
     GPR1D fit data function
