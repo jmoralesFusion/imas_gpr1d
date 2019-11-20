@@ -43,8 +43,8 @@ __all__ = ('fit_data')
 
 
 def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordinates_errors=None, \
-             kernel_method='RQ_Kernel', optimise_all_params=True, slices_optim_nbr=10, nbr_pts=100, \
-             slices_nbr=None, plot_fit=True, dx_data=[0.0], dy_data=[0.0], dy_err=[0.0]):
+             kernel_method='RQ_Kernel', optimise_all_params=False, slices_optim_nbr=10, nbr_pts=100, \
+             slices_nbr=None, plot_fit=False, dx_data=[0.0], dy_data=[0.0], dy_err=[0.0]):
     '''
     Fit Y profile as a function of X quantity
 
@@ -160,18 +160,20 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                     'fit_dydy_y_error': [np.nan]*nbr_time, \
                     'x': X_coordinates, \
                     'y': Y_coordinates, \
-                    'x_error': X_coordinates_errors , \
                     'y_error': Y_coordinates_errors , \
                    }
         Y_reduced = Y_coordinates
         X_reduced = X_coordinates
         Y_errors = Y_coordinates_errors
         if X_coordinates_errors is not None:
-            X_errors = X_coordinates_errors 
+            X_errors = X_coordinates_errors
+            fit_data['x_error'] = X_coordinates_errors
         elif (X_coordinates_errors is None and plot_fit):
             X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
         else:
-            X_errors = None
+            #X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
+            X_errors = 'None'
+            fit_data['x_error'] = np.nan
 
         minimum = X_reduced.min()
         maximum = X_reduced.max()
@@ -233,18 +235,18 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
                                       dxdata=dx_data, dydata=dy_data, dyerr=dy_err )
 
-            if optimise_all_params:
+            #if optimise_all_params:
             #     Default optimizer is gradient ascent / descent - extremely robust but slow
             #     Uncomment any of the following lines to test the recommended optimizers
-                hsgpr_object.set_kernel(kernel=kernel)
-                hsgpr_object.set_error_kernel(kernel=error_kernel)
-                hsgpr_object.set_search_parameters(epsilon=1.0e-2)
-                hsgpr_object.set_error_search_parameters(epsilon=1.0e-1)
-            else:
-                hsgpr_object.set_kernel(kernel=kernel,kbounds=hsgpr_kernel_hyppar_bounds,regpar=1.0)
-                hsgpr_object.set_error_kernel(kernel=error_kernel,kbounds=hsgpr_error_kernel_hyppar_bounds, regpar=1.0)
-                hsgpr_object.set_search_parameters(epsilon='None')
-                hsgpr_object.set_error_search_parameters(epsilon='None')
+            hsgpr_object.set_kernel(kernel=kernel)
+            hsgpr_object.set_error_kernel(kernel=error_kernel)
+            hsgpr_object.set_search_parameters(epsilon=1.0e-2)
+            hsgpr_object.set_error_search_parameters(epsilon=1.0e-1)
+            #else:
+            #    hsgpr_object.set_kernel(kernel=kernel,kbounds=hsgpr_kernel_hyppar_bounds,regpar=1.0)
+            #    hsgpr_object.set_error_kernel(kernel=error_kernel,kbounds=hsgpr_error_kernel_hyppar_bounds, regpar=1.0)
+            #    hsgpr_object.set_search_parameters(epsilon='None')
+            #    hsgpr_object.set_error_search_parameters(epsilon='None')
 
             #     Perform the fit with kernel restarts
             hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True)#,nrestarts=5)
@@ -352,16 +354,16 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             nigpr_object = GPR1D.GaussianProcessRegression1D()
             nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
                                       dxdata=dx_data, dydata=dy_data, dyerr=dy_err )
-            if optimise_all_params:
-                nigpr_object.set_kernel(kernel=kernel)
-                nigpr_object.set_error_kernel(kernel=error_kernel)
-                nigpr_object.set_search_parameters(epsilon=1.0e-2)
-                nigpr_object.set_error_search_parameters(epsilon=1.0e-1)
-            else:
-                nigpr_object.set_search_parameters(epsilon='None')
-                nigpr_object.set_error_search_parameters(epsilon='None')
-                nigpr_object.set_kernel(kernel=kernel,kbounds=nigpr_kernel_hyppar_bounds,regpar=1.0)
-                nigpr_object.set_error_kernel(kernel=error_kernel,kbounds=nigpr_error_kernel_hyppar_bounds,regpar=1.0)
+            #if optimise_all_params:
+            nigpr_object.set_kernel(kernel=kernel)
+            nigpr_object.set_error_kernel(kernel=error_kernel)
+            nigpr_object.set_search_parameters(epsilon=1.0e-2)
+            nigpr_object.set_error_search_parameters(epsilon=1.0e-1)
+            #else:
+            #    nigpr_object.set_search_parameters(epsilon='None')
+            #    nigpr_object.set_error_search_parameters(epsilon='None')
+            #    nigpr_object.set_kernel(kernel=kernel,kbounds=nigpr_kernel_hyppar_bounds,regpar=1.0)
+            #    nigpr_object.set_error_kernel(kernel=error_kernel,kbounds=nigpr_error_kernel_hyppar_bounds,regpar=1.0)
 
 
             #     Perform the fit with kernel restarts, here is the extra option to account for x-errors in fit
@@ -409,7 +411,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             fit_data['fit_x']            = fit_x_values
             fit_data['fit_y']            = hs_fit_y_values
             fit_data['fit_y_error']      = hs_fit_y_errors
-            fit_data['fit_dydx']         = fit_dydx_values
+            fit_data['fit_dydx']         = hs_fit_dydx_values
             fit_data['fit_dydy_y_error'] = hs_fit_dydx_errors
         elif (X_coordinates_errors is not None):
             fit_data['fit_x']            = fit_x_values
@@ -496,7 +498,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             elif (plot_fit and X_coordinates_errors is None):
                 X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
             elif X_coordinates_errors is None:
-                X_errors = None
+                X_errors = 'None'
 
             minimum = X_reduced.min()
             maximum = X_reduced.max()
@@ -794,7 +796,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 fit_data['fit_x'][i]            = fit_x_values
                 fit_data['fit_y'][i]            = hs_fit_y_values
                 fit_data['fit_y_error'][i]      = hs_fit_y_errors
-                fit_data['fit_dydx'][i]         = fit_dydx_values
+                fit_data['fit_dydx'][i]         = hs_fit_dydx_values
                 fit_data['fit_dydy_y_error'][i] = hs_fit_dydx_errors
             elif (X_coordinates_errors is not None):
                 fit_data['fit_x'][i]            = fit_x_values
