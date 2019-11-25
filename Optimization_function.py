@@ -30,13 +30,8 @@ __all__ = ('default_config')
 
 default_configuartion = {
     'RQ_Kernel'  : GPR1D.RQ_Kernel(),
-    'Matern_HI_Kernel'   : GPR1D.Matern_HI_Kernel(),
-    'NN_Kernel'  : GPR1D.NN_Kernel(),
     'Gibbs_Kernel'  : GPR1D.Gibbs_Kernel()
     }
-
-
-
 
 
 def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors, \
@@ -47,8 +42,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
     if Y_coordinates.shape[0]<slices_optim_nbr:
         slices_optim_nbr = Y_coordinates.shape[0]
     print('slices_optim_nbr = ', slices_optim_nbr)
-    
-    
+       
     for i in range(0,(Y_coordinates.shape[0]), int((Y_coordinates.shape[0])/slices_optim_nbr)):
         Y_reduced = Y_coordinates[i]
         X_reduced = X_coordinates[i]
@@ -62,7 +56,7 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
         elif (X_coordinates_errors is None):
             X_errors =  None
 
-        print(X_errors)
+        #print(X_errors)
         minimum = X_reduced.min()
         maximum = X_reduced.max()
        
@@ -71,8 +65,6 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
         kernel_hyppar_bounds = np.atleast_2d()
         error_kernel = default_configuartion.get(kernel_method)
         error_kernel_hyppar_bounds = np.atleast_2d()
-
-    
     
         if kernel_method == 'Gibbs_Kernel':
             optimized_config = {
