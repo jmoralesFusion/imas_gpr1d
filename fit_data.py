@@ -44,7 +44,7 @@ __all__ = ('fit_data')
 
 def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordinates_errors=None, \
              kernel_method='RQ_Kernel', optimise_all_params=True, slices_optim_nbr=10, nbr_pts=100, \
-             slices_nbr=None, plot_fit=True, dx_data=[0.0], dy_data=[0.0], dy_err=[0.0], data_type=None):
+             slices_nbr=None, plot_fit=False, dx_data=[0.0], dy_data=[0.0], dy_err=[0.0], data_type=None):
 
     '''
     Fit Y profile as a function of X quantity

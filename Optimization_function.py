@@ -36,7 +36,7 @@ default_configuartion = {
 
 def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinates_errors, \
                  kernel_method='RQ_Kernel', slices_optim_nbr=10, \
-                 dx_data=[0.0],dy_data=[0.0],dy_err=[0.0], nbr_pts=100, plot_fit=True):
+                 dx_data=[0.0],dy_data=[0.0],dy_err=[0.0], nbr_pts=100, plot_fit=False):
     print('Please be reminded that you are in the new optimization code')
     print(plot_fit)
     if Y_coordinates.shape[0]<slices_optim_nbr:
