@@ -225,7 +225,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             
             idd_out.close()
             '''
-
+        
         return rho_pol_norm, electron_temperature_2, rho_pol_norm_error, temperature_error_2
     
     ###############################################################################################################
@@ -337,12 +337,21 @@ if __name__ == '__main__':
                                 args.run_out, args.occurrence_out, args.user_out, args.machine_out, \
                                 args.run_in, args.occurrence_in, args.user_in, args.machine_in, \
                                 args.ids, args.write_edge_profiles)
-    '''
-    x   = x.T
-    y   = y.T
-    ex = ex.T
-    ey  = ey.T
-    '''
+
+    if x.ndim == 1:
+        x = np.atleast_2d(x)
+
+        
+    if y.ndim == 1:
+        y = np.atleast_2d(y)
+
+    if ex.ndim == 1:
+        ex = np.atleast_2d(ex)
+
+    if y.ndim == 1:
+        ey = np.atleast_2d(ey)
+
+
     out = fit_data(x, y, ex , ey, kernel_method=args.kernel, \
                    optimise_all_params=False , slices_nbr=10, plot_fit=True)
     #import ipdb; ipdb.set_trace()

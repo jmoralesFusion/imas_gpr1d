@@ -133,14 +133,17 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
     print(kernel_methodlist)
     if kernel_method in kernel_methodlist:
         print('The chosed method is : ',kernel_method)
+        '''
         if (data_type=='ece' or data_type=='reflectometer_profile' or data_type=='interferometer'):
             alpha = 10
         else :
             alpha = 1
+        '''
     else:
         raise RuntimeError("The Fit method is not know, please provide a method from the List")
     
-    if (len(X_coordinates.shape)==1 and len(Y_coordinates.shape)==1 and alpha==1) :
+    if (len(X_coordinates.shape)==1 and len(Y_coordinates.shape)==1):
+        # and alpha==1) :
         print(' --------------> we are in the if statement')
         print(' --------------> the data are of size 1D')
         print(' --------------> there is only one slice' )
