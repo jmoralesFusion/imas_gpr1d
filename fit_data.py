@@ -43,8 +43,8 @@ __all__ = ('fit_data')
 
 
 def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordinates_errors=None, \
-             kernel_method='RQ_Kernel', optimise_all_params=True, slices_optim_nbr=10, nbr_pts=100, \
-             slices_nbr=None, plot_fit=False, dx_data=[0.0], dy_data=[0.0], dy_err=[0.0], data_type=None):
+             kernel_method='RQ_Kernel', optimise_all_params=False, slices_optim_nbr=10, nbr_pts=100, \
+             slices_nbr=None, plot_fit=True, dx_data=[0.0], dy_data=[0.0], dy_err=[0.0], data_type=None):
 
     '''
     Fit Y profile as a function of X quantity
@@ -134,13 +134,13 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
     if kernel_method in kernel_methodlist:
         print('The chosed method is : ',kernel_method)
         if (data_type=='ece' or data_type=='reflectometer_profile' or data_type=='interferometer'):
-            alpha = 10
+            alpha_c = 10
         else :
-            alpha = 1
+            alpha_c = 1
     else:
         raise RuntimeError("The Fit method is not know, please provide a method from the List")
     
-    if (len(X_coordinates.shape)==1 and len(Y_coordinates.shape)==1 and alpha==1) :
+    if (len(X_coordinates.shape)==1 and len(Y_coordinates.shape)==1 and alpha_c==1) :
         print(' --------------> we are in the if statement')
         print(' --------------> the data are of size 1D')
         print(' --------------> there is only one slice' )
@@ -228,7 +228,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
   
             #     Grab the log-marginal-likelihood of fit
             fit_lml = gpr_object.get_gp_lml()
-
+            
         if (X_coordinates_errors is None or plot_fit):
             # GPR fit rigourously accounting only for y-errors (this is the recommended option)
             #     Procedure is nearly identical to above, except for the addition of an error kernel
@@ -587,7 +587,8 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             for ii in np.arange(0,num_samples):
                 zsint_mean = np.nanmean(zinteg_array[ii,:])
                 zinteg_array[ii,:] = zinteg_array[ii,:] - zsint_mean + zorig_mean
-
+                
+                
             # Computing statistics of sampled profiles
             sample_mean = np.nanmean(sample_array,axis=0)
             deriv_mean = np.nanmean(deriv_array,axis=0)
@@ -684,7 +685,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             fit_data['fit_y_error']      = ni_fit_y_errors
             fit_data['fit_dydx']         = ni_fit_dydx_values
             fit_data['fit_dydy_y_error'] = ni_fit_dydx_errors
-
+            
         return fit_data
 
     else :    
@@ -1069,5 +1070,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 fit_data['fit_y_error'][i]      = ni_fit_y_errors
                 fit_data['fit_dydx'][i]         = ni_fit_dydx_values
                 fit_data['fit_dydy_y_error'][i] = ni_fit_dydx_errors
+
 
     return fit_data

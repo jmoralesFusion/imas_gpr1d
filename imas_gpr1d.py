@@ -50,9 +50,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         R_base = np.linspace(R_real.min(), R_real.max(), 1000)
         Phi = np.zeros(1000)
         Z = np.zeros(1000)
-        
-        
-        
+               
         rho_pol_norm_base = equimap.get(shot, Time, R_base, Phi, Z, 'rho_pol_norm')
         if rho_pol_norm_base.shape != electron_density.shape :
             rho_pol_norm_base = rho_pol_norm_base.T
@@ -231,28 +229,97 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
     ###############################################################################################################
     
     if datatype == 'interferometer':
-        
+
+        idd_in.interferometer.get()
         idd_in.reflectometer_profile.get()
-        R_real = idd_in.reflectometer_profile.channel[0].position.r.data
-        electron_density = idd_in.reflectometer_profile.channel[0].n_e.data
-                
-        Time = idd_in.reflectometer_profile.time
-        R_base = np.linspace(R_real.min(), R_real.max(), 1000)
+        idd_in.equilibrium.get()
+
+        nbr_channels      = len(idd_in.interferometer.channel)
+
+        Time_eq = idd_in.equilibrium.time
+        Time_inter = idd_in.interferometer.time
+        Time_ref   = idd_in.reflectometer_profile.time
+        if ((Time_ref is None) or (Time_inter is None) or (Time_eq is None)) :
+            raise RuntimeError('choose another shot that have a valid time')
+
+        time_min = np.asarray([Time_inter.min(),Time_ref.min(),Time_eq.min()]).max()
+        time_max = np.asarray([Time_inter.max(),Time_ref.max(),Time_eq.max()]).min()
+
+        result_time = []
+        for ii in range(0, len(Time_ref)):
+            if((Time_ref[ii]>time_min) and (Time_ref[ii]<time_max) ):
+                result_time.append(Time_ref[ii])
+        for ii in range(0, len(Time_inter)):
+            if((Time_inter[ii]>time_min) and (Time_inter[ii]<time_max) ):
+                result_time.append(Time_inter[ii])
+        for ii in range(0, len(Time_eq)):
+            if((Time_eq[ii]>time_min) and (Time_eq[ii]<time_max) ):
+                result_time.append(Time_eq[ii])
+
+        result_time.sort()
+        result_time = np.asarray(result_time)
+        mask_density_time = (idd_in.interferometer.time > result_time[0]) \
+                           & (idd_in.interferometer.time < result_time[-1]) 
+
+        #list of raduis and a list of z boundary positions
+        boundary_r = []
+        boundary_z = []
+        for ii in range(0, len(idd_in.equilibrium.time_slice)):
+            boundary_r.append(idd_in.equilibrium.time_slice[ii].boundary.outline.r)
+            boundary_z.append(idd_in.equilibrium.time_slice[ii].boundary.outline.z)
+
+        boundary_r = np.asarray(boundary_r)
+
+        #extract the minimum and the maximum of the raduis
+        maxim = boundary_r[0].max()
+        minim = boundary_r[0].min()
+        for ii in range(len(boundary_r)):
+            if (boundary_r[ii].max() > maxim):
+                maxim = boundary_r[ii].max()
+            if (boundary_r[ii].min() < minim):
+                minim = boundary_r[ii].min()
+
+        #list of first, second points of line of sight and their vectors(length)
+        R_inter_first   = []
+        Z_inter_first   = []
+
+        R_inter_second   = []
+        Z_inter_second   = []
+
+        R_inter_vector   = []
+        Z_inter_vector   = []
+
+        for ii in range(0, nbr_channels):
+            R_inter_first.append(idd_in.interferometer.channel[ii].line_of_sight.first_point.r)
+            Z_inter_first.append(idd_in.interferometer.channel[ii].line_of_sight.first_point.z)
+            R_inter_second.append(idd_in.interferometer.channel[ii].line_of_sight.second_point.r)
+            Z_inter_second.append(idd_in.interferometer.channel[ii].line_of_sight.second_point.z)
+
+
+        for kk in range(0, nbr_channels):
+            R_inter_vector.append(R_inter_first[kk] - R_inter_second[kk])
+            Z_inter_vector.append(Z_inter_first[kk] - Z_inter_second[kk])
+
+        #start the equimap procedure:
+        R_base = np.linspace(minim, maxim, 1000)
         Phi = np.zeros(1000)
-        Z = np.zeros(1000)
-        
-        
-        
-        rho_pol_norm_base = equimap.get(shot, Time, R_base, Phi, Z, 'rho_pol_norm')
-        if rho_pol_norm_base.shape != electron_density.shape :
-            rho_pol_norm_base = rho_pol_norm_base.T
-        else :
-            rho_pol_norm_base = rho_pol_norm_base
-            
-            
-        rho_pol_norm = np.full(R_real.shape, np.nan)
-        for ii in range(rho_pol_norm_base.shape[1]):
-            rho_pol_norm[:, ii] = np.interp(R_real[:, ii], R_base, rho_pol_norm_base[:, ii])
+        rho_pol_norm_base = []
+        rho_pol_norm_base_min = []
+        electron_density_line=[]
+
+        for zz in range(0,nbr_channels):
+            Z = np.linspace(Z_inter_second[zz], Z_inter_first[zz], 1000)
+            rho_pol_norm_base.append(equimap.get(shot, result_time, R_base, Phi, Z, 'rho_pol_norm', occ=1))
+            rho_pol_norm_base_min.append(np.nanmin(rho_pol_norm_base[zz]))
+            electron_density_line.append(idd_in.interferometer.channel[zz].n_e_line.data)
+        #import ipdb; ipdb.set_trace()
+
+        rho_pol_norm_base = np.asarray(rho_pol_norm_base)
+        rho_pol_norm_base_min = np.asarray(rho_pol_norm_base_min)
+        R_inter_vector = np.asarray(R_inter_vector)
+        electron_density_line = np.asarray(electron_density_line)
+        electron_density_line_masked = electron_density_line[ : , mask_density_time]
+
 
         if (write_edge_profiles):
             #####################################################################################################
@@ -294,10 +361,10 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
             #####################################################################################################
 
-        electron_density_errors = np.full(electron_density.shape, np.mean(electron_density)*0.05)
-        rho_pol_norm_errors =  np.full(rho_pol_norm.shape, np.mean(rho_pol_norm)*0.005)
+        electron_density_line_masked_errors = np.full(electron_density_line_masked.shape, np.mean(electron_density_line_masked)*0.05)
+        rho_pol_norm_base_min_errors =  np.full(rho_pol_norm_base_min.shape, np.mean(rho_pol_norm_base_min)*0.005)
 
-        return rho_pol_norm.T, electron_density.T, rho_pol_norm_errors.T, electron_density_errors.T
+        return rho_pol_norm_base_min, electron_density_line_masked, rho_pol_norm_base_min_errors, electron_density_line_masked_errors
 
 
 if __name__ == '__main__':
@@ -329,21 +396,25 @@ if __name__ == '__main__':
                         help='Kernel to use for profile fit, default=RQ_Kernel')
     parser.add_argument('-wep', '--write-edge-profiles', action='store_true', \
                         help='Write IDS edge_profiles')
+    parser.add_argument('-plt', '--plot-fit', action='store_true', \
+                        help='Save fit plots')
 
     args = parser.parse_args()
 
     # Call wrapper function
     x, y, ex, ey = get_data(args.shot, \
-                                args.run_out, args.occurrence_out, args.user_out, args.machine_out, \
-                                args.run_in, args.occurrence_in, args.user_in, args.machine_in, \
-                                args.ids, args.write_edge_profiles)
+                            args.run_out, args.occurrence_out, args.user_out, args.machine_out, \
+                            args.run_in, args.occurrence_in, args.user_in, args.machine_in, \
+                            args.ids, args.write_edge_profiles)
     '''
     x   = x.T
     y   = y.T
     ex = ex.T
     ey  = ey.T
     '''
+    import ipdb; ipdb.set_trace()
+
     out = fit_data(x, y, ex , ey, kernel_method=args.kernel, \
-                   optimise_all_params=False , slices_nbr=10, plot_fit=True)
-    #import ipdb; ipdb.set_trace()
+                   optimise_all_params=False, slices_nbr=10, plot_fit=args.plot_fit)
+    import ipdb; ipdb.set_trace()
 
