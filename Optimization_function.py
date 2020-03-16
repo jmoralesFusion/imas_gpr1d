@@ -57,8 +57,10 @@ def Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, Y_coordinat
             X_errors =  None
 
         #print(X_errors)
-        minimum = X_reduced.min()
-        maximum = X_reduced.max()
+        minimum = (X_reduced.all()).min()
+        maximum = (X_reduced.all()).max()
+        #minimum = (X_reduced).min()
+        #maximum = (X_reduced).max()
        
         fit_x_values = np.linspace(minimum,maximum,nbr_pts)
         kernel =  default_configuartion.get(kernel_method)

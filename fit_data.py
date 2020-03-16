@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+ # -*- coding: utf-8 -*-
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 # Also if needed: retab
 
@@ -33,18 +33,9 @@ except Exception as err:
     GPR1D fit data function
 '''
 
-__author__ = ['Mohamad Kozeiha', 'Jorge Morales']
-__date__ = '10/09/2019'
-__version__ = '$Revision: 1.10 $'
-
-__all__ = ('fit_data')
-
-
-
-
 def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordinates_errors=None, \
-             kernel_method='RQ_Kernel', optimise_all_params=False, slices_optim_nbr=10, nbr_pts=100, \
-             slices_nbr=None, plot_fit=True, dx_data=[0.0], dy_data=[0.0], dy_err=[0.0], data_type=None):
+             kernel_method='RQ_Kernel', optimise_all_params=True, slices_optim_nbr=10, nbr_pts=100, \
+             slices_nbr=10, plot_fit=True, dx_data=[0.0], dy_data=[0.0], dy_err=[0.0]):
 
     '''
     Fit Y profile as a function of X quantity
@@ -127,43 +118,36 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
     if (Y_coordinates_errors is None):
         raise RuntimeError('Input Y errors are mandatory')
 
-
     kernel_methodlist=['RQ_Kernel', 'Gibbs_Kernel']
     print('Printing the list of kernel methods that should be used: ')
     print(kernel_methodlist)
     if kernel_method in kernel_methodlist:
         print('The chosed method is : ',kernel_method)
-        '''
-        if (data_type=='ece' or data_type=='reflectometer_profile' or data_type=='interferometer'):
-            alpha_c = 10
-        else :
-            alpha_c = 1
-            '''
+
     else:
         raise RuntimeError("The Fit method is not know, please provide a method from the List")
-     
-    if (len(X_coordinates.shape)==1 and len(Y_coordinates.shape)==1):
-        # and alpha==1) :
+    ece = 1
+    if (X_coordinates.ndim==1 and Y_coordinates.ndim==1 and ece==1 ) :
         print(' --------------> we are in the if statement')
         print(' --------------> the data are of size 1D')
         print(' --------------> there is only one slice' )
 
 
         nbr_time = Y_coordinates.shape[0]
-
-        fit_data = {'fit_x': [np.nan]*nbr_time, \
-                    'fit_y': [np.nan]*nbr_time, \
-                    'fit_x_error': [np.nan]*nbr_time, \
-                    'fit_y_error': [np.nan]*nbr_time, \
-                    'fit_dydx': [np.nan]*nbr_time, \
-                    'fit_dydx_x_error': [np.nan]*nbr_time, \
-                    'fit_dydy_y_error': [np.nan]*nbr_time, \
+        fit_data = {'fit_x': [], \
+                    'fit_y': [], \
+                    'fit_x_error': [], \
+                    'fit_y_error': [], \
+                    'fit_dydx': [], \
+                    'fit_dydx_x_error': [], \
+                    'fit_dydy_y_error': [], \
+                    'fit_zinteg_array': [], \
                     'x': X_coordinates, \
                     'y': Y_coordinates, \
+                    'x_error': X_coordinates_errors , \
                     'y_error': Y_coordinates_errors , \
                    }
 
-        
         default_configuartion = {
             'RQ_Kernel'  : GPR1D.RQ_Kernel(),
             'Gibbs_Kernel'  : GPR1D.Gibbs_Kernel()
@@ -178,7 +162,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
         elif (X_coordinates_errors is None and plot_fit):
             X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
         else:
-            #X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
             X_errors = 'None'
             fit_data['x_error'] = np.nan
 
@@ -248,12 +231,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             hsgpr_object.set_error_kernel(kernel=error_kernel)
             hsgpr_object.set_search_parameters(epsilon=1.0e-2)
             hsgpr_object.set_error_search_parameters(epsilon=1.0e-1)
-            #else:
-            #    hsgpr_object.set_kernel(kernel=kernel,kbounds=hsgpr_kernel_hyppar_bounds,regpar=1.0)
-            #    hsgpr_object.set_error_kernel(kernel=error_kernel,kbounds=hsgpr_error_kernel_hyppar_bounds, regpar=1.0)
-            #    hsgpr_object.set_search_parameters(epsilon='None')
-            #    hsgpr_object.set_error_search_parameters(epsilon='None')
-
             #     Perform the fit with kernel restarts
             hsgpr_object.GPRFit(fit_x_values,hsgp_flag=True)#,nrestarts=5)
 
@@ -283,10 +260,10 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
             # Calculates the integrals of the sampled derivative distributions
             ifit_x_values = dfit_x_values.copy()
-            integ_array = dsample_array[:,1] * (ifit_x_values[0] - fit_x_values[0]) # + raw_intercept
+            integ_array = sample_array[:,1] * (ifit_x_values[0] - fit_x_values[0]) # + raw_intercept
             if integ_array.ndim == 1:
                 integ_array = np.transpose(np.atleast_2d(integ_array))
-            for jj in np.arange(1,dsample_array.shape[1]-1):
+            for jj in np.arange(1,sample_array.shape[1]-1):
                 integ = integ_array[:,jj-1] + dsample_array[:,jj] * (ifit_x_values[jj] - ifit_x_values[jj-1])
                 if integ.ndim == 1:
                     integ = np.transpose(np.atleast_2d(integ))
@@ -314,10 +291,10 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             zdsample_array = hsgpr_object.sample_GP_derivative(num_samples,without_noise=True)
 
             # Calculates the integrals of the sampled derivative distributions - zero noise representation
-            zinteg_array = zdsample_array[:,1] * (ifit_x_values[0] - fit_x_values[0]) # + raw_intercept
+            zinteg_array = zsample_array[:,1] * (ifit_x_values[0] - fit_x_values[0]) # + raw_intercept
             if zinteg_array.ndim == 1:
                 zinteg_array = np.transpose(np.atleast_2d(zinteg_array))
-            for jj in np.arange(1,zdsample_array.shape[1]-1):
+            for jj in np.arange(1,zsample_array.shape[1]-1):
                 zinteg = zinteg_array[:,jj-1] + zdsample_array[:,jj] * (ifit_x_values[jj] - ifit_x_values[jj-1])
                 if zinteg.ndim == 1:
                     zinteg = np.transpose(np.atleast_2d(zinteg))
@@ -327,7 +304,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             for ii in np.arange(0,num_samples):
                 zsint_mean = np.nanmean(zinteg_array[ii,:])
                 zinteg_array[ii,:] = zinteg_array[ii,:] - zsint_mean + zorig_mean
-
             # Computing statistics of sampled profiles
             sample_mean = np.nanmean(sample_array,axis=0)
             deriv_mean = np.nanmean(deriv_array,axis=0)
@@ -458,23 +434,29 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
         if X_coordinates_errors is not None:
             if kernel_method == 'RQ_Kernel': 
                 default_configuartion = {
-                    'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
+                    'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'],\
+                                                        optimized_values['nigp_fit_regpar_optimized']['ls'], \
+                                                        optimized_values['nigp_fit_regpar_optimized']['alpha'])
                     }
             
             if kernel_method == 'Gibbs_Kernel':
                 default_configuartion = {
-                    'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
+                    'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'],\
+                                                            optimized_values['nigp_fit_regpar_optimized']['alpha'])
                     }
                     
             elif X_coordinates_errors is None :
                 if kernel_method == 'RQ_Kernel': 
                     default_configuartion = {
-                        'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'], optimized_values['hsgp_fit_regpar_optimized']['ls'], optimized_values['hsgp_fit_regpar_optimized']['alpha'])
+                        'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'],\
+                                                             optimized_values['hsgp_fit_regpar_optimized']['ls'],\
+                                                             optimized_values['hsgp_fit_regpar_optimized']['alpha'])
                         }
                     
                 if kernel_method == 'Gibbs_Kernel':
                     default_configuartion = {
-                        'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'], optimized_values['hsgp_fit_regpar_optimized']['alpha'])
+                        'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'],\
+                                                                optimized_values['hsgp_fit_regpar_optimized']['alpha'])
                         }
                 
         kernel =  default_configuartion.get(kernel_method)
@@ -629,12 +611,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             nigpr_object.set_error_kernel(kernel=error_kernel)
             nigpr_object.set_search_parameters(epsilon=1.0e-2)
             nigpr_object.set_error_search_parameters(epsilon=1.0e-1)
-            #else:
-            #    nigpr_object.set_search_parameters(epsilon='None')
-            #    nigpr_object.set_error_search_parameters(epsilon='None')
-            #    nigpr_object.set_kernel(kernel=kernel,kbounds=nigpr_kernel_hyppar_bounds,regpar=1.0)
-            #    nigpr_object.set_error_kernel(kernel=error_kernel,kbounds=nigpr_error_kernel_hyppar_bounds,regpar=1.0)
-
 
             #     Perform the fit with kernel restarts, here is the extra option to account for x-errors in fit
             nigpr_object.GPRFit(fit_x_values,hsgp_flag=True,nigp_flag=True)#,nrestarts=5)
@@ -672,24 +648,29 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                           nsample_array, \
                           fit_y_values, fit_y_errors, \
                           fit_dydx_values, fit_dydx_errors,\
-                          i=0)
+                          i)
 
         # Results
         # -------
+
         if (X_coordinates_errors is None):
-            fit_data['fit_x']            = fit_x_values
-            fit_data['fit_y']            = hs_fit_y_values
-            fit_data['fit_y_error']      = hs_fit_y_errors
-            fit_data['fit_dydx']         = hs_fit_dydx_values
-            fit_data['fit_dydy_y_error'] = hs_fit_dydx_errors
-        elif (X_coordinates_errors is not None):
-            fit_data['fit_x']            = fit_x_values
-            fit_data['fit_y']            = ni_fit_y_values
-            fit_data['fit_y_error']      = ni_fit_y_errors
-            fit_data['fit_dydx']         = ni_fit_dydx_values
-            fit_data['fit_dydy_y_error'] = ni_fit_dydx_errors
+            fit_data['fit_x'].append(fit_x_values)
+            fit_data['fit_y'].append(hs_fit_y_values)
+            fit_data['fit_y_error'].append(hs_fit_y_errors)
+            fit_data['fit_dydx'].append(hs_fit_dydx_values)
+            fit_data['fit_dydy_y_error'].append(hs_fit_dydx_errors)
+            fit_data['fit_zinteg_array'].append(zinteg_array)
+        if (X_coordinates_errors is not None):
+            fit_data['fit_x'].append(fit_x_values)
+            fit_data['fit_y'].append(ni_fit_y_values)
+            fit_data['fit_y_error'].append(ni_fit_y_errors)
+            fit_data['fit_dydx'].append(ni_fit_dydx_values)
+            fit_data['fit_dydy_y_error'].append(ni_fit_dydx_errors)
+            fit_data['fit_zinteg_array'].append(zinteg_array)
+
             
         return fit_data
+
 
     else :    
         print('we are in the else statement' )
@@ -705,23 +686,29 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             if X_coordinates_errors is not None:
                 if kernel_method == 'RQ_Kernel': 
                     default_configuartion = {
-                        'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['ls'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
+                        'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'],\
+                                                             optimized_values['nigp_fit_regpar_optimized']['ls'],\
+                                                             optimized_values['nigp_fit_regpar_optimized']['alpha'])
                         }
             
                 if kernel_method == 'Gibbs_Kernel':
                     default_configuartion = {
-                        'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'], optimized_values['nigp_fit_regpar_optimized']['alpha'])
+                        'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['nigp_fit_regpar_optimized']['amp'],\
+                                                                optimized_values['nigp_fit_regpar_optimized']['alpha'])
                         }
                     
             elif X_coordinates_errors is None :
                 if kernel_method == 'RQ_Kernel': 
                     default_configuartion = {
-                        'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'], optimized_values['hsgp_fit_regpar_optimized']['ls'], optimized_values['hsgp_fit_regpar_optimized']['alpha'])
+                        'RQ_Kernel'        : GPR1D.RQ_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'],\
+                                                             optimized_values['hsgp_fit_regpar_optimized']['ls'],\
+                                                             optimized_values['hsgp_fit_regpar_optimized']['alpha'])
                         }
                     
                 if kernel_method == 'Gibbs_Kernel':
                     default_configuartion = {
-                        'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'], optimized_values['hsgp_fit_regpar_optimized']['alpha'])
+                        'Gibbs_Kernel'     : GPR1D.Gibbs_Kernel(optimized_values['hsgp_fit_regpar_optimized']['amp'],\
+                                                                optimized_values['hsgp_fit_regpar_optimized']['alpha'])
                         }
                 
             
@@ -739,18 +726,20 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
         nbr_time = Y_coordinates.shape[0]
 
-        fit_data = {'fit_x': [np.nan]*nbr_time, \
-                    'fit_y': [np.nan]*nbr_time, \
-                    'fit_x_error': [np.nan]*nbr_time, \
-                    'fit_y_error': [np.nan]*nbr_time, \
-                    'fit_dydx': [np.nan]*nbr_time, \
-                    'fit_dydx_x_error': [np.nan]*nbr_time, \
-                    'fit_dydy_y_error': [np.nan]*nbr_time, \
+        fit_data = {'fit_x': [], \
+                    'fit_y': [], \
+                    'fit_x_error': [], \
+                    'fit_y_error': [], \
+                    'fit_dydx': [], \
+                    'fit_dydx_x_error': [], \
+                    'fit_dydy_y_error': [], \
+                    'fit_zinteg_array': [], \
                     'x': X_coordinates, \
                     'y': Y_coordinates, \
                     'x_error': X_coordinates_errors , \
                     'y_error': Y_coordinates_errors , \
                    }
+
 
         if (slices_nbr is None):
             slices_nbr = Y_coordinates.shape[0]
@@ -769,8 +758,8 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             elif X_coordinates_errors is None:
                 X_errors = 'None'
 
-            minimum = X_reduced.min()
-            maximum = X_reduced.max()
+            minimum = (X_reduced).min()
+            maximum = (X_reduced).max()
 
             fit_x_values = np.linspace(minimum, maximum, nbr_pts)
             # Define a kernel to fit the data itself
@@ -889,7 +878,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
                 ### Sampling distribution (only done with HSGP option)
 
-                num_samples = 1000
+                num_samples = nbr_time
 
                 # Samples the fit distribution - smooth noise representation
                 sample_array = hsgpr_object.sample_GP(num_samples,actual_noise=False)
@@ -902,11 +891,11 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
                 # Calculates the integrals of the sampled derivative distributions
                 ifit_x_values = dfit_x_values.copy()
-                integ_array = dsample_array[:,1] * (ifit_x_values[0] - fit_x_values[0]) # + raw_intercept
+                integ_array = sample_array[:,1] * (ifit_x_values[0] - fit_x_values[0]) # + raw_intercept
                 if integ_array.ndim == 1:
                     integ_array = np.transpose(np.atleast_2d(integ_array))
-                for jj in np.arange(1,dsample_array.shape[1]-1):
-                    integ = integ_array[:,jj-1] + dsample_array[:,jj] * (ifit_x_values[jj] - ifit_x_values[jj-1])
+                for jj in np.arange(1,sample_array.shape[1]-1):
+                    integ = (integ_array[:,jj-1]) + (sample_array[:,(sample_array.shape[1]-2)- (jj-1)]) * (ifit_x_values[(sample_array.shape[1]-2)-jj] - ifit_x_values[(sample_array.shape[1]-2) - (jj-1)])
                     if integ.ndim == 1:
                         integ = np.transpose(np.atleast_2d(integ))
                     integ_array = np.hstack((integ_array,integ))
@@ -915,6 +904,14 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 for ii in np.arange(0,num_samples):
                     sint_mean = np.nanmean(integ_array[ii,:])
                     integ_array[ii,:] = integ_array[ii,:] - sint_mean + orig_mean
+
+                #################################################
+                #################################################
+                ##    calculation of the integrale using the 
+                ##    trapizoidal method
+                #################################################
+                #################################################
+                
 
                 # Samples the fit distribution - true noise representation
                 nsample_array = hsgpr_object.sample_GP(num_samples,actual_noise=True)
@@ -931,13 +928,13 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 # Samples the derivative distribution - zero noise representation
                 #    Note that zero noise is only different from smooth noise if an error kernel is used
                 zdsample_array = hsgpr_object.sample_GP_derivative(num_samples,without_noise=True)
-
-                # Calculates the integrals of the sampled derivative distributions - zero noise representation
-                zinteg_array = zdsample_array[:,1] * (ifit_x_values[0] - fit_x_values[0]) # + raw_intercept
+                
+                # Calculates the integrals of the sampled  distributions - zero noise representation
+                zinteg_array = zsample_array[:,1] * (ifit_x_values[0] - fit_x_values[0]) # + raw_intercept
                 if zinteg_array.ndim == 1:
                     zinteg_array = np.transpose(np.atleast_2d(zinteg_array))
-                for jj in np.arange(1,zdsample_array.shape[1]-1):
-                    zinteg = zinteg_array[:,jj-1] + zdsample_array[:,jj] * (ifit_x_values[jj] - ifit_x_values[jj-1])
+                for jj in np.arange(1,zsample_array.shape[1]-1):
+                    zinteg = (zinteg_array[:,jj-1]) + (zsample_array[:,(zsample_array.shape[1]-2)-jj]) * (ifit_x_values[(zsample_array.shape[1]-2)-jj] - ifit_x_values[(zsample_array.shape[1]-2)-(jj-1)])
                     if zinteg.ndim == 1:
                         zinteg = np.transpose(np.atleast_2d(zinteg))
                     zinteg_array = np.hstack((zinteg_array,zinteg))
@@ -946,7 +943,10 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 for ii in np.arange(0,num_samples):
                     zsint_mean = np.nanmean(zinteg_array[ii,:])
                     zinteg_array[ii,:] = zinteg_array[ii,:] - zsint_mean + zorig_mean
-
+                            
+   
+                    
+                    
                 # Computing statistics of sampled profiles
                 sample_mean = np.nanmean(sample_array,axis=0)
                 deriv_mean = np.nanmean(deriv_array,axis=0)
@@ -1062,17 +1062,21 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             # Results
             # -------
             if (X_coordinates_errors is None):
-                fit_data['fit_x'][i]            = fit_x_values
-                fit_data['fit_y'][i]            = hs_fit_y_values
-                fit_data['fit_y_error'][i]      = hs_fit_y_errors
-                fit_data['fit_dydx'][i]         = hs_fit_dydx_values
-                fit_data['fit_dydy_y_error'][i] = hs_fit_dydx_errors
-            elif (X_coordinates_errors is not None):
-                fit_data['fit_x'][i]            = fit_x_values
-                fit_data['fit_y'][i]            = ni_fit_y_values
-                fit_data['fit_y_error'][i]      = ni_fit_y_errors
-                fit_data['fit_dydx'][i]         = ni_fit_dydx_values
-                fit_data['fit_dydy_y_error'][i] = ni_fit_dydx_errors
+                fit_data['fit_x'].append(fit_x_values)
+                fit_data['fit_y'].append(hs_fit_y_values)
+                fit_data['fit_y_error'].append(hs_fit_y_errors)
+                fit_data['fit_dydx'].append(hs_fit_dydx_values)
+                fit_data['fit_dydy_y_error'].append(hs_fit_dydx_errors)
+                #fit_data['fit_zinteg_array'].append(zinteg_array)
+                fit_data['fit_zinteg_array'].append(integ_array)
+            if (X_coordinates_errors is not None):
+                fit_data['fit_x'].append(fit_x_values)
+                fit_data['fit_y'].append(ni_fit_y_values)
+                fit_data['fit_y_error'].append(ni_fit_y_errors)
+                fit_data['fit_dydx'].append(ni_fit_dydx_values)
+                fit_data['fit_dydy_y_error'].append(ni_fit_dydx_errors)
+                fit_data['fit_zinteg_array'].append(integ_array)
+                #fit_data['fit_zinteg_array'].append(zinteg_array)
 
 
     return fit_data

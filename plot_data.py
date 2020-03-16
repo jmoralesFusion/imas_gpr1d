@@ -13,6 +13,7 @@ import time
 
 import numpy as np
 import matplotlib.pyplot as plt
+
 from textwrap import wrap
 
 
@@ -36,7 +37,7 @@ def plot_data(fit_x_values, minimum, maximum, \
                   nsample_array, \
                   fit_y_values, fit_y_errors, \
                   fit_dydx_values, fit_dydx_errors,\
-                  i=0): 
+                  i): 
  
     ###Some basic setup
     plot_save_directory = './GPPlots' + str(i)
@@ -72,7 +73,7 @@ def plot_data(fit_x_values, minimum, maximum, \
         ax = fig.add_subplot(111)
         plt.plot(X_reduced, Y_reduced)
         plt.gca().legend(('Raw data'),loc = 'best')
-        fig.savefig(plot_save_directory+'data.png')
+        fig.savefig(plot_save_directory+'Raw_data.png')
         plt.close(fig)
 
 
@@ -88,21 +89,20 @@ def plot_data(fit_x_values, minimum, maximum, \
         ax.fill_between(fit_x_values, plot_hs_fit_y_lower, plot_hs_fit_y_upper, facecolor='r', edgecolor='None', alpha=0.2)
         ax.set_xlim(minimum, maximum)
         plt.gca().legend(('gpr fit','2$\\sigma$ plot region','Raw data'), loc = 'best')
-        fig.savefig(plot_save_directory+'gp_data.png')
+        fig.savefig(plot_save_directory+'gpr_data.png')
         plt.close(fig)
         
         # Derivative of GPR fit and error, only accounting for y-errors
         fig = plt.figure()
         fig.suptitle('Derivative of GPR fit and error, only accounting for y-errors', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
-        #if (fit_dydx_values is not None):
         ax.plot(fit_x_values, hs_fit_dydx_values, color='r')
         plot_hs_fit_dydx_lower = hs_fit_dydx_values - plot_sigma * hs_fit_dydx_errors
         plot_hs_fit_dydx_upper = hs_fit_dydx_values + plot_sigma * hs_fit_dydx_errors
         ax.fill_between(fit_x_values, plot_hs_fit_dydx_lower, plot_hs_fit_dydx_upper, facecolor='r', edgecolor='None', alpha=0.2)
         ax.set_xlim(minimum, maximum)
         plt.gca().legend(('derv gpr fit','2$\\sigma$ plot region ','Raw data'))
-        fig.savefig(plot_save_directory+'gp_derivative_data.png')
+        fig.savefig(plot_save_directory+'gpr_derivative_data.png')
         plt.close(fig)
         
         # Raw data with GPR fit and error, comparison of using y-errors as weights, rigourously accounting for y-errors, and rigourously account for y-errors AND x-errors
@@ -111,7 +111,6 @@ def plot_data(fit_x_values, minimum, maximum, \
         fig.suptitle("\n".join(wrap('Raw data (GPR fit and error), comparison of using y-errors as weights, rigourously accounting for y-errors, and rigourously account for y-errors AND x-errors')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         ax.errorbar(X_reduced, Y_reduced, xerr=plot_X_errors, yerr=plot_Y_errors, ls='', marker='.', color='k')
-        #if (fit_y_values is not None):
         ax.plot(fit_x_values, fit_y_values, color='g', label = 'gpr fit')
         plot_fit_y_lower = fit_y_values - plot_sigma * fit_y_errors
         plot_fit_y_upper = fit_y_values + plot_sigma * fit_y_errors
@@ -232,14 +231,28 @@ def plot_data(fit_x_values, minimum, maximum, \
         fig = plt.figure()
         fig.suptitle("\n".join(wrap('Integrals of sampled fit derivative curves (zero noise) against GPR fit distribution')), fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
-        ax.fill_between(fit_x_values, plot_hs_zfit_y_lower, plot_hs_zfit_y_upper, facecolor='r', edgecolor='None', alpha=0.2)
+        #ax.fill_between(fit_x_values, plot_hs_zfit_y_lower, plot_hs_zfit_y_upper, facecolor='r', edgecolor='None', alpha=0.2)
         for ii in np.arange(0, plot_num_samples):
             ax.plot(ifit_x_values, zinteg_array[ii, :], color='k', alpha=0.5)
         plot_hs_zdsample_y_lower = zinteg_mean - plot_sigma * zinteg_std
         plot_hs_zdsample_y_upper = zinteg_mean + plot_sigma * zinteg_std
         ax.fill_between(ifit_x_values, plot_hs_zdsample_y_lower, plot_hs_zdsample_y_upper, facecolor='b', edgecolor='None', alpha=0.2)
         ax.set_xlim(minimum, maximum)
-        fig.savefig(plot_save_directory+'sample_gp_itg_no_noise_dtest.png')
+        fig.savefig(plot_save_directory+'sample_gp_itg_zero_noise_test.png')
+        plt.close(fig)
+                
+        # Integrals of sampled fit curves (no noise) against GPR fit distribution
+        fig = plt.figure()
+        fig.suptitle("\n".join(wrap('Integrals of sampled fit curves (no noise) against GPR fit distribution')), fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        ax = fig.add_subplot(111)
+        #ax.fill_between(fit_x_values, plot_hs_zfit_y_lower, plot_hs_zfit_y_upper, facecolor='r', edgecolor='None', alpha=0.2)
+        for ii in np.arange(0, plot_num_samples):
+            ax.plot(ifit_x_values, integ_array[ii, :], color='k', alpha=0.5)
+        plot_hs_zdsample_y_lower = integ_mean - plot_sigma * integ_std
+        plot_hs_zdsample_y_upper = integ_mean + plot_sigma * integ_std
+        ax.fill_between(ifit_x_values, plot_hs_zdsample_y_lower, plot_hs_zdsample_y_upper, facecolor='b', edgecolor='None', alpha=0.2)
+        ax.set_xlim(minimum, maximum)
+        fig.savefig(plot_save_directory+'sample_gp_itg_no_noise_test.png')
         plt.close(fig)
         
         print("Results of demonstration plotted in directory ./GPPlots/\n")
