@@ -54,6 +54,9 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
     Y_coordinate_errors : 2D array size (points, time)
         Y profile errors
 
+    dx_data : 
+    dy_data : 
+    dy_err  : 
     kernel_method : string (default='RQ_Kernel')
         which kernel use for fit. One of
 
@@ -76,6 +79,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
     slices_nbr: int
         Number of equally spaced slices in X and Y coordinate input arrays where fit is computed
+        If all the slice, the value = None
 
     plot_fit: boolean (default=True)
         If True saves in sub folders fitted curves images, and used when we have x_errors is not None
@@ -155,18 +159,28 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
         Y_reduced = Y_coordinates
         X_reduced = X_coordinates
+
+        Y_reduced = Y_reduced[~np.isnan(Y_reduced)]
+        X_reduced = X_reduced[~np.isnan(X_reduced)]
+        
         Y_errors = Y_coordinates_errors
+        Y_errors = Y_errors[~np.isnan(Y_errors)]
+
         if X_coordinates_errors is not None:
             X_errors = X_coordinates_errors
+            X_errors = X_errors[~np.isnan(X_errors)]
+
             fit_data['x_error'] = X_coordinates_errors
         elif (X_coordinates_errors is None and plot_fit):
             X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
+            X_errors = X_errors[~np.isnan(X_errors)]
         else:
             X_errors = 'None'
             fit_data['x_error'] = np.nan
 
         minimum = X_reduced.min()
         maximum = X_reduced.max()
+
 
         fit_x_values = np.linspace(minimum, maximum, nbr_pts)
         # Define a kernel to fit the data itself
@@ -734,6 +748,10 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                     'fit_dydx_x_error': [], \
                     'fit_dydy_y_error': [], \
                     'fit_zinteg_array': [], \
+                    'X_fit_max': [], \
+                    'X_fit_min': [], \
+                    'dy_fit_min': [], \
+                    'fit_time_slice': [], \
                     'x': X_coordinates, \
                     'y': Y_coordinates, \
                     'x_error': X_coordinates_errors , \
@@ -741,25 +759,34 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                    }
 
 
+
         if (slices_nbr is None):
             slices_nbr = Y_coordinates.shape[0]
 
-        for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
+        #for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
+        for i in range(5):#0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
+            #add the mask on the nans/
 
             print('slice number : ', i)
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
+
+            Y_reduced = Y_reduced[~np.isnan(Y_reduced)]
+            X_reduced = X_reduced[~np.isnan(X_reduced)]
+
             Y_errors = Y_coordinates_errors[i]
+            Y_errors = Y_errors[~np.isnan(Y_errors)]
 
             if X_coordinates_errors is not None:
                 X_errors = X_coordinates_errors[i] 
+                X_errors = X_errors[~np.isnan(X_errors)]
             elif (plot_fit and X_coordinates_errors is None):
-                X_errors =  np.full(X_coordinates.shape, np.mean(X_coordinates)*0.05)
+                X_errors =  np.full(X_coordinates.shape, np.mean(X_reduced)*0.05)
             elif X_coordinates_errors is None:
                 X_errors = 'None'
 
-            minimum = (X_reduced).min()
-            maximum = (X_reduced).max()
+            minimum =(X_reduced).min()
+            maximum =(X_reduced).max()
 
             fit_x_values = np.linspace(minimum, maximum, nbr_pts)
             # Define a kernel to fit the data itself
@@ -809,7 +836,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 #     Grab the log-marginal-likelihood of fit
                 fit_lml = gpr_object.get_gp_lml()
 
-            if (X_coordinates_errors is None or plot_fit):
+            if ((X_coordinates_errors is None) or (X_coordinates_errors is not None) or plot_fit):
                 # GPR fit rigourously accounting only for y-errors (this is the recommended option)
                 #     Procedure is nearly identical to above, except for the addition of an error kernel
                 if not optimise_all_params:
@@ -904,7 +931,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 for ii in np.arange(0,num_samples):
                     sint_mean = np.nanmean(integ_array[ii,:])
                     integ_array[ii,:] = integ_array[ii,:] - sint_mean + orig_mean
-
+                #import ipdb; ipdb.set_trace()
                 #################################################
                 #################################################
                 ##    calculation of the integrale using the 
@@ -971,7 +998,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
 
 
-            if (X_coordinates_errors is not None):
+            if (X_coordinates_errors is not None or plot_fit):
                 # GPR fit rigourously accounting for y-errors AND x-errors
                 #     Procedure is nearly identical to above, except for the addition of an extra option
                 if not optimise_all_params:
@@ -1067,16 +1094,22 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 fit_data['fit_y_error'].append(hs_fit_y_errors)
                 fit_data['fit_dydx'].append(hs_fit_dydx_values)
                 fit_data['fit_dydy_y_error'].append(hs_fit_dydx_errors)
-                #fit_data['fit_zinteg_array'].append(zinteg_array)
-                fit_data['fit_zinteg_array'].append(integ_array)
+                #fit_data['fit_zinteg_array'].append(integ_array)
+                fit_data['X_fit_max'].append(maximum)
+                fit_data['X_fit_min'].append(minimum)
+                fit_data['dy_fit_min'].append(hs_fit_dydx_values.min())
+                fit_data['fit_time_slice'].append(i)
             if (X_coordinates_errors is not None):
                 fit_data['fit_x'].append(fit_x_values)
                 fit_data['fit_y'].append(ni_fit_y_values)
                 fit_data['fit_y_error'].append(ni_fit_y_errors)
                 fit_data['fit_dydx'].append(ni_fit_dydx_values)
                 fit_data['fit_dydy_y_error'].append(ni_fit_dydx_errors)
-                fit_data['fit_zinteg_array'].append(integ_array)
-                #fit_data['fit_zinteg_array'].append(zinteg_array)
+                fit_data['fit_zinteg_array'].append(integ_array[i])
+                fit_data['X_fit_max'].append(maximum)
+                fit_data['X_fit_min'].append(minimum)
+                fit_data['dy_fit_min'].append(ni_fit_dydx_values.min())
+                fit_data['fit_time_slice'].append(i)
 
 
     return fit_data

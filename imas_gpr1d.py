@@ -246,8 +246,9 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         Phi_reflec = np.zeros(R_real_ref.shape[0])
         Z_reflec = np.zeros(R_real_ref.shape[0])
         rho_pol_norm_base_reflec = np.full((R_real_ref.shape), np.nan)
+        #take a small portion of the R_real to save time on the loop of equimaps
         #for ii in range(R_real_ref.shape[1]):
-        for ii in range(20):
+        for ii in range(10):
             rho_pol_norm_base_reflec[:,ii] = equimap.get(shot, Time_ref[ii], R_real_ref[:,ii], Phi_reflec, Z_reflec, 'rho_pol_norm')
 
         R_base_ref = np.linspace(R_real_ref.min(), R_real_ref.max(), 1000)
@@ -263,17 +264,13 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_pol_norm_ref = np.full(R_real_ref.shape, np.nan)
         for ii in range(rho_pol_norm_base_ref.shape[1]):
             rho_pol_norm_ref[:, ii] = np.interp(R_real_ref[:, ii], R_base_ref, rho_pol_norm_base_ref[:, ii])
-
-        electron_density_errors = np.full(electron_density.shape, np.mean(electron_density)*0.05)
-        rho_pol_norm_errors =  np.full(rho_pol_norm_ref.shape, np.mean(rho_pol_norm_ref)*0.005)
         
          ##################################################################################
 
         #list of raduis and a list of z boundary positions
-        nbr_channels      = len(idd_in.interferometer.channel)
-        print(nbr_channels)
-        boundary_r = []
-        boundary_z = []
+        nbr_channels = len(idd_in.interferometer.channel)
+        boundary_r   = []
+        boundary_z   = []
         for ii in range(0, len(idd_in.equilibrium.time_slice)):
             boundary_r.append(idd_in.equilibrium.time_slice[ii].boundary.outline.r)
             boundary_z.append(idd_in.equilibrium.time_slice[ii].boundary.outline.z)
@@ -293,15 +290,12 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         #list of first, second points of line of sight and their vectors(length)
         R_inter_first   = []
         Z_inter_first   = []
-
-        R_inter_second   = []
-        Z_inter_second   = []
-
-        R_inter_vector   = []
-        Z_inter_vector   = []
+        R_inter_second  = []
+        Z_inter_second  = []
+        R_inter_vector  = []
+        Z_inter_vector  = []
         Z = []
         R = []
-
 
         for ii in range(0, nbr_channels):
             R_inter_first.append(idd_in.interferometer.channel[ii].line_of_sight.first_point.r)
@@ -314,19 +308,17 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         Z = np.asarray(Z)
         R = np.asarray(R)
 
-        r_axis = np.full(len(idd_in.equilibrium.time_slice), None)
-        z_axis = np.full(len(idd_in.equilibrium.time_slice), None)
+        r_axis = np.full(len(idd_in.equilibrium.time_slice), np.nan)
+        z_axis = np.full(len(idd_in.equilibrium.time_slice), np.nan)
 
         for ii in range(r_axis.shape[0]):
             r_axis[ii] = idd_in.equilibrium.time_slice[ii].global_quantities.magnetic_axis.r
             z_axis[ii] = idd_in.equilibrium.time_slice[ii].global_quantities.magnetic_axis.z
 
 
-
-
         #interpolation from the equilibruim time to the Time Reference we are using 
-        r_axis_interp = np.interp(TimeReference, Time_eq, r_axis.astype(float))
-        z_axis_interp = np.interp(TimeReference, Time_eq, z_axis.astype(float))
+        r_axis_interp = np.interp(TimeReference, Time_eq, r_axis)
+        z_axis_interp = np.interp(TimeReference, Time_eq, z_axis)
 
 
         index_r_axis = np.full((R.shape[0],r_axis_interp.shape[0]), np.nan)
@@ -335,9 +327,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         for ii in range(R.shape[0]):
             for jj in range(r_axis_interp.shape[0]):
                 index_r_axis[ii,jj] =np.nanargmin(np.abs( R[ii] - r_axis_interp[jj]))
-
-
-
                 
         #introduce the upper and lower masks:
         for ii in range(R.shape[0]):
@@ -369,13 +358,11 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         #####################################################################################################
         #####################################################################################################
 
-        R_meters = np.linspace(r_axis.min(), 3.03, 1000)
+        R_meters = np.linspace(r_axis.min(), R_real_ref.max(), 1000)
         Phi_meters = np.zeros(1000)
         Z_meters = np.zeros(1000)
-
+        
         rho_mid_plane = equimap.get(shot, TimeReference,R_meters,Phi_meters,Z_meters, 'rho_pol_norm')
-
-
 
         index_rho_min = np.full(rho_pol_norm_base_min.shape, np.nan)
         index_separatrix = np.full(rho_pol_norm_base_min.shape, np.nan)
@@ -385,8 +372,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             for jj in range(rho_pol_norm_base_min.shape[1]):
                 index_separatrix[ii,:] = np.nanargmin(np.abs(rho_pol_norm_base[ii, jj, index_rho_min[ii, jj].astype(int):] - 1))
 
-
-        #import ipdb; ipdb.set_trace()
         R_separatrix = np.full(rho_pol_norm_base_min.shape, np.nan)
         Z_separatrix = np.full(rho_pol_norm_base_min.shape, np.nan)
         R_LOS = np.full(rho_pol_norm_base_min.shape, np.nan)
@@ -401,16 +386,12 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         length_1 = np.sqrt((R_separatrix-R_LOS)**2 + (Z_separatrix-Z_LOS)**2)
-        
-
         #rho_mid_plane calculations
 
         index_rho_mid_plane_min = np.full(rho_pol_norm_base_min.shape, np.nan)
         index_sep_mid_plane_min = np.full(index_rho_mid_plane_min.shape[1], np.nan)
         R_mid_left = np.full(rho_pol_norm_base_min.shape, np.nan)
         R_mid_right = np.full(rho_pol_norm_base_min.shape[1], np.nan)
-
-
 
         for ii in range(index_rho_mid_plane_min.shape[0]):
             for jj in range(index_rho_mid_plane_min.shape[1]):
@@ -455,155 +436,397 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             print('Infs_index = '  ,Infss_index)
             raise RuntimeError('array must not contain infs or NaNs')
 
-
-
-
-
-
-        #divide the elecron density into two parts, upper and lower using the upper and lower masks created above :
         
+        #divide the elecron density into two parts, upper and lower using the upper and lower masks created above :
         #######################################################################################################################
         #######################################################################################################################
         #######################################################################################################################
         #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-
-        #######################################################################################################################
-
-        rho_total_lower = np.full((ne_line_total.shape) , np.nan)
-        electron_density_ne_lower = np.full(electron_density_ne.shape, np.nan)
-        rho_pol_norm_base_min_lower = np.full((rho_pol_norm_base_min.shape) , np.nan)
-        electron_density_ne_lower = np.ma.array(electron_density_ne, mask = ~mask_lower_LOS, fill_value=np.nan)
-        rho_pol_norm_base_min_lower = np.ma.array(rho_pol_norm_base_min, mask = ~mask_lower_LOS, fill_value=np.nan)
-        electron_density_ne_lower.filled(np.nan)
-        rho_pol_norm_base_min_lower.filled(np.nan)
-
-
-        #prepare for concatenation :
-        ne_line_total_lower = np.concatenate((electron_density_ne_lower,integrale_density_ref))
-
-
-        for jj in range(rho_total_lower.shape[1]):
-            rho_total_lower[:,jj] = np.concatenate((rho_pol_norm_base_min_lower[:,jj],rho_pol_norm_ref[:,jj]))
-
-        #prepare for sorting arrays :
-
-        index_sort_lower = np.argsort(rho_total_lower, axis=0)
-        rho_total_sort_lower = (np.array(list(map(lambda x, y: y[x], index_sort_lower.T, rho_total_lower.T)))).T
-        ne_line_total_sort_lower = np.array(list(map(lambda x, y: y[x], index_sort_lower.T, ne_line_total_lower.T))).T
-
-
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-
-        #######################################################################################################################
-
-
-
+        #upper electron density 
         rho_total_upper = np.full((ne_line_total.shape) , np.nan)
+        ne_line_total_upper = np.full((ne_line_total.shape) , np.nan)
         electron_density_ne_upper = np.full(electron_density_ne.shape, np.nan)
         rho_pol_norm_base_min_upper = np.full((rho_pol_norm_base_min.shape) , np.nan)
+
         electron_density_ne_upper = np.ma.array(electron_density_ne, mask = ~mask_upper_LOS, fill_value=np.nan)
         rho_pol_norm_base_min_upper = np.ma.array(rho_pol_norm_base_min, mask = ~mask_upper_LOS, fill_value=np.nan)
-        electron_density_ne_upper.filled(np.nan)
-        rho_pol_norm_base_min_upper.filled(np.nan)
 
+        electron_density_ne_upper = electron_density_ne_upper.filled()
+        rho_pol_norm_base_min_upper = rho_pol_norm_base_min_upper.filled()
 
         #prepare for concatenation :
-        ne_line_total_upper = np.concatenate((electron_density_ne_upper,integrale_density_ref))
-
-
         for jj in range(rho_total_upper.shape[1]):
+            ne_line_total_upper[:,jj] = np.concatenate((electron_density_ne_upper[:,jj],integrale_density_ref[:,jj]))
             rho_total_upper[:,jj] = np.concatenate((rho_pol_norm_base_min_upper[:,jj],rho_pol_norm_ref[:,jj]))
 
         #prepare for sorting arrays :
-
         index_sort_upper = np.argsort(rho_total_upper, axis=0)
         rho_total_sort_upper = (np.array(list(map(lambda x, y: y[x], index_sort_upper.T, rho_total_upper.T)))).T
         ne_line_total_sort_upper = np.array(list(map(lambda x, y: y[x], index_sort_upper.T, ne_line_total_upper.T))).T
+        
+        ne_line_total_errors_upper = np.full((ne_line_total_sort_upper).shape, (ne_line_total_sort_upper)*0.05)
+        rho_total_errors_upper =  np.full((rho_total_sort_upper).shape, (rho_total_sort_upper)*0.01)
+
+        print('------------------------------')
+        print('------------------------------')
+        print('----fit_data for the upper----')
+        print('------------------------------')
+        print('------------------------------')
+        out_put_upper = fit_data(rho_total_sort_upper.T, (ne_line_total_sort_upper).T, rho_total_errors_upper.T, ne_line_total_errors_upper.T, kernel_method=args.kernel, \
+                          optimise_all_params=True, nbr_pts=100, slices_nbr=10, plot_fit=False, dx_data=None, dy_data=None, dy_err=None)
+
+        ne_line_density_fit_upper = (np.asarray(out_put_upper['fit_y']))
+        rho_total_fit_x_upper =  (np.asarray(out_put_upper['fit_x']))
+  
+
+        #add the time slices as an output for the data_fit function
+        time_slices_red_upper = out_put_upper['fit_time_slice']
+        mask_diff_upper = []
+        ne_line_interpolated_R_upper = []
+        derivative_interp_array_upper = []
+
+        for ii in range(len(time_slices_red_upper)):
+            mask_diff_upper.append((np.diff(rho_mid_plane[time_slices_red_upper[ii],:])>0))
+            mask_rho_fit_upper= ((rho_mid_plane[time_slices_red_upper[ii],:]>rho_total_fit_x_upper[ii].min()) & (rho_mid_plane[time_slices_red_upper[ii],:]<rho_total_fit_x_upper[ii].max()))
+        
+        mask_diff_upper = np.asarray(mask_diff_upper)
+        mask_diff_upper = np.insert(mask_diff_upper, False, 0, axis=1)
+        mask_total_upper = mask_rho_fit_upper & mask_diff_upper
+
+        for ii in range(len(time_slices_red_upper)):
+            ne_line_interpolated_R_upper.append(np.interp(rho_mid_plane[time_slices_red_upper[ii],mask_total_upper[ii]], rho_total_fit_x_upper[ii,:], ne_line_density_fit_upper[ii,:]))
+        
+        ne_line_interpolated_R_upper = np.asarray(ne_line_interpolated_R_upper)
+ 
+        ######################################################################################################
+        #derivative of the interpolated density over space
+        for ii in range(len(time_slices_red_upper)):
+            derivative_interp_array_upper.append(np.gradient(ne_line_interpolated_R_upper[ii], R_meters[mask_total_upper[ii]]))
+        
+        derivative_interp_array_upper = np.asarray(derivative_interp_array_upper)
+        ######################################################################################################
+
+        R_meters_mask_upper = np.full((len(time_slices_red_upper), 100),np.nan)
+        ne_line_interpolated_R_2d_upper = np.full(R_meters_mask_upper.shape, np.nan)
+        ne_derivative_interpolated_2d_upper = np.full(R_meters_mask_upper.shape, np.nan)
+
+        for ii in range(len(time_slices_red_upper)):
+            R_meters_mask_upper[ii]=np.linspace(np.nanmin(R_meters[mask_total_upper[ii]]), np.nanmax(R_meters[mask_total_upper[ii]]), 100)
+            ne_line_interpolated_R_2d_upper[ii] = np.interp(R_meters_mask_upper[ii], (R_meters[mask_total_upper[ii]]) ,ne_line_interpolated_R_upper[ii])
+            ne_derivative_interpolated_2d_upper[ii] = np.interp(R_meters_mask_upper[ii], (R_meters[mask_total_upper[ii]]) ,derivative_interp_array_upper[ii])
+
+        R_meters_mask_upper = R_meters_mask_upper.T
+        ne_line_interpolated_R_2d_upper = ne_line_interpolated_R_2d_upper.T
+        ne_line_interpolated_R_2d_errors_upper = np.full(ne_line_interpolated_R_2d_upper.shape, np.mean(ne_line_interpolated_R_2d_upper)*0.091)
+        R_meters_2d_errors_upper =  np.full(R_meters_mask_upper.shape, np.mean(R_meters_mask_upper)*0.001)
+ 
+        print('------------------------------------------')
+        print('------------------------------------------')
+        print('----fit_data for the upper in R_meters----')
+        print('------------------------------------------')
+        print('------------------------------------------')
+
+        out_put_R_upper = fit_data(R_meters_mask_upper.T, (ne_line_interpolated_R_2d_upper).T, R_meters_2d_errors_upper.T, ne_line_interpolated_R_2d_errors_upper.T, kernel_method=args.kernel, \
+                          optimise_all_params=True, slices_nbr=10, plot_fit=False, dx_data=[2.54829553,2.96031922], dy_data=[(-7.86915607*1e19), (3.10*1e19)], dy_err=[(-3.10*1e19)*0.2])#dx_data=[2.55], dy_data=[(-3.96915607*1e19)], dy_err=[0.0])#dx_data=[2.54829553,2.96031922], dy_data=[(-3.86915607*1e19), (-0.0*1e19)], dy_err=[(-3.86915607*1e19)*0.2,(-0.0*1e19)*0.2])
+
+        derivative_ne_line_interpolated_upper = np.asarray(out_put_R_upper['fit_dydx'])
+        electron_density_from_ref_upper = electron_density
+        
+        #####################################################################################################################
+        #####################################################################################################################
+        #####################################################################################################################
+
+        #lower electron density 
+        rho_total_lower = np.full((ne_line_total.shape) , np.nan)
+        ne_line_total_lower = np.full((ne_line_total.shape) , np.nan)
+        electron_density_ne_lower = np.full(electron_density_ne.shape, np.nan)
+        rho_pol_norm_base_min_lower = np.full((rho_pol_norm_base_min.shape) , np.nan)
+
+        electron_density_ne_lower = np.ma.array(electron_density_ne, mask = ~mask_lower_LOS, fill_value=np.nan)
+        rho_pol_norm_base_min_lower = np.ma.array(rho_pol_norm_base_min, mask = ~mask_lower_LOS, fill_value=np.nan)
+
+        electron_density_ne_lower = electron_density_ne_lower.filled(np.nan)
+        rho_pol_norm_base_min_lower = rho_pol_norm_base_min_lower.filled(np.nan)
+
+        
+        #prepare for concatenation :
+        for jj in range(rho_total_lower.shape[1]):
+            ne_line_total_lower[:,jj] = np.concatenate((electron_density_ne_lower[:,jj],integrale_density_ref[:,jj]))
+            rho_total_lower[:,jj] = np.concatenate((rho_pol_norm_base_min_lower[:,jj],rho_pol_norm_ref[:,jj]))
+
+        #prepare for sorting arrays :
+        index_sort_lower = np.argsort(rho_total_lower, axis=0)
+        rho_total_sort_lower = (np.array(list(map(lambda x, y: y[x], index_sort_lower.T, rho_total_lower.T)))).T
+        ne_line_total_sort_lower = np.array(list(map(lambda x, y: y[x], index_sort_lower.T, ne_line_total_lower.T))).T
+                
+        ne_line_total_errors_lower = np.full(ne_line_total_sort_lower.shape, (ne_line_total_sort_lower)*0.05)
+        rho_total_errors_lower =  np.full(rho_total_sort_lower.shape, (rho_total_sort_lower)*0.01)
+    
+        print('------------------------------')
+        print('------------------------------')
+        print('----fit_data for the lower----')
+        print('------------------------------')
+        print('------------------------------')
+
+
+        out_put_lower = fit_data(rho_total_sort_lower.T, (ne_line_total_sort_lower).T, rho_total_errors_lower.T, ne_line_total_errors_lower.T, kernel_method=args.kernel, \
+                          optimise_all_params=True, slices_nbr=10, plot_fit=False, dx_data=None, dy_data=None, dy_err=None)
+
+        ne_line_density_fit_lower = (np.asarray(out_put_lower['fit_y']))
+        rho_total_fit_x_lower =  (np.asarray(out_put_lower['fit_x']))
+  
+
+        #add the time slices as an output for the data_fit function
+        
+        time_slices_red_lower = out_put_lower['fit_time_slice']
+        mask_diff_lower = []
+        ne_line_interpolated_R_lower = []
+        derivative_interp_array_lower = []
+
+        for ii in range(len(time_slices_red_lower)):
+            mask_diff_lower.append((np.diff(rho_mid_plane[time_slices_red_lower[ii],:])>0))
+            mask_rho_fit_lower= ((rho_mid_plane[time_slices_red_lower[ii],:]>rho_total_fit_x_lower[ii].min()) & (rho_mid_plane[time_slices_red_lower[ii],:]<rho_total_fit_x_lower[ii].max()))
+        
+        mask_diff_lower = np.asarray(mask_diff_lower)
+        mask_diff_lower = np.insert(mask_diff_lower, False, 0, axis=1)
+        mask_total_lower = mask_rho_fit_lower & mask_diff_lower
+
+        for ii in range(len(time_slices_red_lower)):
+            ne_line_interpolated_R_lower.append(np.interp(rho_mid_plane[time_slices_red_lower[ii],mask_total_lower[ii]], rho_total_fit_x_lower[ii,:], ne_line_density_fit_lower[ii,:]))
+        
+        ne_line_interpolated_R_lower = np.asarray(ne_line_interpolated_R_lower)
+
+        ######################################################################################################
+        #derivative of the interpolated density over space for the lower 
+        for ii in range(len(time_slices_red_lower)):
+            derivative_interp_array_lower.append(np.gradient(ne_line_interpolated_R_lower[ii], R_meters[mask_total_lower[ii]]))
+        
+        derivative_interp_array_lower = np.asarray(derivative_interp_array_lower)
+        ######################################################################################################
+
+        R_meters_mask_lower = np.full((len(time_slices_red_lower), 100),np.nan)
+        ne_line_interpolated_R_2d_lower = np.full(R_meters_mask_lower.shape, np.nan)
+        ne_derivative_interpolated_2d_lower = np.full(R_meters_mask_lower.shape, np.nan)
+
+        for ii in range(len(time_slices_red_lower)):
+            R_meters_mask_lower[ii]=np.linspace(np.nanmin(R_meters[mask_total_lower[ii]]), np.nanmax(R_meters[mask_total_lower[ii]]), 100)
+            ne_line_interpolated_R_2d_lower[ii] = np.interp(R_meters_mask_lower[ii], (R_meters[mask_total_lower[ii]]) ,ne_line_interpolated_R_lower[ii])
+            ne_derivative_interpolated_2d_lower[ii] = np.interp(R_meters_mask_lower[ii], (R_meters[mask_total_lower[ii]]) ,derivative_interp_array_lower[ii])
+
+        R_meters_mask_lower = R_meters_mask_lower.T
+        ne_line_interpolated_R_2d_lower = ne_line_interpolated_R_2d_lower.T
+        ne_line_interpolated_R_2d_errors_lower = np.full(ne_line_interpolated_R_2d_lower.shape, np.mean(ne_line_interpolated_R_2d_lower)*0.091)
+        R_meters_2d_errors_lower =  np.full(R_meters_mask_lower.shape, np.mean(R_meters_mask_lower)*0.001)
+
+
+        print('------------------------------------------')
+        print('------------------------------------------')
+        print('----fit_data for the lower in R_meters----')
+        print('------------------------------------------')
+        print('------------------------------------------')
+        
+        out_put_R_lower = fit_data(R_meters_mask_lower.T, (ne_line_interpolated_R_2d_lower).T, R_meters_2d_errors_lower.T, ne_line_interpolated_R_2d_errors_lower.T, kernel_method=args.kernel, \
+                          optimise_all_params=True, slices_nbr=10, plot_fit=False, dx_data=[2.47914, 2.96031922 ], dy_data=[(-7.15450744*1e19), (3.0*1e19)], dy_err=[(-3.15450744*1e19)*0.2])#dx_data=[2.47], dy_data=[(-4.15450744*1e19)], dy_err=[0.0])
+
+
+        print('-----------------------------------------------------------')
+        print('-----------------------------------------------------------')
+        print('----Transformation from R_space to rho_space for lower ----')
+        print('----Transformation from R_space to rho_space for upper ----')
+        print('-----------------------------------------------------------')
+        print('-----------------------------------------------------------')
+       
+
+
+        time_slices_real_lower = np.asarray(TimeReference[time_slices_red_lower])
+        time_slices_real_upper = np.asarray(TimeReference[time_slices_red_upper])
+
+
+        rho_mid_plane_lower = np.full((R_meters_mask_lower.shape[1],R_meters_mask_lower.shape[0] ), np.nan)
+        rho_mid_plane_upper = np.full((R_meters_mask_upper.shape[1],R_meters_mask_upper.shape[0]), np.nan)
+        Phi_meters_trans = np.zeros(100)
+        Z_meters_trans = np.zeros(100)
+
+        #loop over time in the time array
+        for ii in range(R_meters_mask_lower.shape[1]):
+            rho_mid_plane_lower[ii] = equimap.get(shot,time_slices_real_lower[ii] , R_meters_mask_lower[:,ii], Phi_meters_trans, Z_meters_trans, 'rho_pol_norm')
+
+        for ii in range(R_meters_mask_upper.shape[1]):
+            rho_mid_plane_upper[ii] = equimap.get(shot,time_slices_real_upper[ii] , R_meters_mask_upper[:,ii], Phi_meters_trans, Z_meters_trans, 'rho_pol_norm')
 
 
 
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
+
+        mask_lower_rho =  rho_mid_plane_lower<np.nanmax(rho_pol_norm_base_min_lower)
+        rho_mid_plane_lower = np.ma.array(rho_mid_plane_lower, mask = ~mask_lower_rho, fill_value=np.nan)
+        rho_mid_plane_lower_masked = rho_mid_plane_lower.filled(np.nan)
+
+        mask_upper_rho = rho_mid_plane_upper<np.nanmax(rho_pol_norm_base_min_upper)
+        rho_mid_plane_upper = np.ma.array(rho_mid_plane_upper, mask = ~mask_upper_rho, fill_value=np.nan)
+        rho_mid_plane_upper_masked = rho_mid_plane_upper.filled(np.nan)
+
+
+
+        derivative_density_upper = -(np.asarray(out_put_R_upper['fit_dydx']))
+        derivative_density_lower = -(np.asarray(out_put_R_lower['fit_dydx']))
+        electron_density_der_upper = np.full(rho_mid_plane_upper_masked.shape, np.nan)
+        electron_density_der_lower = np.full(rho_mid_plane_lower_masked.shape, np.nan)
+
+
+        #Check which on of the data sets have more nans and interpolate the one having more into the other in rho 
+        if(np.isnan(rho_mid_plane_upper_masked).sum()<np.isnan(rho_mid_plane_lower_masked).sum()):
+            for ii in range(electron_density_der_lower.shape[0]):
+                electron_density_der_lower[ii]= np.interp(rho_mid_plane_upper_masked[ii,:], rho_mid_plane_lower_masked[ii,:], derivative_density_lower[ii], left=np.nan, right=np.nan)
+            rho_total_final = rho_mid_plane_upper_masked
+            average_der_density = np.nanmean((electron_density_der_lower, derivative_density_upper),axis=0)
+
+        else:
+            for ii in range(electron_density_der_upper.shape[0]):
+                electron_density_der_upper[ii]= np.interp(rho_mid_plane_lower_masked[ii,:], rho_mid_plane_upper_masked[ii,:] ,derivative_density_upper[ii], left=np.nan, right=np.nan)
+            rho_total_final = rho_mid_plane_lower_masked
+            #Calculate the average density of the upper and lower data samples 
+            average_der_density = np.nanmean((derivative_density_lower, electron_density_der_upper),axis=0)
+            
+
+
+        #Interpolate the electron density to the time slices that we are working in
+        #Interpolate the rho_pol_norm_ref that is associated to the electron density to the same time slices
+        electron_density_interpolated=[]
+        rho_pol_norm_ref_interpolated = []
+        for ii in range(electron_density.shape[0]):
+            rho_pol_norm_ref_interpolated.append(np.interp(time_slices_real_lower, TimeReference, rho_pol_norm_ref[ii,:]))
+            electron_density_interpolated.append(np.interp(time_slices_real_lower, TimeReference, electron_density[ii,:]))
+        electron_density_interpolated = (np.asarray(electron_density_interpolated)).T # transpose from (space,time) to (time, space)  shape
+        rho_pol_norm_ref_interpolated = (np.asarray(rho_pol_norm_ref_interpolated)).T # transpose from (space,time) to (time, space)  shape
+
+
+        #concatenate the rho_pol_norm_ref_interpolated with rho_mid_plane_upper_masked or rho_mid_plane_lower_masked
+        rho_pol_norm_ref_concat = (np.concatenate((rho_total_final,rho_pol_norm_ref_interpolated), axis=1))#concatenate along the second axis ======> in space
+        electron_density_concat = (np.concatenate((average_der_density, electron_density_interpolated), axis=1))#concatenate along the second axis ======> in space
+       
+
+
+
+        #prepare for sorting arrays :
+
+        array_index = (np.argsort(rho_pol_norm_ref_concat, axis=1))
+        rho_total_sort_final = np.asarray(list(map(lambda x, y: y[x], array_index, rho_pol_norm_ref_concat)))
+        ne_line_total_sort_final = np.asarray(list(map(lambda x, y: y[x], array_index, electron_density_concat)))
+        
+        #check for nans in density and mask over the values that corresponds to the nans in the rho
+        if np.isnan(ne_line_total_sort_final).any(): 
+            mask_rho_total_sort_final = np.ma.array(rho_total_sort_final, mask = np.isnan(ne_line_total_sort_final), fill_value=np.nan)
+            rho_total_sort_final = mask_rho_total_sort_final.filled(np.nan)
+
+        #check for nans in rho and mask over the values that corresponds to the nans in the ne_profile
+        if np.isnan(rho_total_sort_final).any(): 
+            mask_ne_line_total_sort = np.ma.array(ne_line_total_sort_final, mask = np.isnan(rho_total_sort_final), fill_value=np.nan)
+            ne_line_total_sort_final = mask_ne_line_total_sort.filled(np.nan)
+
+        #add an 2 extra point to rho total
+        rho_total_sort_final = np.insert(rho_total_sort_final, 0, 0.02, axis=1)#index, value
+        rho_total_sort_final = np.insert(rho_total_sort_final, 0, 0.01, axis=1)
+        #the maximum should be by time slice and should 
+        maximum_elements_array = []
+        for ii in range(ne_line_total_sort_final.shape[0]):
+            maximum_elements_array.append(np.nanmax(ne_line_total_sort_final[ii]))
+        maximum_elements_array = np.asarray(maximum_elements_array)
+                                          
+        #concatenate the array of the first elements with the total density elements
+        ne_line_total_sort_final = np.concatenate((maximum_elements_array[:,None], ne_line_total_sort_final),axis=1)
+        ne_line_total_sort_final = np.concatenate((maximum_elements_array[:,None], ne_line_total_sort_final),axis=1)
+        
+        rho_total_sort_final_error = np.full(rho_total_sort_final.shape,(rho_total_sort_final)*0.001)
+        ne_line_total_sort_final_error = np.full(ne_line_total_sort_final.shape, (ne_line_total_sort_final)*0.01)
+
+
+        out_put_final = fit_data(rho_total_sort_final , ne_line_total_sort_final , rho_total_sort_final_error , ne_line_total_sort_final_error , kernel_method='Gibbs_Kernel', \
+                                       optimise_all_params=True, slices_nbr=10, plot_fit=True, dx_data=None, dy_data=None, dy_err=None)#dx_data=[0.0], dy_data=[0.0], dy_err=[0.26619637e+19])#        
+
+
+        ne_density_fit = (np.asarray(out_put_final['fit_y']))
+        rho_total_fit =  (np.asarray(out_put_final['fit_x']))
+        Time_index = np.asarray(out_put_final['fit_time_slice'])
+
+        #interpolate rho_pol_norm_base along time and space to rho_total_fit
+        
+        density_pol_norm_base_interp = np.full((rho_pol_norm_base.shape[0],rho_total_fit.shape[0],rho_pol_norm_base.shape[2]),np.nan)
+        
+        for ii in range(density_pol_norm_base_interp.shape[0]):
+            for jj in range(density_pol_norm_base_interp.shape[1]):
+                density_pol_norm_base_interp[ii,jj] = np.interp(rho_pol_norm_base[ii, Time_index[jj]], rho_total_fit[jj],  ne_density_fit[jj], left=0, right=0)
+        
+
+        rho_pol_norm_base_sample = rho_pol_norm_base[:, Time_index, :] #will have the size of (line of sight, Time_index, space)
+        mask_profile_rho = np.ones(rho_pol_norm_base_sample.shape, dtype=bool)
+        for ii in range(mask_profile_rho.shape[1]):
+            mask_profile_rho[:,ii,:] = rho_pol_norm_base_sample[:,ii,:]<np.nanmax(rho_total_fit[ii])#loop on time slices for the rho_total_fit
+
+        R_0 = np.full((R.shape[0]), np.nan)
+        Z_0 = np.full((R.shape[0]), np.nan)
+        distance_length = np.full((R.shape), np.nan)
+
+        #create a loop over the line of sight 
+        for ii in range(R.shape[0]):
+            R_0[ii] = R[ii,0]
+            Z_0[ii] = Z[ii,0]
+            distance_length[ii] = np.sqrt((R[ii]-R_0[ii])**2 + (Z[ii]-Z_0[ii])**2)
+
+        integrale_density_final = np.full((density_pol_norm_base_interp.shape[0],density_pol_norm_base_interp.shape[1]),np.nan)
+        density_pol_norm_base_interp[np.isnan(density_pol_norm_base_interp)]=0
+
+        for ii in range(density_pol_norm_base_interp.shape[0]):
+            for jj in range(density_pol_norm_base_interp.shape[1]):
+                integrale_density_final[ii, jj] = (integrate.trapz(density_pol_norm_base_interp[ii, jj],distance_length[ii]))
+        import ipdb; ipdb.set_trace()
+
 
         '''
-        ne_line_total_errors_lower = np.full(ne_line_total_sort_lower.shape, np.mean(ne_line_total_sort_lower)*0.3)
-        rho_total_errors_lower =  np.full(rho_total_sort_lower.shape, np.mean(rho_total_sort_lower)*0.01)
-        
-        out_put = fit_data(rho_total_sort_lower.T, (ne_line_total_sort_lower).T, rho_total_errors_lower.T, ne_line_total_errors_lower.T, kernel_method=args.kernel, \
-                          optimise_all_params=True, slices_nbr=10, plot_fit=True, dx_data=None, dy_data=None, dy_err=None)
+ 
+        ###Some basic setup
+        plot_save_directory = './upper_figuers'
+        if not plot_save_directory.endswith('/'):
+            plot_save_directory = plot_save_directory+'/'
+        if not os.path.isdir(plot_save_directory):
+            os.makedirs(plot_save_directory)
+            
+        for ii in range(len(time_slices_red_upper)):
+            fig = plt.figure()
+            fig.suptitle((('Raw data_upper')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
+            ax = fig.add_subplot(111)
+            ax.plot(R_real_ref[:,time_slices_red_lower[ii]],electron_density[:,time_slices_red_lower[ii]] , color='g', label = 'ne vers r from reflec real')
+            ax.plot(R_meters_mask_upper[:,time_slices_red_lower[ii]],-(np.asarray(out_put_R_upper['fit_dydx']))[time_slices_red_lower[ii]] , color='r', label = 'deriv ne vers r fit_data_upper')
+            plt.legend()
+            fig.savefig(plot_save_directory + 'time_slice_upper' + str(time_slices_red_lower[ii]) +'.png')
+            plt.close(fig)
+        print("Results of demonstration plotted in directory ./upper_figuers/\n")
 
-        import ipdb; ipdb.set_trace()
+        
+        plot_save_directory = './lower_figuers'
+        if not plot_save_directory.endswith('/'):
+            plot_save_directory = plot_save_directory+'/'
+        if not os.path.isdir(plot_save_directory):
+            os.makedirs(plot_save_directory)
+   
+        for ii in range(len(time_slices_red_lower)):
+            fig = plt.figure()
+            fig.suptitle((('Raw data_lower')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
+            ax = fig.add_subplot(111)
+            ax.plot(R_real_ref[:,time_slices_red_lower[ii]],electron_density[:,time_slices_red_lower[ii]] , color='g', label = 'ne vers r from reflec real')
+            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],-(np.asarray(out_put_R_lower['fit_dydx']))[time_slices_red_lower[ii]] , color='r', label = 'deriv ne vers r fit_data_lower')
+            plt.legend()
+            fig.savefig(plot_save_directory+ 'time_slice_upper' + str(time_slices_red_lower[ii]) +'.png')
+            plt.close(fig)
+
+        print("Results of demonstration plotted in directory ./lower_figuers/\n")
+
+
+
+
         '''
-        
-        ne_line_total_errors_upper = np.full(ne_line_total_sort_upper.shape, np.mean(ne_line_total_sort_upper)*0.3)
-        rho_total_errors_upper =  np.full(rho_total_sort_upper.shape, np.mean(rho_total_sort_upper)*0.01)
-        
-        out_put = fit_data(rho_total_sort_upper.T, (ne_line_total_sort_upper).T, rho_total_errors_upper.T, ne_line_total_errors_upper.T, kernel_method=args.kernel, \
-                          optimise_all_params=True, nbr_pts=100, slices_nbr=10, plot_fit=True, dx_data=None, dy_data=None, dy_err=None)
 
         import ipdb; ipdb.set_trace()
-        
-
-
-
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-        #######################################################################################################################
-
-        #######################################################################################################################
-
-
-
-        '''
-        ne_line_total_errors = np.full(ne_line_total_sort.shape, np.mean(ne_line_total_sort)*0.3)
-        rho_total_errors =  np.full(rho_total_sort.shape, np.mean(rho_total_sort)*0.01)
-        
-        out_put = fit_data(rho_total_sort.T, (ne_line_total_sort).T, rho_total_errors.T, ne_line_total_errors.T, kernel_method=args.kernel, \
-                          optimise_all_params=True, slices_nbr=10, plot_fit=True, dx_data=None, dy_data=None, dy_err=None)
-        '''
-        ne_line_density_fit = np.asarray(out_put['fit_y'])
-        rho_total_fit_x =  np.asarray(out_put['fit_x'])
-
-        
-
-        ne_line_interpolated_R = np.full((ne_line_density_fit.shape[0],rho_mid_plane.shape[0]),np.nan)
-        for ii in range(ne_line_density_fit.shape[0]):
-            ne_line_interpolated_R[ii,:]= np.interp(rho_mid_plane[:,ii], rho_total_fit_x[ii,:], ne_line_density_fit[ii,:])
-        
-
-
-
-
-        import ipdb; ipdb.set_trace()
-        derivative_interp_array = np.full(ne_line_interpolated_R.shape, np.nan) 
-        for ii in range(derivative_interp_array.shape[1]):
-            derivative_interp_array[ii,:] = np.gradient(ne_line_interpolated_R[ii,:], R_meters[ii])
-
-
-
-
-
-
-         
-        import ipdb; ipdb.set_trace()
-        return rho_total_sort_lower.T, ne_line_total_sort_lower.T, rho_total_errors_lower.T, ne_line_total_errors_lower.T
+        return rho_total_sort_upper.T, ne_line_total_sort_upper.T, rho_total_errors_upper.T, ne_line_total_errors_upper.T
 
 
 if __name__ == '__main__':
@@ -663,7 +886,7 @@ if __name__ == '__main__':
     
     import ipdb; ipdb.set_trace()
     '''
-    out = fit_data(x, y, ex , ey, kernel_method=args.kernel, \
-                       optimise_all_params=True, slices_nbr=10, plot_fit=True)
+    #out = fit_data(x, y, ex , ey, kernel_method=args.kernel, \
+                       #optimise_all_params=True, slices_nbr=10, plot_fit=True)
     #import pdb; pdb.set_trace()
 

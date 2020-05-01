@@ -44,7 +44,7 @@ def plot_data(fit_x_values, minimum, maximum, \
     if not plot_save_directory.endswith('/'):
         plot_save_directory = plot_save_directory+'/'
     if not os.path.isdir(plot_save_directory):
-            os.makedirs(plot_save_directory)
+        os.makedirs(plot_save_directory)
             
             
 
