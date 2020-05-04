@@ -705,8 +705,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         electron_density_concat = (np.concatenate((average_der_density, electron_density_interpolated), axis=1))#concatenate along the second axis ======> in space
        
 
-
-
         #prepare for sorting arrays :
 
         array_index = (np.argsort(rho_pol_norm_ref_concat, axis=1))
@@ -781,6 +779,118 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         import ipdb; ipdb.set_trace()
 
 
+
+
+        #try the comparison between the interferometer data befor and after integration 
+        #prepare for sorting arrays :
+
+        array_index = (np.argsort(rho_total_final, axis=1))
+        rho_total_sort_final1 = np.asarray(list(map(lambda x, y: y[x], array_index, rho_total_final)))
+        ne_line_total_sort_final1 = np.asarray(list(map(lambda x, y: y[x], array_index, average_der_density)))
+        
+        #check for nans in density and mask over the values that corresponds to the nans in the rho
+        if np.isnan(ne_line_total_sort_final1).any(): 
+            mask_rho_total_sort_final1 = np.ma.array(rho_total_sort_final1, mask = np.isnan(ne_line_total_sort_final1), fill_value=np.nan)
+            rho_total_sort_final1 = mask_rho_total_sort_final1.filled(np.nan)
+
+        #check for nans in rho and mask over the values that corresponds to the nans in the ne_profile
+        if np.isnan(rho_total_sort_final1).any(): 
+            mask_ne_line_total_sort1 = np.ma.array(ne_line_total_sort_final1, mask = np.isnan(rho_total_sort_final1), fill_value=np.nan)
+            ne_line_total_sort_final1 = mask_ne_line_total_sort1.filled(np.nan)
+
+        #add an 2 extra point to rho total
+        rho_total_sort_final1 = np.insert(rho_total_sort_final1, 0, 0.02, axis=1)#index, value
+        rho_total_sort_final1 = np.insert(rho_total_sort_final1, 0, 0.01, axis=1)
+        #the maximum should be by time slice and should 
+        maximum_elements_array1 = []
+        for ii in range(ne_line_total_sort_final1.shape[0]):
+            maximum_elements_array1.append(np.nanmax(ne_line_total_sort_final1[ii]))
+        maximum_elements_array1 = np.asarray(maximum_elements_array1)
+                                          
+        #concatenate the array of the first elements with the total density elements
+        ne_line_total_sort_final1 = np.concatenate((maximum_elements_array[:,None], ne_line_total_sort_final1),axis=1)
+        ne_line_total_sort_final1 = np.concatenate((maximum_elements_array[:,None], ne_line_total_sort_final1),axis=1)
+        
+        rho_total_sort_final1_error = np.full(rho_total_sort_final1.shape,(rho_total_sort_final1)*0.001)
+        ne_line_total_sort_final1_error = np.full(ne_line_total_sort_final1.shape, (ne_line_total_sort_final1)*0.01)
+
+
+        out_put_final1 = fit_data(rho_total_sort_final1 , ne_line_total_sort_final1 , rho_total_sort_final1_error , ne_line_total_sort_final1_error , kernel_method='Gibbs_Kernel', \
+                                       optimise_all_params=True, slices_nbr=10, plot_fit=False, dx_data=None, dy_data=None, dy_err=None)#dx_data=[0.0], dy_data=[0.0], dy_err=[0.26619637e+19])#        
+
+
+        ne_density_fit1 = (np.asarray(out_put_final1['fit_y']))
+        rho_total_fit1 =  (np.asarray(out_put_final1['fit_x']))
+        Time_index1 = np.asarray(out_put_final1['fit_time_slice'])
+
+        #interpolate rho_pol_norm_base along time and space to rho_total_fit
+        
+        density_pol_norm_base_interp1 = np.full((rho_pol_norm_base.shape[0],rho_total_fit1.shape[0],rho_pol_norm_base.shape[2]),np.nan)
+        
+        for ii in range(density_pol_norm_base_interp1.shape[0]):
+            for jj in range(density_pol_norm_base_interp1.shape[1]):
+                density_pol_norm_base_interp1[ii,jj] = np.interp(rho_pol_norm_base[ii, Time_index1[jj]], rho_total_fit1[jj],  ne_density_fit1[jj], left=0, right=0)
+        
+
+        rho_pol_norm_base_sample1 = rho_pol_norm_base[:, Time_index1, :] #will have the size of (line of sight, Time_index, space)
+
+        R_01 = np.full((R.shape[0]), np.nan)
+        Z_01 = np.full((R.shape[0]), np.nan)
+        distance_length1 = np.full((R.shape), np.nan)
+
+        #create a loop over the line of sight 
+        for ii in range(R.shape[0]):
+            R_01[ii] = R[ii,0]
+            Z_01[ii] = Z[ii,0]
+            distance_length1[ii] = np.sqrt((R[ii]-R_01[ii])**2 + (Z[ii]-Z_01[ii])**2)
+
+        integrale_density_final1 = np.full((density_pol_norm_base_interp1.shape[0],density_pol_norm_base_interp1.shape[1]),np.nan)
+        density_pol_norm_base_interp1[np.isnan(density_pol_norm_base_interp1)]=0
+
+        for ii in range(density_pol_norm_base_interp1.shape[0]):
+            for jj in range(density_pol_norm_base_interp1.shape[1]):
+                integrale_density_final1[ii, jj] = (integrate.trapz(density_pol_norm_base_interp1[ii, jj],distance_length1[ii]))
+        import ipdb; ipdb.set_trace()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        density4 = electron_density_ne/Normalization_constant
+        ###Some basic setup
+        plot_save_directory = './comparison_figuers'
+        if not plot_save_directory.endswith('/'):
+            plot_save_directory = plot_save_directory+'/'
+        if not os.path.isdir(plot_save_directory):
+            os.makedirs(plot_save_directory)
+            
+        for ii in range(len(Time_index)):
+            fig = plt.figure()
+            fig.suptitle((('inter verses integrated  data')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
+            ax = fig.add_subplot(111)
+            ax.plot(integrale_density_final[:,Time_index[ii]] , color='r', label = 'ne from integration and fit procedure')
+            ax.plot(2*density4[:,Time_index][:,Time_index[ii]] , color='g', label = 'ne from interferometery without normalisation')
+            #ax.plot(2*electron_density_ne[:,Time_index][:,Time_index[ii]] , color='b', label = 'ne from inter using normalisaton')
+            ax.plot(integrale_density_final1[:,Time_index1[ii]] , color='k', label = 'ne from inter without concatination')
+
+            plt.legend()
+            fig.savefig(plot_save_directory + 'time_slice_upper' + str(Time_index[ii]) +'.png')
+            plt.close(fig)
+        print("Results of demonstration plotted in directory ./comparison_figuers/\n")
+
+        
+
         '''
  
         ###Some basic setup
@@ -802,6 +912,18 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         print("Results of demonstration plotted in directory ./upper_figuers/\n")
 
         
+
+
+
+
+
+
+
+
+
+
+
+
         plot_save_directory = './lower_figuers'
         if not plot_save_directory.endswith('/'):
             plot_save_directory = plot_save_directory+'/'
