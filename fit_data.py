@@ -35,7 +35,7 @@ except Exception as err:
 
 def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordinates_errors=None, \
              kernel_method='RQ_Kernel', optimise_all_params=True, slices_optim_nbr=10, nbr_pts=100, \
-             slices_nbr=10, plot_fit=True, dx_data=[0.0], dy_data=[0.0], dy_err=[0.0]):
+             slices_nbr=10, plot_fit=True, x_fix_data=[0.0], dy_fix_data=[0.0], dy_fix_err=[0.0], boundary_max=None, boundary_min=None, boundary_derv=None):
 
     '''
     Fit Y profile as a function of X quantity
@@ -54,9 +54,9 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
     Y_coordinate_errors : 2D array size (points, time)
         Y profile errors
 
-    dx_data : 
-    dy_data : 
-    dy_err  : 
+    x_fix_data : 
+    dy_fix_data : 
+    dy_fix_err  : 
     kernel_method : string (default='RQ_Kernel')
         which kernel use for fit. One of
 
@@ -206,7 +206,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             gpr_object.set_kernel(kernel=kernel)
             #     Define the raw data and associated errors to be fitted
             gpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
-                                        dxdata=dx_data, dydata=dy_data, dyerr=dy_err )     # Example of applying derivative constraints
+                                        dxdata=x_fix_data, dydata=dy_fix_data, dyerr=dy_fix_err )     # Example of applying derivative constraints
 
             #     Define the search criteria for data fitting routine and error fitting routine
             if optimise_all_params:
@@ -236,7 +236,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             hsgpr_error_kernel_hyppar_bounds = np.atleast_2d()
             hsgpr_object = GPR1D.GaussianProcessRegression1D()
             hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
-                                      dxdata=dx_data, dydata=dy_data, dyerr=dy_err )
+                                      dxdata=x_fix_data, dydata=dy_fix_data, dyerr=dy_fix_err )
 
             #if optimise_all_params:
             #     Default optimizer is gradient ascent / descent - extremely robust but slow
@@ -345,7 +345,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             nigpr_error_kernel_hyppar_bounds = np.atleast_2d()
             nigpr_object = GPR1D.GaussianProcessRegression1D()
             nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
-                                      dxdata=dx_data, dydata=dy_data, dyerr=dy_err )
+                                      dxdata=x_fix_data, dydata=dy_fix_data, dyerr=dy_fix_err )
             if optimise_all_params:
                 nigpr_object.set_kernel(kernel=kernel)
                 nigpr_object.set_error_kernel(kernel=error_kernel)
@@ -483,7 +483,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             gpr_object = GPR1D.GaussianProcessRegression1D()
             gpr_object.set_kernel(kernel=kernel)
             gpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
-                                        dxdata=dx_data, dydata=dy_data, dyerr=dy_err )     # Example of applying derivative constraints
+                                        dxdata=x_fix_data, dydata=dy_fix_data, dyerr=dy_fix_err )     # Example of applying derivative constraints
 
             if optimise_all_params:
                 gpr_object.set_search_parameters(epsilon=1.0e-2)
@@ -504,7 +504,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             hsgpr_error_kernel_hyppar_bounds = np.atleast_2d()
             hsgpr_object = GPR1D.GaussianProcessRegression1D()
             hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
-                                      dxdata=dx_data, dydata=dy_data, dyerr=dy_err )
+                                      dxdata=x_fix_data, dydata=dy_fix_data, dyerr=dy_fix_err )
 
             if optimise_all_params:
                 hsgpr_object.set_kernel(kernel=kernel)
@@ -619,7 +619,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             nigpr_error_kernel_hyppar_bounds = np.atleast_2d()
             nigpr_object = GPR1D.GaussianProcessRegression1D()
             nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
-                                      dxdata=dx_data, dydata=dy_data, dyerr=dy_err )
+                                      dxdata=x_fix_data, dydata=dy_fix_data, dyerr=dy_fix_err )
             #if optimise_all_params:
             nigpr_object.set_kernel(kernel=kernel)
             nigpr_object.set_error_kernel(kernel=error_kernel)
@@ -696,7 +696,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             print('computing the time for optimisating the ' , slices_optim_nbr,  'slices')
             optimized_values = Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, \
                                             Y_coordinates_errors,  kernel_method, slices_optim_nbr, \
-                                            dx_data, dy_data,dy_err, nbr_pts, True)
+                                            x_fix_data, dy_fix_data,dy_fix_err, nbr_pts, True)
             if X_coordinates_errors is not None:
                 if kernel_method == 'RQ_Kernel': 
                     default_configuartion = {
@@ -748,9 +748,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                     'fit_dydx_x_error': [], \
                     'fit_dydy_y_error': [], \
                     'fit_zinteg_array': [], \
-                    'X_fit_max': [], \
-                    'X_fit_min': [], \
-                    'dy_fit_min': [], \
                     'fit_time_slice': [], \
                     'x': X_coordinates, \
                     'y': Y_coordinates, \
@@ -784,6 +781,23 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 X_errors =  np.full(X_coordinates.shape, np.mean(X_reduced)*0.05)
             elif X_coordinates_errors is None:
                 X_errors = 'None'
+            
+            #introduce the boundary conditions as requested by the user:
+            if boundary_max is not None:
+                #print('please note that you have requested to impose boundary ')
+                #print('boundary conditions to the profile fitted, so make sure')
+                #print('to enter all the required infromation')
+                if boundary_min is not None:
+                    if boundary_derv is not None: 
+                        x_fix_data  = [boundary_min[i], boundary_max[i]]
+                        dy_fix_err  = [boundary_derv[i]*0.2]
+                        dy_fix_data = [boundary_derv[i], (-1)*dy_fix_err[0]]
+                    else:
+                        raise RuntimeError('Input derivative boundary conditions is mandatory')
+                else:
+                    raise RuntimeError('Input minimum boundary conditions is mandatory')
+
+                        #import ipdb;ipdb.set_trace()
 
             minimum =(X_reduced).min()
             maximum =(X_reduced).max()
@@ -812,7 +826,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 gpr_object.set_kernel(kernel=kernel)
                 #     Define the raw data and associated errors to be fitted
                 gpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
-                                            dxdata=dx_data, dydata=dy_data, dyerr=dy_err )     # Example of applying derivative constraints
+                                            dxdata=x_fix_data, dydata=dy_fix_data, dyerr=dy_fix_err )     # Example of applying derivative constraints
 
                 #     Define the search criteria for data fitting routine and error fitting routine
                 if optimise_all_params:
@@ -872,7 +886,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
                 hsgpr_object = GPR1D.GaussianProcessRegression1D()
                 hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
-                                          dxdata=dx_data, dydata=dy_data, dyerr=dy_err )
+                                          dxdata=x_fix_data, dydata=dy_fix_data, dyerr=dy_fix_err )
 
                 if optimise_all_params:
                 #     Default optimizer is gradient ascent / descent - extremely robust but slow
@@ -1032,7 +1046,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
                 nigpr_object = GPR1D.GaussianProcessRegression1D()
                 nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
-                                          dxdata=dx_data, dydata=dy_data, dyerr=dy_err )
+                                          dxdata=x_fix_data, dydata=dy_fix_data, dyerr=dy_fix_err )
                 if optimise_all_params:
                     nigpr_object.set_kernel(kernel=kernel)
                     nigpr_object.set_error_kernel(kernel=error_kernel)
@@ -1095,9 +1109,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 fit_data['fit_dydx'].append(hs_fit_dydx_values)
                 fit_data['fit_dydy_y_error'].append(hs_fit_dydx_errors)
                 #fit_data['fit_zinteg_array'].append(integ_array)
-                fit_data['X_fit_max'].append(maximum)
-                fit_data['X_fit_min'].append(minimum)
-                fit_data['dy_fit_min'].append(hs_fit_dydx_values.min())
                 fit_data['fit_time_slice'].append(i)
             if (X_coordinates_errors is not None):
                 fit_data['fit_x'].append(fit_x_values)
@@ -1106,9 +1117,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 fit_data['fit_dydx'].append(ni_fit_dydx_values)
                 fit_data['fit_dydy_y_error'].append(ni_fit_dydx_errors)
                 fit_data['fit_zinteg_array'].append(integ_array[i])
-                fit_data['X_fit_max'].append(maximum)
-                fit_data['X_fit_min'].append(minimum)
-                fit_data['dy_fit_min'].append(ni_fit_dydx_values.min())
                 fit_data['fit_time_slice'].append(i)
 
 
