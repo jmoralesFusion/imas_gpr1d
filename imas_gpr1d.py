@@ -427,7 +427,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         index_sort = np.argsort(rho_total, axis=0)
         rho_total_sort = (np.array(list(map(lambda x, y: y[x], index_sort.T, rho_total.T)))).T
         ne_line_total_sort = np.array(list(map(lambda x, y: y[x], index_sort.T, ne_line_total.T))).T
-
         if((np.any(np.isnan(ne_line_total_sort))) or (np.any(np.isinf(ne_line_total_sort)))):
             print('please check the following non finite data elements')
             NaNs_index = np.argwhere(np.isnan(ne_line_total_sort))
@@ -448,11 +447,11 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         electron_density_ne_upper = np.full(electron_density_ne.shape, np.nan)
         rho_pol_norm_base_min_upper = np.full((rho_pol_norm_base_min.shape) , np.nan)
 
-        electron_density_ne_upper = np.ma.array(electron_density_ne, mask = ~mask_upper_LOS, fill_value=np.nan)
-        rho_pol_norm_base_min_upper = np.ma.array(rho_pol_norm_base_min, mask = ~mask_upper_LOS, fill_value=np.nan)
+        electron_density_ne_upper_1 = np.ma.array(electron_density_ne, mask = ~mask_upper_LOS, fill_value=np.nan)
+        rho_pol_norm_base_min_upper_1 = np.ma.array(rho_pol_norm_base_min, mask = ~mask_upper_LOS, fill_value=np.nan)
 
-        electron_density_ne_upper = electron_density_ne_upper.filled()
-        rho_pol_norm_base_min_upper = rho_pol_norm_base_min_upper.filled()
+        electron_density_ne_upper = electron_density_ne_upper_1.filled()
+        rho_pol_norm_base_min_upper = rho_pol_norm_base_min_upper_1.filled()
 
         #prepare for concatenation :
         for jj in range(rho_total_upper.shape[1]):
@@ -463,16 +462,59 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         index_sort_upper = np.argsort(rho_total_upper, axis=0)
         rho_total_sort_upper = (np.array(list(map(lambda x, y: y[x], index_sort_upper.T, rho_total_upper.T)))).T
         ne_line_total_sort_upper = np.array(list(map(lambda x, y: y[x], index_sort_upper.T, ne_line_total_upper.T))).T
-        
-        ne_line_total_errors_upper = np.full((ne_line_total_sort_upper).shape, (ne_line_total_sort_upper)*0.05)
-        rho_total_errors_upper =  np.full((rho_total_sort_upper).shape, (rho_total_sort_upper)*0.01)
+
+
+        ##############################################################################################################
+        #############################check and remove nans from datat sets ###########################################
+        ##############################################################################################################
+
+        #check for the nans in both data sets and mask over the values that corresponds to the nans in the rho:
+        if np.isnan(ne_line_total_sort_upper).any(): 
+            rho_total_sort_upper_nan = np.ma.array(rho_total_sort_upper, mask = np.isnan(ne_line_total_sort_upper), fill_value=np.nan)
+            rho_total_sort_upper = rho_total_sort_upper_nan.filled(np.nan)
+
+        if np.isnan(rho_total_sort_upper).any(): 
+            ne_line_total_sort_upper_nan = np.ma.array(ne_line_total_sort_upper, mask = np.isnan(rho_total_sort_upper), fill_value=np.nan)
+            ne_line_total_sort_upper = ne_line_total_sort_upper_nan.filled(np.nan)
+
+
+
+
+        new_space_dimension_upper            = len(rho_total_sort_upper[:,0][~np.isnan(rho_total_sort_upper[:,0])])
+        new_time_dimension_upper            = ne_line_total_sort_upper.shape[1]
+
+        for ii in range(ne_line_total_sort_upper.shape[1]):
+            if (len(rho_total_sort_upper[:,ii][~np.isnan(rho_total_sort_upper[:,ii])])<new_space_dimension_upper):
+                new_space_dimension_upper = len(rho_total_sort_upper[:,ii][~np.isnan(rho_total_sort_upper[:,ii])])
+
+
+        rho_total_sort_upper_nonan     = np.full((new_space_dimension_upper, new_time_dimension_upper), np.nan)
+        ne_line_total_sort_upper_nonan = np.full((new_space_dimension_upper, new_time_dimension_upper), np.nan)
+
+        #import ipdb;ipdb.set_trace()
+
+        for ii in range(ne_line_total_sort_upper.shape[1]):
+            if(len(rho_total_sort_upper[:,ii][~np.isnan(rho_total_sort_upper[:,ii])])>new_space_dimension_upper):
+                difference_upper = len(rho_total_sort_upper[:,ii][~np.isnan(rho_total_sort_upper[:,ii])])-new_space_dimension_upper
+                rho_total_sort_upper_nonan[:,ii] = (rho_total_sort_upper[:,ii][~np.isnan(rho_total_sort_upper[:,ii])])[:-difference_upper]
+                ne_line_total_sort_upper_nonan[:,ii] = (ne_line_total_sort_upper[:,ii][~np.isnan(ne_line_total_sort_upper[:,ii])])[:-difference_upper]
+            else:
+                rho_total_sort_upper_nonan[:,ii] = (rho_total_sort_upper[:,ii][~np.isnan(rho_total_sort_upper[:,ii])])
+                ne_line_total_sort_upper_nonan[:,ii] = (ne_line_total_sort_upper[:,ii][~np.isnan(ne_line_total_sort_upper[:,ii])])
+
+        #import ipdb;ipdb.set_trace()
+
+
+
+        ne_line_total_errors_upper = np.full((ne_line_total_sort_upper_nonan).shape, (ne_line_total_sort_upper_nonan)*0.05)
+        rho_total_errors_upper =  np.full((rho_total_sort_upper_nonan).shape, (rho_total_sort_upper_nonan)*0.01)
 
         print('------------------------------')
         print('------------------------------')
         print('----fit_data for the upper----')
         print('------------------------------')
         print('------------------------------')
-        out_put_upper = fit_data(rho_total_sort_upper.T, (ne_line_total_sort_upper).T, rho_total_errors_upper.T, ne_line_total_errors_upper.T, kernel_method=args.kernel, \
+        out_put_upper = fit_data(rho_total_sort_upper_nonan.T, (ne_line_total_sort_upper_nonan).T, rho_total_errors_upper.T, ne_line_total_errors_upper.T, kernel_method=args.kernel, \
                           optimise_all_params=True, nbr_pts=100, slices_nbr=10, plot_fit=False, x_fix_data=None, dy_fix_data=None, dy_fix_err=None)
 
         ne_line_density_fit_upper = (np.asarray(out_put_upper['fit_y']))
@@ -553,25 +595,72 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         electron_density_ne_lower = np.full(electron_density_ne.shape, np.nan)
         rho_pol_norm_base_min_lower = np.full((rho_pol_norm_base_min.shape) , np.nan)
 
-        electron_density_ne_lower = np.ma.array(electron_density_ne, mask = ~mask_lower_LOS, fill_value=np.nan)
-        rho_pol_norm_base_min_lower = np.ma.array(rho_pol_norm_base_min, mask = ~mask_lower_LOS, fill_value=np.nan)
+        electron_density_ne_lower_1 = np.ma.array(electron_density_ne, mask = ~mask_lower_LOS, fill_value=np.nan)
+        rho_pol_norm_base_min_lower_1 = np.ma.array(rho_pol_norm_base_min, mask = ~mask_lower_LOS, fill_value=np.nan)
 
-        electron_density_ne_lower = electron_density_ne_lower.filled(np.nan)
-        rho_pol_norm_base_min_lower = rho_pol_norm_base_min_lower.filled(np.nan)
+        electron_density_ne_lower = electron_density_ne_lower_1.filled(np.nan)
+        rho_pol_norm_base_min_lower = rho_pol_norm_base_min_lower_1.filled(np.nan)
 
         
         #prepare for concatenation :
         for jj in range(rho_total_lower.shape[1]):
             ne_line_total_lower[:,jj] = np.concatenate((electron_density_ne_lower[:,jj],integrale_density_ref[:,jj]))
             rho_total_lower[:,jj] = np.concatenate((rho_pol_norm_base_min_lower[:,jj],rho_pol_norm_ref[:,jj]))
-
         #prepare for sorting arrays :
         index_sort_lower = np.argsort(rho_total_lower, axis=0)
         rho_total_sort_lower = (np.array(list(map(lambda x, y: y[x], index_sort_lower.T, rho_total_lower.T)))).T
         ne_line_total_sort_lower = np.array(list(map(lambda x, y: y[x], index_sort_lower.T, ne_line_total_lower.T))).T
                 
-        ne_line_total_errors_lower = np.full(ne_line_total_sort_lower.shape, (ne_line_total_sort_lower)*0.05)
-        rho_total_errors_lower =  np.full(rho_total_sort_lower.shape, (rho_total_sort_lower)*0.01)
+
+
+        ##############################################################################################################
+        #############################check and remove nans from datat sets ###########################################
+        ##############################################################################################################
+
+        #check for the nans in both data sets and mask over the values that corresponds to the nans in the rho:
+        if np.isnan(ne_line_total_sort_lower).any(): 
+            rho_total_sort_lower_nan = np.ma.array(rho_total_sort_lower, mask = np.isnan(ne_line_total_sort_lower), fill_value=np.nan)
+            rho_total_sort_lower = rho_total_sort_lower_nan.filled(np.nan)
+
+        if np.isnan(rho_total_sort_lower).any(): 
+            ne_line_total_sort_lower_nan = np.ma.array(ne_line_total_sort_lower, mask = np.isnan(rho_total_sort_lower), fill_value=np.nan)
+            ne_line_total_sort_lower = ne_line_total_sort_lower_nan.filled(np.nan)
+
+
+
+
+        new_space_dimension_lower            = len(rho_total_sort_lower[:,0][~np.isnan(rho_total_sort_lower[:,0])])
+        new_time_dimension_lower             = ne_line_total_sort_lower.shape[1]
+
+        for ii in range(ne_line_total_sort_lower.shape[1]):
+            if (len(rho_total_sort_lower[:,ii][~np.isnan(rho_total_sort_lower[:,ii])])<new_space_dimension_lower):
+                new_space_dimension_lower = len(rho_total_sort_lower[:,ii][~np.isnan(rho_total_sort_lower[:,ii])])
+
+
+        rho_total_sort_lower_nonan     = np.full((new_space_dimension_lower, new_time_dimension_lower), np.nan)
+        ne_line_total_sort_lower_nonan = np.full((new_space_dimension_lower, new_time_dimension_lower), np.nan)
+
+        #import ipdb;ipdb.set_trace()
+
+        for ii in range(ne_line_total_sort_lower.shape[1]):
+            if(len(rho_total_sort_lower[:,ii][~np.isnan(rho_total_sort_lower[:,ii])])>new_space_dimension_lower):
+                difference_lower = len(rho_total_sort_lower[:,ii][~np.isnan(rho_total_sort_lower[:,ii])])-new_space_dimension_lower
+                rho_total_sort_lower_nonan[:,ii] = (rho_total_sort_lower[:,ii][~np.isnan(rho_total_sort_lower[:,ii])])[:-difference_lower]
+                ne_line_total_sort_lower_nonan[:,ii] = (ne_line_total_sort_lower[:,ii][~np.isnan(ne_line_total_sort_lower[:,ii])])[:-difference_lower]
+            else:
+                rho_total_sort_lower_nonan[:,ii] = (rho_total_sort_lower[:,ii][~np.isnan(rho_total_sort_lower[:,ii])])
+                ne_line_total_sort_lower_nonan[:,ii] = (ne_line_total_sort_lower[:,ii][~np.isnan(ne_line_total_sort_lower[:,ii])])
+
+        #import ipdb;ipdb.set_trace()
+
+
+
+        ne_line_total_errors_lower = np.full((ne_line_total_sort_lower_nonan).shape, (ne_line_total_sort_lower_nonan)*0.05)
+        rho_total_errors_lower =  np.full((rho_total_sort_lower_nonan).shape, (rho_total_sort_lower_nonan)*0.01)
+
+
+        #ne_line_total_errors_lower = np.full(ne_line_total_sort_lower.shape, (ne_line_total_sort_lower)*0.05)
+        #rho_total_errors_lower =  np.full(rho_total_sort_lower.shape, (rho_total_sort_lower)*0.01)
     
         print('------------------------------')
         print('------------------------------')
@@ -580,7 +669,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         print('------------------------------')
 
 
-        out_put_lower = fit_data(rho_total_sort_lower.T, (ne_line_total_sort_lower).T, rho_total_errors_lower.T, ne_line_total_errors_lower.T, kernel_method=args.kernel, \
+        out_put_lower = fit_data(rho_total_sort_lower_nonan.T, (ne_line_total_sort_lower_nonan).T, rho_total_errors_lower.T, ne_line_total_errors_lower.T, kernel_method=args.kernel, \
                           optimise_all_params=True, slices_nbr=10, plot_fit=False, x_fix_data=None, dy_fix_data=None, dy_fix_err=None)
 
         ne_line_density_fit_lower = (np.asarray(out_put_lower['fit_y']))
@@ -646,7 +735,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         
         out_put_R_lower = fit_data(R_meters_mask_lower.T, (ne_line_interpolated_R_2d_lower).T, R_meters_2d_errors_lower.T, ne_line_interpolated_R_2d_errors_lower.T, kernel_method=args.kernel, \
-                          optimise_all_params=True, slices_nbr=10, plot_fit=False,x_fix_data=None, dy_fix_data=None, dy_fix_err=None, boundary_max=lower_maximum_R, boundary_min=lower_minimum_R, boundary_derv=lower_derivative_R)
+                          optimise_all_params=True, slices_nbr=10, plot_fit=False, x_fix_data=None, dy_fix_data=None, dy_fix_err=None, boundary_max=lower_maximum_R, boundary_min=lower_minimum_R, boundary_derv=lower_derivative_R)
 
         print('-----------------------------------------------------------')
         print('-----------------------------------------------------------')
@@ -655,7 +744,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         print('-----------------------------------------------------------')
         print('-----------------------------------------------------------')
        
-
 
         time_slices_real_lower = np.asarray(TimeReference[time_slices_red_lower])
         time_slices_real_upper = np.asarray(TimeReference[time_slices_red_upper])
@@ -677,35 +765,49 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         mask_lower_rho =  rho_mid_plane_lower<np.nanmax(rho_pol_norm_base_min_lower)
-        rho_mid_plane_lower = np.ma.array(rho_mid_plane_lower, mask = ~mask_lower_rho, fill_value=np.nan)
-        rho_mid_plane_lower_masked = rho_mid_plane_lower.filled(np.nan)
+        rho_mid_plane_lower_1 = np.ma.array(rho_mid_plane_lower, mask = ~mask_lower_rho, fill_value=np.nan)
+        rho_mid_plane_lower_masked = rho_mid_plane_lower_1.filled(np.nan)
 
         mask_upper_rho = rho_mid_plane_upper<np.nanmax(rho_pol_norm_base_min_upper)
-        rho_mid_plane_upper = np.ma.array(rho_mid_plane_upper, mask = ~mask_upper_rho, fill_value=np.nan)
-        rho_mid_plane_upper_masked = rho_mid_plane_upper.filled(np.nan)
+        rho_mid_plane_upper_1 = np.ma.array(rho_mid_plane_upper, mask = ~mask_upper_rho, fill_value=np.nan)
+        rho_mid_plane_upper_masked = rho_mid_plane_upper_1.filled(np.nan)
 
 
+        #apply the mask to both the upper and lower densities
+        derivative_density_upper_fit_output = -(np.asarray(out_put_R_upper['fit_dydx']))
+        derivative_density_lower_fit_output = -(np.asarray(out_put_R_lower['fit_dydx']))
 
-        derivative_density_upper = -(np.asarray(out_put_R_upper['fit_dydx']))
-        derivative_density_lower = -(np.asarray(out_put_R_lower['fit_dydx']))
+        derivative_density_upper_masked = np.ma.array(derivative_density_upper_fit_output, mask = ~mask_upper_rho, fill_value=np.nan)
+        derivative_density_lower_masked = np.ma.array(derivative_density_lower_fit_output, mask = ~mask_lower_rho, fill_value=np.nan)
+        derivative_density_upper = derivative_density_upper_masked.filled(np.nan)
+        derivative_density_lower = derivative_density_lower_masked.filled(np.nan)
         electron_density_der_upper = np.full(rho_mid_plane_upper_masked.shape, np.nan)
         electron_density_der_lower = np.full(rho_mid_plane_lower_masked.shape, np.nan)
 
+        #import ipdb;ipdb.set_trace()
 
         #Check which on of the data sets have more nans and interpolate the one having more into the other in rho 
         if(np.isnan(rho_mid_plane_upper_masked).sum()<np.isnan(rho_mid_plane_lower_masked).sum()):
             for ii in range(electron_density_der_lower.shape[0]):
                 electron_density_der_lower[ii]= np.interp(rho_mid_plane_upper_masked[ii,:], rho_mid_plane_lower_masked[ii,:], derivative_density_lower[ii], left=np.nan, right=np.nan)
-            rho_total_final = rho_mid_plane_upper_masked
+            #rho_total_final = np.nanmean((rho_mid_plane_upper_masked, rho_mid_plane_lower_masked),axis=0)
+            rho_total_final = ((rho_mid_plane_upper_masked))
+            #average_der_density = np.nanmean((derivative_density_lower, derivative_density_upper),axis=0)
             average_der_density = np.nanmean((electron_density_der_lower, derivative_density_upper),axis=0)
+            #average_der_density = np.ma.average((derivative_density_lower_masked, rho_mid_plane_upper_masked),axis=0)
+
+            print('nan upper < nan lower')
 
         else:
             for ii in range(electron_density_der_upper.shape[0]):
                 electron_density_der_upper[ii]= np.interp(rho_mid_plane_lower_masked[ii,:], rho_mid_plane_upper_masked[ii,:] ,derivative_density_upper[ii], left=np.nan, right=np.nan)
-            rho_total_final = rho_mid_plane_lower_masked
+            #rho_total_final = np.nanmean((rho_mid_plane_upper_masked, rho_mid_plane_lower_masked),axis=0)
+            rho_total_final = ((rho_mid_plane_lower_masked))
             #Calculate the average density of the upper and lower data samples 
+            #average_der_density = np.nanmean((derivative_density_lower, derivative_density_upper),axis=0)
             average_der_density = np.nanmean((derivative_density_lower, electron_density_der_upper),axis=0)
-            
+            #average_der_density = np.ma.average((derivative_density_lower_masked, derivative_density_upper_masked),axis=0)
+            print('nan upper > nan lower')
 
 
         #Interpolate the electron density to the time slices that we are working in
@@ -720,6 +822,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         #concatenate the rho_pol_norm_ref_interpolated with rho_mid_plane_upper_masked or rho_mid_plane_lower_masked
+
+
         rho_pol_norm_ref_concat = (np.concatenate((rho_total_final,rho_pol_norm_ref_interpolated), axis=1))#concatenate along the second axis ======> in space
         electron_density_concat = (np.concatenate((average_der_density, electron_density_interpolated), axis=1))#concatenate along the second axis ======> in space
        
@@ -753,11 +857,46 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         ne_line_total_sort_final = np.concatenate((maximum_elements_array[:,None], ne_line_total_sort_final),axis=1)
         ne_line_total_sort_final = np.concatenate((maximum_elements_array[:,None], ne_line_total_sort_final),axis=1)
         
-        rho_total_sort_final_error = np.full(rho_total_sort_final.shape,(rho_total_sort_final)*0.001)
-        ne_line_total_sort_final_error = np.full(ne_line_total_sort_final.shape, (ne_line_total_sort_final)*0.01)
 
-        out_put_final12 = fit_data(rho_total_sort_final , ne_line_total_sort_final , rho_total_sort_final_error , ne_line_total_sort_final_error , kernel_method='Gibbs_Kernel', \
-                                       optimise_all_params=True, slices_nbr=10, plot_fit=True, x_fix_data=None, dy_fix_data=None, dy_fix_err=None)
+        #import ipdb;ipdb.set_trace()
+
+
+
+
+        new_space_dimension_final            = len(rho_total_sort_final[0][~np.isnan(rho_total_sort_final[0])])
+        new_time_dimension_final             = ne_line_total_sort_final.shape[1]
+
+        for ii in range(ne_line_total_sort_final.shape[0]):
+            if ((len(rho_total_sort_final[ii][~np.isnan(rho_total_sort_final[ii])])<new_space_dimension_final) and (len(rho_total_sort_final[ii][~np.isnan(rho_total_sort_final[ii])])!=0) ):
+                new_space_dimension_final = len(rho_total_sort_final[ii][~np.isnan(rho_total_sort_final[ii])])
+
+
+        rho_total_sort_final_nonan     = []#np.full((new_space_dimension_final, new_time_dimension_final), np.nan)
+        ne_line_total_sort_final_nonan = []#np.full((new_space_dimension_final, new_time_dimension_final), np.nan)
+
+        for ii in range(ne_line_total_sort_final.shape[0]):
+            if(len(rho_total_sort_final[ii][~np.isnan(rho_total_sort_final[ii])])>new_space_dimension_final):
+                difference_final = len(rho_total_sort_final[ii][~np.isnan(rho_total_sort_final[ii])])-new_space_dimension_final
+                #rho_total_sort_final_nonan[:,ii] = (rho_total_sort_final[:,ii][~np.isnan(rho_total_sort_final[:,ii])])[:-difference_final]
+                rho_total_sort_final_nonan.append((rho_total_sort_final[ii][~np.isnan(rho_total_sort_final[ii])])[:-difference_final])
+                ne_line_total_sort_final_nonan.append((ne_line_total_sort_final[ii][~np.isnan(ne_line_total_sort_final[ii])])[:-difference_final])
+                #ne_line_total_sort_final_nonan[:,ii] = (ne_line_total_sort_final[:,ii][~np.isnan(ne_line_total_sort_final[:,ii])])[:-difference_final]
+            else:
+                #rho_total_sort_final_nonan[:,ii] = (rho_total_sort_final[:,ii][~np.isnan(rho_total_sort_final[:,ii])])
+                #ne_line_total_sort_final_nonan[:,ii] = (ne_line_total_sort_final[:,ii][~np.isnan(ne_line_total_sort_final[:,ii])])
+                rho_total_sort_final_nonan.append(rho_total_sort_final[ii][~np.isnan(rho_total_sort_final[ii])])
+                ne_line_total_sort_final_nonan.append(ne_line_total_sort_final[ii][~np.isnan(ne_line_total_sort_final[ii])])
+
+        rho_total_sort_final_nonan = np.asarray(rho_total_sort_final_nonan)
+        ne_line_total_sort_final_nonan = np.asarray(ne_line_total_sort_final_nonan)
+
+        rho_total_sort_final_error = np.full(rho_total_sort_final_nonan.shape,(rho_total_sort_final_nonan)*0.001)
+        ne_line_total_sort_final_error = np.full(ne_line_total_sort_final_nonan.shape, (ne_line_total_sort_final_nonan)*0.01)
+        #import ipdb;ipdb.set_trace()
+
+        '''
+        out_put_final12 = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan , rho_total_sort_final_error , ne_line_total_sort_final_error , kernel_method='Gibbs_Kernel', \
+                                       optimise_all_params=True, slices_nbr=10, plot_fit=False, x_fix_data=None, dy_fix_data=None, dy_fix_err=None)
 
 
 
@@ -765,9 +904,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         final_maximum_R    = (np.asarray(out_put_final12['fit_x'])).max(axis=1)
         final_minimum_R    = (np.asarray(out_put_final12['fit_x'])).min(axis=1)
         final_derivative_R = (np.asarray(out_put_final12['fit_dydx'])).min(axis=1)
-
-
-        out_put_final = fit_data(rho_total_sort_final , ne_line_total_sort_final , rho_total_sort_final_error , ne_line_total_sort_final_error , kernel_method='Gibbs_Kernel', \
+        '''
+        out_put_final = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan , rho_total_sort_final_error , ne_line_total_sort_final_error , kernel_method='Gibbs_Kernel', \
                                        optimise_all_params=True, slices_nbr=10, plot_fit=True, x_fix_data=None, dy_fix_data=None, dy_fix_err=None)#, boundary_max=final_maximum_R, boundary_min=final_minimum_R, boundary_derv=final_derivative_R)
 
         ne_density_fit = (np.asarray(out_put_final['fit_y']))
@@ -845,7 +983,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
 
-
+        '''
         #try the comparison between the interferometer data befor and after integration 
         #prepare for sorting arrays :
 
@@ -916,7 +1054,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             for jj in range(density_pol_norm_base_interp1.shape[1]):
                 integrale_density_final1[ii, jj] = (integrate.trapz(density_pol_norm_base_interp1[ii, jj],distance_length1[ii]))
         #import ipdb; ipdb.set_trace()
-
+        '''
 
 
 
@@ -947,7 +1085,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             ax.plot(integrale_density_final[:,Time_index[ii]] , color='r', label = 'ne from integration and fit procedure')
             ax.plot(2*density4[:,Time_index][:,Time_index[ii]] , color='g', label = 'ne from interferometery without normalisation')
             ax.plot(2*electron_density_ne[:,Time_index][:,Time_index[ii]] , color='b', label = 'ne from inter using normalisaton')
-            ax.plot(integrale_density_final1[:,Time_index1[ii]] , color='k', label = 'ne from inter without concatination')
+            #ax.plot(integrale_density_final1[:,Time_index1[ii]] , color='k', label = 'ne from inter without concatination')
 
             plt.legend()
             fig.savefig(plot_save_directory + 'time_slice' + str(Time_index[ii]) +'.png')
@@ -969,11 +1107,12 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             fig = plt.figure()
             fig.suptitle((('Raw data_upper')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
             ax = fig.add_subplot(111)
-            ax.plot(R_real_ref[:,time_slices_red_upper[ii]],electron_density[:,time_slices_red_upper[ii]] , color='g', label = 'ne vers r from reflec real')
-            ax.plot(R_meters_mask_upper[:,time_slices_red_upper[ii]],-(np.asarray(out_put_R_upper['fit_dydx']))[time_slices_red_upper[ii]] , color='r', label = 'deriv ne vers r fit_data_upper')
-            ax.plot(R_meters_mask_upper[:,time_slices_red_upper[ii]],average_der_density[time_slices_red_upper[ii]] , color='k', label = 'ne vers r from reflec real')
+            #ax.plot(R_real_ref[:,time_slices_red_upper[ii]],electron_density[:,time_slices_red_upper[ii]] ,'.',  color='g', label = 'ne vers r from reflec real')
+            ax.plot(R_meters_mask_upper[:,time_slices_red_upper[ii]],-(np.asarray(out_put_R_upper['fit_dydx']))[time_slices_red_upper[ii]] ,'.', color='b', label = 'deriv ne vers r fit_data_upper before masking ')
+            ax.plot(R_meters_mask_upper[:,time_slices_red_lower[ii]],derivative_density_upper[time_slices_red_lower[ii]] ,color='r', label = 'deriv ne vers r fit_data_upper after masking ')
+            ax.plot(R_meters_mask_upper[:,time_slices_red_upper[ii]],average_der_density[time_slices_red_upper[ii]] ,color='k', label = 'ne vers r from reflec real')
             plt.legend()
-            fig.savefig(plot_save_directory + 'time_slice_upper' + str(time_slices_red_lower[ii]) +'.png')
+            fig.savefig(plot_save_directory + 'time_slice' + str(time_slices_red_lower[ii]) +'.png')
             plt.close(fig)
         print("Results of demonstration plotted in directory ./upper_figuers/\n")
         
@@ -990,11 +1129,12 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             fig = plt.figure()
             fig.suptitle((('Raw data_lower')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
             ax = fig.add_subplot(111)
-            ax.plot(R_real_ref[:,time_slices_red_lower[ii]],electron_density[:,time_slices_red_lower[ii]] , color='g', label = 'ne vers r from reflec real')
-            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],-(np.asarray(out_put_R_lower['fit_dydx']))[time_slices_red_lower[ii]] , color='r', label = 'deriv ne vers r fit_data_lower')
-            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],average_der_density[time_slices_red_lower[ii]] , color='k', label = 'deriv ne vers r fit_data_lower')
+            #ax.plot(R_real_ref[:,time_slices_red_lower[ii]],electron_density[:,time_slices_red_lower[ii]] , color='g', label = 'ne vers r from reflec real')
+            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],-(np.asarray(out_put_R_lower['fit_dydx']))[time_slices_red_lower[ii]] , '.',color='b', label = 'deriv ne vers r fit_data_lower before masking ')
+            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],derivative_density_lower[time_slices_red_lower[ii]] ,color='r', label = 'deriv ne vers r fit_data_lower after masking')
+            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],average_der_density[time_slices_red_lower[ii]] ,color='k', label = 'deriv ne vers r fit_data_lower')
             plt.legend()
-            fig.savefig(plot_save_directory+ 'time_slice_upper' + str(time_slices_red_lower[ii]) +'.png')
+            fig.savefig(plot_save_directory+ 'time_slice' + str(time_slices_red_lower[ii]) +'.png')
             plt.close(fig)
 
         print("Results of demonstration plotted in directory ./lower_figuers/\n")
@@ -1013,19 +1153,22 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             fig.suptitle((('Raw data_lower average, upper')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
             ax = fig.add_subplot(111)
             ax.plot(R_real_ref[:,time_slices_red_lower[ii]],electron_density[:,time_slices_red_lower[ii]] , color='g', label = 'ne vers r from reflec real')
-            ax.plot(R_meters_mask_upper[:,time_slices_red_lower[ii]],-(np.asarray(out_put_R_upper['fit_dydx']))[time_slices_red_lower[ii]] , color='r', label = 'deriv ne vers r fit_data_upper')
-            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],-(np.asarray(out_put_R_lower['fit_dydx']))[time_slices_red_lower[ii]] , color='b', label = 'deriv ne vers r fit_data_lower')
-            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],average_der_density[time_slices_red_lower[ii]] , color='k', label = 'average fit_data_lower')
+            #ax.plot(R_meters_mask_upper[:,time_slices_red_lower[ii]],-(np.asarray(out_put_R_upper['fit_dydx']))[time_slices_red_lower[ii]] , '.',color='r', label = 'deriv ne vers r fit_data_upper')
+            ax.plot(R_meters_mask_upper[:,time_slices_red_lower[ii]],derivative_density_upper[time_slices_red_lower[ii]] ,color='r', label = 'deriv ne vers r fit_data_upper')
+            #ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],-(np.asarray(out_put_R_lower['fit_dydx']))[time_slices_red_lower[ii]] , '.',color='b', label = 'deriv ne vers r fit_data_lower')
+            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],derivative_density_lower[time_slices_red_lower[ii]] , '.',color='b', label = 'deriv ne vers r fit_data_lower')
+            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],average_der_density[time_slices_red_lower[ii]] ,color='k', label = 'average fit_data_lower')
             plt.legend()
             fig.savefig(plot_save_directory+ 'time_slice' + str(time_slices_red_lower[ii]) +'.png')
             plt.close(fig)
 
         print("Results of demonstration plotted in directory ./comparison_upper_average_lower_figuers/\n")
-
+ 
 
         
 
         import ipdb; ipdb.set_trace()
+
         return rho_total_sort_upper.T, ne_line_total_sort_upper.T, rho_total_errors_upper.T, ne_line_total_errors_upper.T
 
 

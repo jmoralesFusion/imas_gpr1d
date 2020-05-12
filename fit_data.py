@@ -767,16 +767,16 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             print('slice number : ', i)
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
-
-            Y_reduced = Y_reduced[~np.isnan(Y_reduced)]
-            X_reduced = X_reduced[~np.isnan(X_reduced)]
+            #check for errors and raise an error
+            #Y_reduced = Y_reduced[~np.isnan(Y_reduced)]
+            #X_reduced = X_reduced[~np.isnan(X_reduced)]
 
             Y_errors = Y_coordinates_errors[i]
-            Y_errors = Y_errors[~np.isnan(Y_errors)]
+            #Y_errors = Y_errors[~np.isnan(Y_errors)]
 
             if X_coordinates_errors is not None:
                 X_errors = X_coordinates_errors[i] 
-                X_errors = X_errors[~np.isnan(X_errors)]
+                #X_errors = X_errors[~np.isnan(X_errors)]
             elif (plot_fit and X_coordinates_errors is None):
                 X_errors =  np.full(X_coordinates.shape, np.mean(X_reduced)*0.05)
             elif X_coordinates_errors is None:
