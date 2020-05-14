@@ -222,10 +222,11 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         time_min = np.asarray([Time_eq.min(),Time_inter.min(),Time_ref.min()]).max()
         time_max = np.asarray([Time_eq.max(),Time_inter.max(),Time_ref.max()]).min()
-
+        
         #mask over the times of reflectometer and interferometer
         mask_time_reflec = (Time_ref > time_min) & (Time_ref < time_max)
         mask_time_interf = (Time_inter > time_min) & (Time_inter < time_max)
+        #import pdb; pdb.set_trace()
         if (len(Time_ref[mask_time_reflec])< len(Time_inter[mask_time_interf])):
             TimeReference = Time_ref[mask_time_reflec]
         else:
@@ -234,7 +235,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         ##########################
         ##########################
         #grab the reflectometer data and mask them 
-        R_real_ref       = idd_in.reflectometer_profile.channel[0].position.r.data
+        R_real_ref       = idd_in.reflectometer_profile.channel[0].position.r#.data
         electron_density = idd_in.reflectometer_profile.channel[0].n_e.data
         R_real_ref       = R_real_ref[:,mask_time_reflec]
         electron_density = electron_density[:,mask_time_reflec]
@@ -820,14 +821,24 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         electron_density_interpolated = (np.asarray(electron_density_interpolated)).T # transpose from (space,time) to (time, space)  shape
         rho_pol_norm_ref_interpolated = (np.asarray(rho_pol_norm_ref_interpolated)).T # transpose from (space,time) to (time, space)  shape
 
+        #create a mask and remove the value in the average density from the interferometry that are greater than 0.8 in rho
+        mask_rho_LCFS = rho_total_final< 0.8
+        
+        average_density_LCFS_masked = np.ma.array(average_der_density, mask = ~mask_rho_LCFS, fill_value=np.nan)
+        rho_total_final_LCFS_masked = np.ma.array(rho_total_final, mask = ~mask_rho_LCFS, fill_value=np.nan)
+        average_density_LCFS = average_density_LCFS_masked.filled(np.nan)
+        rho_total_final_LCFS =rho_total_final_LCFS_masked.filled(np.nan)
 
         #concatenate the rho_pol_norm_ref_interpolated with rho_mid_plane_upper_masked or rho_mid_plane_lower_masked
 
 
-        rho_pol_norm_ref_concat = (np.concatenate((rho_total_final,rho_pol_norm_ref_interpolated), axis=1))#concatenate along the second axis ======> in space
-        electron_density_concat = (np.concatenate((average_der_density, electron_density_interpolated), axis=1))#concatenate along the second axis ======> in space
+        rho_pol_norm_ref_concat = (np.concatenate((rho_total_final_LCFS,rho_pol_norm_ref_interpolated), axis=1))#concatenate along the second axis ======> in space
+        electron_density_concat = (np.concatenate((average_density_LCFS, electron_density_interpolated), axis=1))#concatenate along the second axis ======> in space
        
 
+        #rho_pol_norm_ref_concat = (np.concatenate((rho_total_final,rho_pol_norm_ref_interpolated), axis=1))#concatenate along the second axis ======> in space
+        #electron_density_concat = (np.concatenate((average_der_density, electron_density_interpolated), axis=1))#concatenate along the second axis ======> in space
+       
         #prepare for sorting arrays :
 
         array_index = (np.argsort(rho_pol_norm_ref_concat, axis=1))
@@ -890,7 +901,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_total_sort_final_nonan = np.asarray(rho_total_sort_final_nonan)
         ne_line_total_sort_final_nonan = np.asarray(ne_line_total_sort_final_nonan)
 
-        rho_total_sort_final_error = np.full(rho_total_sort_final_nonan.shape,(rho_total_sort_final_nonan)*0.001)
+        rho_total_sort_final_error = np.full(rho_total_sort_final_nonan.shape,(rho_total_sort_final_nonan)*0.01)
         ne_line_total_sort_final_error = np.full(ne_line_total_sort_final_nonan.shape, (ne_line_total_sort_final_nonan)*0.01)
         #import ipdb;ipdb.set_trace()
 
@@ -1083,8 +1094,10 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             fig.suptitle((('inter verses integrated  data')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
             ax = fig.add_subplot(111)
             ax.plot(integrale_density_final[:,Time_index[ii]] , color='r', label = 'ne from integration and fit procedure')
-            ax.plot(2*density4[:,Time_index][:,Time_index[ii]] , color='g', label = 'ne from interferometery without normalisation')
-            ax.plot(2*electron_density_ne[:,Time_index][:,Time_index[ii]] , color='b', label = 'ne from inter using normalisaton')
+            ax.plot(2*density4[:,Time_index][:,Time_index[ii]] , color='g', label = 'ne from interferometery')
+            #ax.set_xlabel('xlabel')
+            ax.set_ylabel('Density')
+            #ax.plot(2*electron_density_ne[:,Time_index][:,Time_index[ii]] , color='b', label = 'ne from inter using normalisaton')
             #ax.plot(integrale_density_final1[:,Time_index1[ii]] , color='k', label = 'ne from inter without concatination')
 
             plt.legend()
@@ -1110,7 +1123,9 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             #ax.plot(R_real_ref[:,time_slices_red_upper[ii]],electron_density[:,time_slices_red_upper[ii]] ,'.',  color='g', label = 'ne vers r from reflec real')
             ax.plot(R_meters_mask_upper[:,time_slices_red_upper[ii]],-(np.asarray(out_put_R_upper['fit_dydx']))[time_slices_red_upper[ii]] ,'.', color='b', label = 'deriv ne vers r fit_data_upper before masking ')
             ax.plot(R_meters_mask_upper[:,time_slices_red_lower[ii]],derivative_density_upper[time_slices_red_lower[ii]] ,color='r', label = 'deriv ne vers r fit_data_upper after masking ')
-            ax.plot(R_meters_mask_upper[:,time_slices_red_upper[ii]],average_der_density[time_slices_red_upper[ii]] ,color='k', label = 'ne vers r from reflec real')
+            ax.plot(R_meters_mask_upper[:,time_slices_red_upper[ii]],average_der_density[time_slices_red_upper[ii]] ,color='k', label = 'average fit_data')
+            ax.set_xlabel('radius')
+            ax.set_ylabel('Density')
             plt.legend()
             fig.savefig(plot_save_directory + 'time_slice' + str(time_slices_red_lower[ii]) +'.png')
             plt.close(fig)
@@ -1132,7 +1147,9 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             #ax.plot(R_real_ref[:,time_slices_red_lower[ii]],electron_density[:,time_slices_red_lower[ii]] , color='g', label = 'ne vers r from reflec real')
             ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],-(np.asarray(out_put_R_lower['fit_dydx']))[time_slices_red_lower[ii]] , '.',color='b', label = 'deriv ne vers r fit_data_lower before masking ')
             ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],derivative_density_lower[time_slices_red_lower[ii]] ,color='r', label = 'deriv ne vers r fit_data_lower after masking')
-            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],average_der_density[time_slices_red_lower[ii]] ,color='k', label = 'deriv ne vers r fit_data_lower')
+            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],average_der_density[time_slices_red_lower[ii]] ,color='k', label = 'average fit_data')
+            ax.set_xlabel('radius')
+            ax.set_ylabel('Density')
             plt.legend()
             fig.savefig(plot_save_directory+ 'time_slice' + str(time_slices_red_lower[ii]) +'.png')
             plt.close(fig)
@@ -1150,14 +1167,16 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
    
         for ii in range(len(time_slices_red_lower)):
             fig = plt.figure()
-            fig.suptitle((('Raw data_lower average, upper')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
+            fig.suptitle((('Raw data lower, upper and average')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
             ax = fig.add_subplot(111)
-            ax.plot(R_real_ref[:,time_slices_red_lower[ii]],electron_density[:,time_slices_red_lower[ii]] , color='g', label = 'ne vers r from reflec real')
+            #ax.plot(R_real_ref[:,time_slices_red_lower[ii]],electron_density[:,time_slices_red_lower[ii]] , color='g', label = 'ne vers r from reflec profile')
             #ax.plot(R_meters_mask_upper[:,time_slices_red_lower[ii]],-(np.asarray(out_put_R_upper['fit_dydx']))[time_slices_red_lower[ii]] , '.',color='r', label = 'deriv ne vers r fit_data_upper')
-            ax.plot(R_meters_mask_upper[:,time_slices_red_lower[ii]],derivative_density_upper[time_slices_red_lower[ii]] ,color='r', label = 'deriv ne vers r fit_data_upper')
+            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],derivative_density_lower[time_slices_red_lower[ii]] , '.',color='b', label = 'fit_data_lower')
+            ax.plot(R_meters_mask_upper[:,time_slices_red_lower[ii]],derivative_density_upper[time_slices_red_lower[ii]] ,color='r', label = 'fit_data_upper')
             #ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],-(np.asarray(out_put_R_lower['fit_dydx']))[time_slices_red_lower[ii]] , '.',color='b', label = 'deriv ne vers r fit_data_lower')
-            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],derivative_density_lower[time_slices_red_lower[ii]] , '.',color='b', label = 'deriv ne vers r fit_data_lower')
-            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],average_der_density[time_slices_red_lower[ii]] ,color='k', label = 'average fit_data_lower')
+            ax.plot(R_meters_mask_lower[:,time_slices_red_lower[ii]],average_der_density[time_slices_red_lower[ii]] ,color='k', label = 'average fit_data')
+            ax.set_xlabel('radius')
+            ax.set_ylabel('Density')
             plt.legend()
             fig.savefig(plot_save_directory+ 'time_slice' + str(time_slices_red_lower[ii]) +'.png')
             plt.close(fig)
