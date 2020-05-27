@@ -37,10 +37,10 @@ def plot_data(fit_x_values, minimum, maximum, \
                   nsample_array, \
                   fit_y_values, fit_y_errors, \
                   fit_dydx_values, fit_dydx_errors,\
-                  i): 
+                  i, file_name='GPPlots'): 
  
     ###Some basic setup
-    plot_save_directory = './GPPlots' + str(i)
+    plot_save_directory = './'+file_name +'_'+ str(i)
     if not plot_save_directory.endswith('/'):
         plot_save_directory = plot_save_directory+'/'
     if not os.path.isdir(plot_save_directory):

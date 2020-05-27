@@ -35,7 +35,7 @@ except Exception as err:
 
 def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordinates_errors=None, \
              kernel_method='RQ_Kernel', optimise_all_params=True, slices_optim_nbr=10, nbr_pts=100, \
-             slices_nbr=10, plot_fit=True, x_fix_data=[0.0], dy_fix_data=[0.0], dy_fix_err=[0.0], boundary_max=None, boundary_min=None, boundary_derv=None):
+             slices_nbr=10, plot_fit=True, x_fix_data=[0.0], dy_fix_data=[0.0], dy_fix_err=[0.0], file_name = 'GPPlots', boundary_max=None, boundary_min=None, boundary_derv=None):
 
     '''
     Fit Y profile as a function of X quantity
@@ -662,7 +662,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                           nsample_array, \
                           fit_y_values, fit_y_errors, \
                           fit_dydx_values, fit_dydx_errors,\
-                          i)
+                          i,file_name = file_name)
 
         # Results
         # -------
@@ -760,23 +760,25 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
         if (slices_nbr is None):
             slices_nbr = Y_coordinates.shape[0]
 
+        if plot_fit:
+            save_directory = './'+file_name 
+            if not save_directory.endswith('/'):
+                save_directory = save_directory+'/'
+            if not os.path.isdir(save_directory):
+                os.makedirs(save_directory)
+            os.chdir(save_directory)
+            
         #for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
         for i in range(5):#0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
-            #add the mask on the nans/
 
             print('slice number : ', i)
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
-            #check for errors and raise an error
-            #Y_reduced = Y_reduced[~np.isnan(Y_reduced)]
-            #X_reduced = X_reduced[~np.isnan(X_reduced)]
 
             Y_errors = Y_coordinates_errors[i]
-            #Y_errors = Y_errors[~np.isnan(Y_errors)]
 
             if X_coordinates_errors is not None:
                 X_errors = X_coordinates_errors[i] 
-                #X_errors = X_errors[~np.isnan(X_errors)]
             elif (plot_fit and X_coordinates_errors is None):
                 X_errors =  np.full(X_coordinates.shape, np.mean(X_reduced)*0.05)
             elif X_coordinates_errors is None:
@@ -797,7 +799,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 else:
                     raise RuntimeError('Input minimum boundary conditions is mandatory')
 
-                        #import ipdb;ipdb.set_trace()
 
             minimum =(X_reduced).min()
             maximum =(X_reduced).max()
@@ -945,7 +946,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 for ii in np.arange(0,num_samples):
                     sint_mean = np.nanmean(integ_array[ii,:])
                     integ_array[ii,:] = integ_array[ii,:] - sint_mean + orig_mean
-                #import ipdb; ipdb.set_trace()
                 #################################################
                 #################################################
                 ##    calculation of the integrale using the 
@@ -1098,7 +1098,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                               nsample_array, \
                               fit_y_values, fit_y_errors, \
                               fit_dydx_values, fit_dydx_errors, \
-                              i)
+                              i,file_name = file_name)
 
             # Results
             # -------
@@ -1119,5 +1119,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 fit_data['fit_zinteg_array'].append(integ_array[i])
                 fit_data['fit_time_slice'].append(i)
 
-
+        if plot_fit:
+            os.chdir('../')
     return fit_data

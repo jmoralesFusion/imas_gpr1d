@@ -529,7 +529,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         #apply the fit_function:
         print('initialize fit_function:')
         out_put_upper = fit_data(rho_total_sort_upper_nonan, ne_line_total_sort_upper_nonan, rho_total_errors_upper, ne_line_total_errors_upper, kernel_method=args.kernel, \
-                          optimise_all_params=True, nbr_pts=100, slices_nbr=10, plot_fit=False, x_fix_data=None, dy_fix_data=None, dy_fix_err=None)
+                          optimise_all_params=True, nbr_pts=100, slices_nbr=10, plot_fit=True, x_fix_data=None, dy_fix_data=None, dy_fix_err=None, file_name = 'Upper_GPPlots_Rho')
 
         #extract the fit results:
         ne_line_density_fit_upper = (np.asarray(out_put_upper['fit_y']))
@@ -570,7 +570,10 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             R_meters_mask_upper[ii]=np.linspace(np.nanmin(R_meters[mask_total_upper[ii]]), np.nanmax(R_meters[mask_total_upper[ii]]), 100)
             ne_line_interpolated_R_2d_upper[ii] = np.interp(R_meters_mask_upper[ii], (R_meters[mask_total_upper[ii]]) ,ne_line_interpolated_R_upper[ii])
             ne_derivative_interpolated_2d_upper[ii] = np.interp(R_meters_mask_upper[ii], (R_meters[mask_total_upper[ii]]) ,derivative_interp_array_upper[ii])
+        
 
+
+        #create the errors assigned to each of density and space:
         ne_line_interpolated_R_2d_errors_upper = np.full(ne_line_interpolated_R_2d_upper.shape, np.mean(ne_line_interpolated_R_2d_upper)*0.03)
         R_meters_2d_errors_upper =  np.full(R_meters_mask_upper.shape, np.mean(R_meters_mask_upper)*0.01)
  
@@ -581,17 +584,17 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         print('------------------------------------------')
         
         out_put_R_upper12 = fit_data(R_meters_mask_upper, (ne_line_interpolated_R_2d_upper), R_meters_2d_errors_upper, ne_line_interpolated_R_2d_errors_upper, kernel_method=args.kernel, \
-                          optimise_all_params=True, slices_nbr=10, plot_fit=False, x_fix_data=None, dy_fix_data=None, dy_fix_err=None)
+                          optimise_all_params=True, slices_nbr=10, plot_fit=True, x_fix_data=None, dy_fix_data=None, dy_fix_err=None, file_name = 'Upper_GPPlots_r')
 
 
         # output the data necessary for the boundary conditions
         upper_maximum_R    = (np.asarray(out_put_R_upper12['fit_x'])).max(axis=1)
         upper_minimum_R    = (np.asarray(out_put_R_upper12['fit_x'])).min(axis=1)
-        upper_derivative_R = (np.asarray(out_put_R_upper12['fit_dydx'])).min(axis=1)#take the maximum instead of the min
+        upper_derivative_R = (np.asarray(out_put_R_upper12['fit_dydx'])).min(axis=1)
 
 
         out_put_R_upper = fit_data(R_meters_mask_upper, ne_line_interpolated_R_2d_upper, R_meters_2d_errors_upper, ne_line_interpolated_R_2d_errors_upper, kernel_method=args.kernel, \
-                          optimise_all_params=True, slices_nbr=10, plot_fit=False, x_fix_data=None, dy_fix_data=None, dy_fix_err=None, boundary_max=upper_maximum_R, boundary_min=upper_minimum_R, boundary_derv=upper_derivative_R)
+                          optimise_all_params=True, slices_nbr=10, plot_fit=True, x_fix_data=None, dy_fix_data=None, dy_fix_err=None, file_name = 'Upper_GPPlots_rcon', boundary_max=upper_maximum_R, boundary_min=upper_minimum_R, boundary_derv=upper_derivative_R)
 
 
         derivative_ne_line_interpolated_upper = np.asarray(out_put_R_upper['fit_dydx'])
@@ -680,7 +683,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         out_put_lower = fit_data(rho_total_sort_lower_nonan, ne_line_total_sort_lower_nonan, rho_total_errors_lower, ne_line_total_errors_lower, kernel_method=args.kernel, \
-                          optimise_all_params=True, slices_nbr=10, plot_fit=False, x_fix_data=None, dy_fix_data=None, dy_fix_err=None)
+                          optimise_all_params=True, slices_nbr=10, plot_fit=True, x_fix_data=None, dy_fix_data=None, dy_fix_err=None, file_name = 'lower_GPPlots_Rho')
 
         ne_line_density_fit_lower = (np.asarray(out_put_lower['fit_y']))
         rho_total_fit_x_lower =  (np.asarray(out_put_lower['fit_x']))
@@ -723,7 +726,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             ne_line_interpolated_R_2d_lower[ii] = np.interp(R_meters_mask_lower[ii], (R_meters[mask_total_lower[ii]]) ,ne_line_interpolated_R_lower[ii])
             ne_derivative_interpolated_2d_lower[ii] = np.interp(R_meters_mask_lower[ii], (R_meters[mask_total_lower[ii]]) ,derivative_interp_array_lower[ii])
 
-        ne_line_interpolated_R_2d_errors_lower = np.full(ne_line_interpolated_R_2d_lower.shape, np.mean(ne_line_interpolated_R_2d_lower)*0.03)
+        ne_line_interpolated_R_2d_errors_lower = np.full(ne_line_interpolated_R_2d_lower.shape, (ne_line_interpolated_R_2d_lower)*0.03)
         R_meters_2d_errors_lower =  np.full(R_meters_mask_lower.shape, np.mean(R_meters_mask_lower)*0.01)
 
 
@@ -734,16 +737,16 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         print('------------------------------------------')
         
         out_put_R_lower12 = fit_data(R_meters_mask_lower, ne_line_interpolated_R_2d_lower, R_meters_2d_errors_lower, ne_line_interpolated_R_2d_errors_lower, kernel_method=args.kernel, \
-                          optimise_all_params=True, slices_nbr=10, plot_fit=False,x_fix_data=None, dy_fix_data=None, dy_fix_err=None)
+                          optimise_all_params=True, slices_nbr=10, plot_fit=True,x_fix_data=None, dy_fix_data=None, dy_fix_err=None, file_name = 'lower_GPPlots_r')
 
         # output the data necessary for the boundary conditions
         lower_maximum_R    = (np.asarray(out_put_R_lower12['fit_x'])).max(axis=1)
         lower_minimum_R    = (np.asarray(out_put_R_lower12['fit_x'])).min(axis=1)
-        lower_derivative_R = (np.asarray(out_put_R_lower12['fit_dydx'])).min(axis=1)#take the max
+        lower_derivative_R = (np.asarray(out_put_R_lower12['fit_dydx'])).min(axis=1)
 
         
         out_put_R_lower = fit_data(R_meters_mask_lower, ne_line_interpolated_R_2d_lower, R_meters_2d_errors_lower, ne_line_interpolated_R_2d_errors_lower, kernel_method=args.kernel, \
-                          optimise_all_params=True, slices_nbr=10, plot_fit=False, x_fix_data=None, dy_fix_data=None, dy_fix_err=None, boundary_max=lower_maximum_R, boundary_min=lower_minimum_R, boundary_derv=lower_derivative_R)
+                          optimise_all_params=True, slices_nbr=10, plot_fit=True, x_fix_data=None, dy_fix_data=None, dy_fix_err=None, file_name = 'lower_GPPlots_rcon', boundary_max=lower_maximum_R, boundary_min=lower_minimum_R, boundary_derv=lower_derivative_R)
 
         print('-----------------------------------------------------------')
         print('-----------------------------------------------------------')
@@ -871,6 +874,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         ne_line_total_sort_final = np.concatenate((maximum_elements_array[:,None], ne_line_total_sort_final),axis=1)
         
 
+
         new_space_dimension_final            = len(rho_total_sort_final[0][~np.isnan(rho_total_sort_final[0])])
         new_time_dimension_final             = ne_line_total_sort_final.shape[1]
 
@@ -898,8 +902,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_total_sort_final_nonan = np.asarray(rho_total_sort_final_nonan)
         ne_line_total_sort_final_nonan = np.asarray(ne_line_total_sort_final_nonan)
 
-        rho_total_sort_final_error = np.full(rho_total_sort_final_nonan.shape,(rho_total_sort_final_nonan)*0.01)
         ne_line_total_sort_final_error = np.full(ne_line_total_sort_final_nonan.shape, (ne_line_total_sort_final_nonan)*0.03)
+        rho_total_sort_final_error = np.full(rho_total_sort_final_nonan.shape,(rho_total_sort_final_nonan)*0.01)
 
         '''
         out_put_final12 = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan , rho_total_sort_final_error , ne_line_total_sort_final_error , kernel_method='Gibbs_Kernel', \
@@ -913,7 +917,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         final_derivative_R = (np.asarray(out_put_final12['fit_dydx'])).min(axis=1)
         '''
         out_put_final = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan , rho_total_sort_final_error , ne_line_total_sort_final_error , kernel_method='Gibbs_Kernel', \
-                                       optimise_all_params=True, slices_nbr=10, plot_fit=True, x_fix_data=None, dy_fix_data=None, dy_fix_err=None)#, boundary_max=final_maximum_R, boundary_min=final_minimum_R, boundary_derv=final_derivative_R)
+                                       optimise_all_params=True, slices_nbr=10, plot_fit=True, x_fix_data=None, dy_fix_data=None, dy_fix_err=None, file_name = 'GPPlots_resultant')#, boundary_max=final_maximum_R, boundary_min=final_minimum_R, boundary_derv=final_derivative_R)
 
         ne_density_fit = (np.asarray(out_put_final['fit_y']))
         rho_total_fit =  (np.asarray(out_put_final['fit_x']))
@@ -1045,6 +1049,17 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         density4 = electron_density_ne/Normalization_constant
         ###Some basic setup
+        #create the test directory to save all the testing files
+        test_save_directory = './test_directory'
+        if not test_save_directory.endswith('/'):
+            test_save_directory = test_save_directory+'/'
+        if not os.path.isdir(test_save_directory):
+            os.makedirs(test_save_directory)
+        os.chdir(test_save_directory)
+
+        #create the testing files directories
+
+
         plot_save_directory = './comparison_figuers'
         if not plot_save_directory.endswith('/'):
             plot_save_directory = plot_save_directory+'/'
@@ -1056,22 +1071,19 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             fig.suptitle((('inter verses integrated  data')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
             ax = fig.add_subplot(111)
             ax.plot(integrale_density_final[:,Time_index[ii]] , color='r', label = 'ne from integration and fit procedure')
-            ax.plot(2*density4[:,Time_index][:,Time_index[ii]] , color='g', label = 'ne from interferometery')
-            #ax.set_xlabel('xlabel')
-            ax.set_ylabel('Density')
-            #ax.plot(2*electron_density_ne[:,Time_index][:,Time_index[ii]] , color='b', label = 'ne from inter using normalisaton')
-            #ax.plot(integrale_density_final1[:,Time_index1[ii]] , color='k', label = 'ne from inter without concatination')
+            ax.plot(2*density4[:,Time_index[ii]] , color='b', label = 'ne from inter')
+            #ax.plot(2*electron_density_ne_lower[:,Time_index[ii]] , color='g', label = 'ne from inter lower')
+            #ax.plot(2*electron_density_ne_upper[:,Time_index[ii]] , color='k', label = 'ne from inter upper')
 
+            ax.set_ylabel('Density')
             plt.legend()
             fig.savefig(plot_save_directory + 'time_slice' + str(Time_index[ii]) +'.png')
             plt.close(fig)
         print("Results of demonstration plotted in directory ./comparison_figuers/\n")
 
-        
-
-        
 
         ###Some basic setup
+
         plot_save_directory = './upper_figuers'
         if not plot_save_directory.endswith('/'):
             plot_save_directory = plot_save_directory+'/'
@@ -1169,7 +1181,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         print("Results of demonstration plotted in directory ./figuers_inter_refl_fits_rho/\n")
  
-
+        os.chdir('../')
+        
         import ipdb; ipdb.set_trace()
 
         return rho_total_sort_upper.T, ne_line_total_sort_upper.T, rho_total_errors_upper.T, ne_line_total_errors_upper.T
