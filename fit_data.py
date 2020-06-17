@@ -737,13 +737,15 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
         print(kernel_method)
         print("--- %s seconds ---" % (time.time() - start_time))
 
-
         nbr_time = Y_coordinates.shape[0]
 
         fit_data = {'fit_x': [], \
                     'fit_y': [], \
                     'fit_x_error': [], \
                     'fit_y_error': [], \
+                    'fit_y_weighted': [], \
+                    'fit_dydx_weighted': [], \
+                    'fit_dydx_errors_weighted': [], \
                     'fit_dydx': [], \
                     'fit_dydx_x_error': [], \
                     'fit_dydy_y_error': [], \
@@ -1108,11 +1110,17 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 fit_data['fit_y_error'].append(hs_fit_y_errors)
                 fit_data['fit_dydx'].append(hs_fit_dydx_values)
                 fit_data['fit_dydy_y_error'].append(hs_fit_dydx_errors)
+                fit_data['fit_y_weighted'].append(fit_y_values)
+                fit_data['fit_dydx_weighted'].append(fit_dydx_values)   
+                fit_data['fit_dydx_errors_weighted'].append(fit_dydx_errors) 
                 #fit_data['fit_zinteg_array'].append(integ_array)
                 fit_data['fit_time_slice'].append(i)
             if (X_coordinates_errors is not None):
                 fit_data['fit_x'].append(fit_x_values)
                 fit_data['fit_y'].append(ni_fit_y_values)
+                fit_data['fit_y_weighted'].append(fit_y_values)
+                fit_data['fit_dydx_weighted'].append(fit_dydx_values)   
+                fit_data['fit_dydx_errors_weighted'].append(fit_dydx_errors) 
                 fit_data['fit_y_error'].append(ni_fit_y_errors)
                 fit_data['fit_dydx'].append(ni_fit_dydx_values)
                 fit_data['fit_dydy_y_error'].append(ni_fit_dydx_errors)
