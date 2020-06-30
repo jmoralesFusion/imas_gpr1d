@@ -249,8 +249,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_pol_norm_base_reflec = np.full((R_real_ref.shape), np.nan)
 
         #take a small portion of the R_real to save time on the loop of equimaps
-        #for ii in range(R_real_ref.shape[1]):
-        for ii in range(10):
+        for ii in range(R_real_ref.shape[1]):
+        #for ii in range(10):
             rho_pol_norm_base_reflec[:,ii] = equimap.get(shot, Time_ref[ii], R_real_ref[:,ii], Phi_reflec, Z_reflec, 'rho_pol_norm')
 
         R_base_ref = np.linspace(R_real_ref.min(), R_real_ref.max(), 1000)
@@ -526,6 +526,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         ne_line_total_errors_upper     = np.full((ne_line_total_sort_upper_nonan).shape, ((ne_line_total_sort_upper_nonan))*0.1)
         rho_total_errors_upper         = np.full((rho_total_sort_upper_nonan).shape, (np.mean((rho_total_sort_upper_nonan))*0.01))
         
+        ne_line_total_errors_upper     = np.clip(ne_line_total_errors_upper, 6*1e17, None)
+        
         #apply the fit_function:
         print('initialize fit_function:')
         out_put_upper = fit_data(rho_total_sort_upper_nonan, ne_line_total_sort_upper_nonan, rho_total_errors_upper, ne_line_total_errors_upper, kernel_method=args.kernel, \
@@ -575,9 +577,10 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         #create the errors assigned to each of density and space:
-        ne_line_interpolated_R_2d_errors_upper = np.full(ne_line_interpolated_R_2d_upper.shape, ((ne_line_interpolated_R_2d_upper))*0.09)
+        ne_line_interpolated_R_2d_errors_upper = np.full(ne_line_interpolated_R_2d_upper.shape, ((ne_line_interpolated_R_2d_upper))*0.1)
         R_meters_2d_errors_upper =  np.full(R_meters_mask_upper.shape, np.mean((R_meters_mask_upper))*0.01)
- 
+        ne_line_interpolated_R_2d_errors_upper      = np.clip(ne_line_interpolated_R_2d_errors_upper, 6*1e17, None)
+
         print('------------------------------------------')
         print('------------------------------------------')
         print('----fit_data for the upper in R_meters----')
@@ -686,8 +689,9 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_total_sort_lower_nonan=rho_total_sort_lower_nonan.T
         ne_line_total_sort_lower_nonan= ne_line_total_sort_lower_nonan.T
         
-        ne_line_total_errors_lower = np.full((ne_line_total_sort_lower_nonan).shape, (ne_line_total_sort_lower_nonan)*0.03)
+        ne_line_total_errors_lower = np.full((ne_line_total_sort_lower_nonan).shape, (ne_line_total_sort_lower_nonan)*0.1)
         rho_total_errors_lower =  np.full((rho_total_sort_lower_nonan).shape, np.mean(rho_total_sort_lower_nonan)*0.01)
+        ne_line_total_errors_lower      = np.clip(ne_line_total_errors_lower, 6*1e17, None)
 
 
    
@@ -746,8 +750,9 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             ne_line_interpolated_R_2d_lower[ii] = np.interp(R_meters_mask_lower[ii], (R_meters[mask_total_lower[ii]]) ,ne_line_interpolated_R_lower[ii])
             ne_derivative_interpolated_2d_lower[ii] = np.interp(R_meters_mask_lower[ii], (R_meters[mask_total_lower[ii]]) ,derivative_interp_array_lower[ii])
 
-        ne_line_interpolated_R_2d_errors_lower = np.full(ne_line_interpolated_R_2d_lower.shape, (ne_line_interpolated_R_2d_lower)*0.09)
+        ne_line_interpolated_R_2d_errors_lower = np.full(ne_line_interpolated_R_2d_lower.shape, (ne_line_interpolated_R_2d_lower)*0.1)
         R_meters_2d_errors_lower =  np.full(R_meters_mask_lower.shape, np.mean(R_meters_mask_lower)*0.01)
+        ne_line_interpolated_R_2d_errors_lower      = np.clip(ne_line_interpolated_R_2d_errors_lower, 6*1e17, None)
 
 
         print('------------------------------------------')
@@ -1015,160 +1020,33 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         
 
 
+        density_check = 2*(electron_density_ne/Normalization_constant)
+        density_check[np.isnan(density_check)] = 0 
 
-        #start plots for checkup the results:
-        plot_test_figures = True
-        if plot_test_figures:
-            # electron_density_ne[0] first element value is zero and similarly for Normalization_constant[0]
-            # so dividing them over each other will result nan and then we are forced to set nans to zero again 
-            density_check = electron_density_ne/Normalization_constant
-            density_check[np.isnan(density_check)] = 0 
-
-
-            # to check 
-            RMS_error = True
-            if RMS_error:
-                error_difference = integrale_density_final - 2*density_check[:,Time_index]
-                #sqrt(mean(abs(x - x.mean())**2))
-                #sqrt(mean(abs(x)**2)) transform into percentage
-                RMS = np.sqrt(np.mean(np.abs(error_difference)**2, axis=0))
-
-                plot_save_directory = './RMS_figuers'
-                if not plot_save_directory.endswith('/'):
-                    plot_save_directory = plot_save_directory+'/'
-                if not os.path.isdir(plot_save_directory):
-                    os.makedirs(plot_save_directory)
-
-                fig = plt.figure()
-                fig.suptitle((('error diff btw inter and  integrated  data')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
-                ax = fig.add_subplot(111)
-                ax.plot(RMS, '-', color='r', label = 'rms')
-                ax.set_ylabel('RMS')
-                plt.legend()
-                fig.savefig(plot_save_directory + 'RMS.png')
-                plt.close(fig)
-                print("Results of demonstration plotted in directory ./RMS_figuers/\n")
-
-            ###Some basic setup
-            #create the test directory to save all the testing files
-            test_save_directory = './test_directory'
-            if not test_save_directory.endswith('/'):
-                test_save_directory = test_save_directory+'/'
-            if not os.path.isdir(test_save_directory):
-                os.makedirs(test_save_directory)
-            os.chdir(test_save_directory)
-
-            #create the testing files directories
-            plot_save_directory = './comparison_figuers'
-            if not plot_save_directory.endswith('/'):
-                plot_save_directory = plot_save_directory+'/'
-            if not os.path.isdir(plot_save_directory):
-                os.makedirs(plot_save_directory)
-
-            for ii in range(len(Time_index)):
-                fig = plt.figure()
-                fig.suptitle((('inter verses integrated  data')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
-                ax = fig.add_subplot(111)
-                ax.plot(integrale_density_final[:,Time_index[ii]], '-', color='r', label = 'ne from integration and fit procedure')
-                ax.plot(2*density_check[:,Time_index[ii]] , '-', color='k', label = 'ne from inter')
-                ax.set_ylabel('Density')
-                plt.legend()
-                fig.savefig(plot_save_directory + 'time_slice' + str(Time_index[ii]) +'.png')
-                plt.close(fig)
-            print("Results of demonstration plotted in directory ./comparison_figuers/\n")
-            
-            plot_upper_lower = False
-            if plot_upper_lower:
-                plot_save_directory = './upper_figuers'
-                if not plot_save_directory.endswith('/'):
-                    plot_save_directory = plot_save_directory+'/'
-                if not os.path.isdir(plot_save_directory):
-                    os.makedirs(plot_save_directory)
-
-                for ii in range(len(time_slices_red_upper)):
-                    fig = plt.figure()
-                    fig.suptitle((('Raw data_upper')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
-                    ax = fig.add_subplot(111)
-                    ax.plot(R_meters_mask_upper[ii],-(np.asarray(out_put_R_upper['fit_dydx']))[ii] ,'.', color='b', label = 'deriv ne vers r fit_data_upper before masking ')
-                    ax.plot(R_meters_mask_upper[ii],derivative_density_upper[ii] ,color='r', label = 'deriv ne vers r fit_data_upper after masking ')
-                    ax.plot(R_meters_mask_upper[ii],average_der_density[ii] ,color='k', label = 'average fit_data')
-                    ax.set_xlabel('radius')
-                    ax.set_ylabel('Density')
-                    plt.legend()
-                    fig.savefig(plot_save_directory + 'time_slice' + str(time_slices_red_lower[ii]) +'.png')
-                    plt.close(fig)
-                print("Results of demonstration plotted in directory ./upper_figuers/\n")
+        error_difference = integrale_density_final - density_check[:,Time_index]
+        error_difference_percent  = (integrale_density_final - density_check[:,Time_index])/(2*density_check[:,Time_index])
+        error_difference_percent[np.isinf(error_difference_percent)] = 0 
+        RMS = np.sqrt(np.mean((error_difference)**2, axis=0))
+        RMSE = (np.sqrt(np.mean((error_difference_percent)**2, axis=0)))*100
 
 
+        ###Some basic setup
+        #create the test directory to save  output files
+        #user can add as much as he wants here
+        output_save_directory = './output_directory'
+        if not output_save_directory.endswith('/'):
+            test_save_directory = output_save_directory+'/'
+        if not os.path.isdir(output_save_directory):
+            os.makedirs(output_save_directory)
+        os.chdir(output_save_directory)
+        #save the outputs to files to be loaded and used in plots
+        np.savez('Time_file', Time_index=Time_index, time_slices_red_upper=time_slices_red_upper , time_slices_red_lower=time_slices_red_lower)
+        np.savez('Error_files', error_difference=error_difference, error_difference_percent=error_difference_percent, RMSE=RMSE, RMS=RMS)
+        np.savez('Compare_density', R_meters_mask_lower=R_meters_mask_lower , R_meters_mask_upper=R_meters_mask_upper , average_der_density=average_der_density, derivative_density_upper=derivative_density_upper , derivative_density_lower=derivative_density_lower)
+        np.savez('Rhos_vs_ne', rho_pol_norm_base_min=rho_pol_norm_base_min , rho_pol_norm_ref=rho_pol_norm_ref , electron_density_ne=electron_density_ne , integrale_density_ref=integrale_density_ref, density_check=density_check, integrale_density_final=integrale_density_final)
+        os.chdir('../')
 
 
-                plot_save_directory = './lower_figuers'
-                if not plot_save_directory.endswith('/'):
-                    plot_save_directory = plot_save_directory+'/'
-                if not os.path.isdir(plot_save_directory):
-                    os.makedirs(plot_save_directory)
-
-                for ii in range(len(time_slices_red_lower)):
-                    fig = plt.figure()
-                    fig.suptitle((('Raw data_lower')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
-                    ax = fig.add_subplot(111)
-                    ax.plot(R_meters_mask_lower[ii],-(np.asarray(out_put_R_lower['fit_dydx']))[ii] , '.',color='b', label = 'deriv ne vers r fit_data_lower before masking ')
-                    ax.plot(R_meters_mask_lower[ii],derivative_density_lower[ii] ,color='r', label = 'deriv ne vers r fit_data_lower after masking')
-                    ax.plot(R_meters_mask_lower[ii],average_der_density[ii] ,color='k', label = 'average fit_data')
-                    ax.set_xlabel('radius')
-                    ax.set_ylabel('Density')
-                    plt.legend()
-                    fig.savefig(plot_save_directory+ 'time_slice' + str(time_slices_red_lower[ii]) +'.png')
-                    plt.close(fig)
-
-                print("Results of demonstration plotted in directory ./lower_figuers/\n")
-
-
-
-            plot_save_directory = './comparison_upper_average_lower_figuers'
-            if not plot_save_directory.endswith('/'):
-                plot_save_directory = plot_save_directory+'/'
-            if not os.path.isdir(plot_save_directory):
-                os.makedirs(plot_save_directory)
-
-            for ii in range(len(time_slices_red_lower)):
-                fig = plt.figure()
-                fig.suptitle((('Raw data lower, upper and average')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
-                ax = fig.add_subplot(111)
-                ax.plot(R_meters_mask_lower[ii],derivative_density_lower[ii] , '.',color='b', label = 'fit_data_lower')
-                ax.plot(R_meters_mask_upper[ii],derivative_density_upper[ii] ,color='r', label = 'fit_data_upper')
-                ax.plot(R_meters_mask_lower[ii],average_der_density[ii] ,color='k', label = 'average fit_data')
-                ax.set_xlabel('radius')
-                ax.set_ylabel('Density')
-                plt.legend()
-                fig.savefig(plot_save_directory+ 'time_slice' + str(time_slices_red_lower[ii]) +'.png')
-                plt.close(fig)
-
-            print("Results of demonstration plotted in directory ./comparison_upper_average_lower_figuers/\n")
-
-
-            plot_save_directory = './figuers_inter_refl_fits_rho'
-            if not plot_save_directory.endswith('/'):
-                plot_save_directory = plot_save_directory+'/'
-            if not os.path.isdir(plot_save_directory):
-                os.makedirs(plot_save_directory)
-
-            for ii in range(len(time_slices_red_lower)):
-                fig = plt.figure()
-                fig.suptitle((('figures before and after fits rho')), fontdict={'fontsize': 5, 'fontweight': 'medium'})
-                ax = fig.add_subplot(111)
-                ax.plot(rho_pol_norm_base_min[:,time_slices_red_lower[ii]],electron_density_ne[:,time_slices_red_lower[ii]], '.' , color='r', label = 'ne interferometry')
-                ax.plot(rho_pol_norm_ref[:,time_slices_red_lower[ii]],integrale_density_ref[:,time_slices_red_lower[ii]] ,color='b', label = 'integrale density reflectometry')
-                ax.set_xlabel('rho')
-                ax.set_ylabel('Density')
-                plt.legend()
-                fig.savefig(plot_save_directory+ 'time_slice' + str(time_slices_red_lower[ii]) +'.png')
-                plt.close(fig)
-
-            print("Results of demonstration plotted in directory ./figuers_inter_refl_fits_rho/\n")
-
-            os.chdir('../')
-        
         #import pdb; pdb.set_trace()
 
         return rho_total_sort_upper.T, ne_line_total_sort_upper.T, rho_total_errors_upper.T, ne_line_total_errors_upper.T

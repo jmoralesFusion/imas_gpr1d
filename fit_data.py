@@ -771,8 +771,8 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             os.chdir(save_directory)
             
         #for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
-        for i in range(5):#0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
-
+        #for i in range(5):#0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
+        for i in range(0, 1000):
             print('slice number : ', i)
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
@@ -788,9 +788,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             
             #introduce the boundary conditions as requested by the user:
             if boundary_max is not None:
-                #print('please note that you have requested to impose boundary ')
-                #print('boundary conditions to the profile fitted, so make sure')
-                #print('to enter all the required infromation')
                 if boundary_min is not None:
                     if boundary_derv is not None: 
                         x_fix_data  = [boundary_min[i], boundary_max[i]]
@@ -1073,7 +1070,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
 
 
-            if ((X_coordinates_errors is not None and plot_fit) or (X_coordinates_errors is None and plot_fit)):
+            if ((X_coordinates_errors is not None or plot_fit) or (X_coordinates_errors is None or plot_fit)):
                 print_data(gp_kernel_name,gp_kernel_hyppars,gp_fit_regpar,fit_lml,\
                                hsgp_kernel_name,hsgp_fit_regpar,hsgp_kernel_hyppars,\
                                hsgp_error_kernel_name,hsgp_error_fit_regpar,hsgp_error_kernel_hyppars,hs_fit_lml,\
