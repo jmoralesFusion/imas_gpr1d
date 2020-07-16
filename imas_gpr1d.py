@@ -533,7 +533,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         out_put_upper = fit_data(rho_total_sort_upper_nonan, ne_line_total_sort_upper_nonan, rho_total_errors_upper, \
                                  ne_line_total_errors_upper, kernel_method=args.kernel, \
                                  optimise_all_params=True, nbr_pts=100, slices_nbr=10, plot_fit=True, x_fix_data=None, \
-                                 dy_fix_data=None, dy_fix_err=None, file_name = 'Upper_GPPlots_Rho')
+                                 dy_fix_data=None, dy_fix_err=None, file_name = 'upper_GPPlots_Rho')
 
 
         #extract the fit results:
