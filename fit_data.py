@@ -35,7 +35,8 @@ except Exception as err:
 
 def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordinates_errors=None, \
              kernel_method='RQ_Kernel', optimise_all_params=True, slices_optim_nbr=10, nbr_pts=100, \
-             slices_nbr=10, plot_fit=True, x_fix_data=[0.0], dy_fix_data=[0.0], dy_fix_err=[0.0], file_name = 'GPPlots', boundary_max=None, boundary_min=None, boundary_derv=None):
+             slices_nbr=10, plot_fit=True, x_fix_data=[0.0], dy_fix_data=[0.0], dy_fix_err=[0.0], \
+             file_name = 'GPPlots', boundary_max=None, boundary_min=None, boundary_derv=None):
 
     '''
     Fit Y profile as a function of X quantity
@@ -770,9 +771,9 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 os.makedirs(save_directory)
             os.chdir(save_directory)
             
-        #for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
+        for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
         #for i in range(5):#0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
-        for i in range(0, 1000):
+        #for i in range(0, 1000):
             print('slice number : ', i)
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
