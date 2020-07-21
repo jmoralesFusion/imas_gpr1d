@@ -542,18 +542,20 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         #add the time slices as an output for the data_fit function
         time_slices_red_upper = out_put_upper['fit_time_slice']
-        mask_diff_upper = []
+        #mask_diff_upper = []
+        mask_total_upper = []
         ne_line_interpolated_R_upper = []
         derivative_interp_array_upper = []
 
         for ii in range(len(time_slices_red_upper)):
-            mask_diff_upper.append((np.diff(rho_mid_plane[time_slices_red_upper[ii],:])>0))
-            mask_rho_fit_upper= ((rho_mid_plane[time_slices_red_upper[ii],:]>rho_total_fit_x_upper[ii].min()) \
+            mask_diff_upper = np.diff(rho_mid_plane[time_slices_red_upper[ii],:]) > 0
+            mask_rho_fit_upper = ((rho_mid_plane[time_slices_red_upper[ii],:]>rho_total_fit_x_upper[ii].min()) \
                                & (rho_mid_plane[time_slices_red_upper[ii],:]<rho_total_fit_x_upper[ii].max()))
 
-        mask_diff_upper = np.asarray(mask_diff_upper)
-        mask_diff_upper = np.insert(mask_diff_upper, False, 0, axis=1)
-        mask_total_upper = mask_rho_fit_upper & mask_diff_upper
+            mask_diff_upper = np.insert(mask_diff_upper, False, 0)
+            mask_total_upper.append(mask_rho_fit_upper & mask_diff_upper)
+
+        mask_total_upper = np.asarray(mask_total_upper)
 
         for ii in range(len(time_slices_red_upper)):
             ne_line_interpolated_R_upper.append(np.interp(rho_mid_plane[time_slices_red_upper[ii],mask_total_upper[ii]], \
@@ -729,18 +731,20 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         #add the time slices as an output for the data_fit function
 
         time_slices_red_lower = out_put_lower['fit_time_slice']
-        mask_diff_lower = []
+        #mask_diff_lower = []
+        mask_total_lower = []
         ne_line_interpolated_R_lower = []
         derivative_interp_array_lower = []
 
         for ii in range(len(time_slices_red_lower)):
-            mask_diff_lower.append((np.diff(rho_mid_plane[time_slices_red_lower[ii],:])>0))
+            mask_diff_lower = np.diff(rho_mid_plane[time_slices_red_lower[ii],:]) > 0
             mask_rho_fit_lower= ((rho_mid_plane[time_slices_red_lower[ii],:]>rho_total_fit_x_lower[ii].min()) \
                                & (rho_mid_plane[time_slices_red_lower[ii],:]<rho_total_fit_x_lower[ii].max()))
 
-        mask_diff_lower = np.asarray(mask_diff_lower)
-        mask_diff_lower = np.insert(mask_diff_lower, False, 0, axis=1)
-        mask_total_lower = mask_rho_fit_lower & mask_diff_lower
+            mask_diff_lower = np.insert(mask_diff_lower, False, 0)
+            mask_total_lower.append(mask_rho_fit_lower & mask_diff_lower)
+
+        mask_total_lower = np.asarray(mask_total_lower)
 
         for ii in range(len(time_slices_red_lower)):
             ne_line_interpolated_R_lower.append(np.interp(rho_mid_plane[time_slices_red_lower[ii],mask_total_lower[ii]], \
