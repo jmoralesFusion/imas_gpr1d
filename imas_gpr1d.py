@@ -244,15 +244,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         for jj in np.arange(0,integrale_density_ref.shape[1]):
             integrale_density_ref[:,jj] = (-1)*(integrate.cumtrapz(electron_density[:,jj],R_real_ref[:,jj], initial=0))
 
-        Phi_reflec = np.zeros(R_real_ref.shape[0])
-        Z_reflec = np.zeros(R_real_ref.shape[0])
-        rho_pol_norm_base_reflec = np.full((R_real_ref.shape), np.nan)
-
-        #take a small portion of the R_real to save time on the loop of equimaps
-        for ii in range(R_real_ref.shape[1]):
-        #for ii in range(10):
-            rho_pol_norm_base_reflec[:,ii] = equimap.get(shot, Time_ref[ii], R_real_ref[:,ii], Phi_reflec, Z_reflec, 'rho_pol_norm')
-
         R_base_ref = np.linspace(R_real_ref.min(), R_real_ref.max(), 1000)
         Phi_ref = np.zeros(1000)
         Z_ref = np.zeros(1000)
@@ -327,8 +318,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         #create two masks for the line of sight regarding their 
         #with respect to z-axis in order to study the asymmetry
         #we call them upper(z>0) and lower(z<0)
-        mask_upper_LOS = []
-        mask_lower_LOS = []
+        mask_upper_LOS = []; mask_lower_LOS = []
 
         for ii in range(R.shape[0]):
             for jj in range(r_axis_interp.shape[0]):
@@ -344,9 +334,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         #start the equimap procedure:
         Phi = np.zeros(1000)
-        rho_pol_norm_base = []
-        rho_pol_norm_base_min = []
-        electron_density_line=[]
+        rho_pol_norm_base = []; rho_pol_norm_base_min = []; electron_density_line=[]
 
         for zz in range(0,nbr_channels):
             rho_pol_norm_base.append(equimap.get(shot, TimeReference, R[zz], Phi, Z[zz], 'rho_pol_norm', occ=1))
