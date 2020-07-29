@@ -34,8 +34,8 @@ except Exception as err:
 '''
 
 def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordinates_errors=None, \
-             kernel_method='RQ_Kernel', optimise_all_params=True, slices_optim_nbr=10, nbr_pts=100, \
-             slices_nbr=10, plot_fit=True, x_fix_data=[0.0], dy_fix_data=[0.0], dy_fix_err=[0.0], \
+             kernel_method='RQ_Kernel', optimise_all_params=False, slices_optim_nbr=10, nbr_pts=100, \
+             slices_nbr=10, plot_fit=True, x_fix_data=[0.0], dy_fix_data=[0.0], dy_fix_err=[0.0], Time_real=None, \
              file_name = 'GPPlots', boundary_max=None, boundary_min=None, boundary_derv=None):
 
     '''
@@ -693,11 +693,11 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
         #grab the obtimized values and use them in the fitting routine:
         start_time = time.time()
         print(start_time)
-        if not optimise_all_params:
+        if optimise_all_params:
             print('computing the time for optimisating the ' , slices_optim_nbr,  'slices')
             optimized_values = Optimization(X_coordinates, Y_coordinates, X_coordinates_errors, \
                                             Y_coordinates_errors,  kernel_method, slices_optim_nbr, \
-                                            x_fix_data, dy_fix_data,dy_fix_err, nbr_pts, True)
+                                            x_fix_data, dy_fix_data,dy_fix_err, nbr_pts)
             if X_coordinates_errors is not None:
                 if kernel_method == 'RQ_Kernel': 
                     default_configuartion = {
@@ -854,7 +854,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             if ((X_coordinates_errors is None) or (X_coordinates_errors is not None) or plot_fit):
                 # GPR fit rigourously accounting only for y-errors (this is the recommended option)
                 #     Procedure is nearly identical to above, except for the addition of an error kernel
-                if not optimise_all_params:
+                if optimise_all_params:
                     if kernel_method == 'Gibbs_Kernel':
                         hsgpr_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['hsgp_fit_regpar_optimized']['amp'] ,\
                                                                      optimized_values['hsgp_fit_regpar_optimized']['alpha']],\
@@ -889,7 +889,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 hsgpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
                                           dxdata=x_fix_data, dydata=dy_fix_data, dyerr=dy_fix_err )
 
-                if optimise_all_params:
+                if not optimise_all_params:
                 #     Default optimizer is gradient ascent / descent - extremely robust but slow
                 #     Uncomment any of the following lines to test the recommended optimizers
                     hsgpr_object.set_kernel(kernel=kernel)
@@ -1015,7 +1015,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             if (X_coordinates_errors is not None or plot_fit):
                 # GPR fit rigourously accounting for y-errors AND x-errors
                 #     Procedure is nearly identical to above, except for the addition of an extra option
-                if not optimise_all_params:
+                if optimise_all_params:
                     if kernel_method == 'Gibbs_Kernel':
 
                         nigpr_kernel_hyppar_bounds = np.atleast_2d([[optimized_values['nigp_fit_regpar_optimized']['amp'] ,\
@@ -1047,7 +1047,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 nigpr_object = GPR1D.GaussianProcessRegression1D()
                 nigpr_object.set_raw_data(xdata=X_reduced,ydata=Y_reduced,yerr=Y_errors,xerr=X_errors, \
                                           dxdata=x_fix_data, dydata=dy_fix_data, dyerr=dy_fix_err )
-                if optimise_all_params:
+                if not optimise_all_params:
                     nigpr_object.set_kernel(kernel=kernel)
                     nigpr_object.set_error_kernel(kernel=error_kernel)
                     nigpr_object.set_search_parameters(epsilon=1.0e-2)
@@ -1077,7 +1077,10 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                                hsgp_error_kernel_name,hsgp_error_fit_regpar,hsgp_error_kernel_hyppars,hs_fit_lml,\
                                nigp_kernel_name,nigp_fit_regpar,nigp_kernel_hyppars,\
                                nigp_error_kernel_name,nigp_error_fit_regpar,nigp_error_kernel_hyppars,ni_fit_lml)
-
+                if Time_real is not None:
+                    Time_real_sec =  Time_real[i]
+                else:
+                    Time_real_sec = None
                 plot_data(fit_x_values, minimum, maximum, \
                               X_reduced, Y_reduced, \
                               Y_errors, X_errors, \
@@ -1098,7 +1101,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                               nsample_array, \
                               fit_y_values, fit_y_errors, \
                               fit_dydx_values, fit_dydx_errors, \
-                              i,file_name = file_name)
+                              i,Time_real_sec, file_name = file_name)
 
             # Results
             # -------

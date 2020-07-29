@@ -37,7 +37,7 @@ def plot_data(fit_x_values, minimum, maximum, \
                   nsample_array, \
                   fit_y_values, fit_y_errors, \
                   fit_dydx_values, fit_dydx_errors,\
-                  i, file_name='GPPlots'): 
+                  i, Time_real_sec, file_name='GPPlots'): 
  
     ###Some basic setup
     plot_save_directory = './'+file_name +'_'+ str(i)
@@ -57,8 +57,6 @@ def plot_data(fit_x_values, minimum, maximum, \
         plt = None
 
     if plt is not None:
-
-
         plot_num_samples = 3
         plot_sigma = 2.0
         
@@ -76,11 +74,10 @@ def plot_data(fit_x_values, minimum, maximum, \
         fig.savefig(plot_save_directory+'Raw_data.png')
         plt.close(fig)
 
-
         # Raw data with GPR fit and error, only accounting for y-errors
         plot_Y_errors = plot_sigma * Y_errors
         fig = plt.figure()
-        fig.suptitle('Raw data with GPR fit and error, only accounting for y-error', fontdict={'fontsize': 8, 'fontweight': 'medium'})
+        fig.suptitle('Raw data with GPR fit and error, only accounting for y-error at T= '+str(Time_real_sec) + 'sec' , fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         ax.errorbar(X_reduced, Y_reduced, yerr=plot_Y_errors, ls='', marker='.', color='b')
         ax.plot(fit_x_values, hs_fit_y_values, color='r')
@@ -88,7 +85,7 @@ def plot_data(fit_x_values, minimum, maximum, \
         plot_hs_fit_y_upper = hs_fit_y_values + plot_sigma * hs_fit_y_errors
         ax.fill_between(fit_x_values, plot_hs_fit_y_lower, plot_hs_fit_y_upper, facecolor='r', edgecolor='None', alpha=0.2)
         ax.set_xlim(minimum, maximum)
-        plt.gca().legend(('gpr fit','2$\\sigma$ plot region','Raw data'), loc = 'best')
+        plt.gca().legend(('gpr fit','2$\\sigma$ plot region','Raw data', Time_real_sec), loc = 'best')
         fig.savefig(plot_save_directory+'gpr_data.png')
         plt.close(fig)
         
