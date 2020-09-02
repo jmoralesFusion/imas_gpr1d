@@ -38,6 +38,12 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         raise ValueError("The data type is not know, please provide an valid type from the List")
         return
 
+    shot_directory = './'+str(shot)+'_'+datatype+'_data'
+    if not shot_directory.endswith('/'):
+        shot_directory = shot_directory+'/'
+    if not os.path.isdir(shot_directory):
+        os.makedirs(shot_directory)
+    os.chdir(shot_directory)
     #-	55580 and 54560  abserrNe = 6.0e17  relerrNe = 0.1
     idd_in = imas.ids(shot, run_in)
     idd_in.open_env(user_in, machine_in, '3')
@@ -220,6 +226,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         Time_eq = idd_in.equilibrium.time
         Time_inter = idd_in.interferometer.time
         Time_ref   = idd_in.reflectometer_profile.time
+        import pdb; pdb.set_trace()
         if ((Time_ref is None) or (Time_inter is None) or (Time_eq is None)) :
             raise RuntimeError('choose another shot that have a valid time')
 
@@ -569,7 +576,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         print('initialize fit_function:')
         out_put_upper = fit_data(rho_total_sort_upper_nonan, ne_line_total_sort_upper_nonan, rho_total_errors_upper, \
                                  ne_line_total_errors_upper, kernel_method=args.kernel, \
-                                 optimise_all_params=False, nbr_pts=100, slices_nbr=10, plot_fit=True, x_fix_data=None, \
+                                 optimise_all_params=False, nbr_pts=100, slices_nbr=30, plot_fit=True, x_fix_data=None, \
                                  dy_fix_data=None, dy_fix_err=None, Time_real=TimeReference, file_name = 'upper_GPPlots_Rho')
 
 
@@ -642,7 +649,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         if output_as_input_upper:
             out_put_R_upper12 = fit_data(R_meters_mask_upper, ne_line_interpolated_R_2d_upper, R_meters_2d_errors_upper, \
                                          ne_line_interpolated_R_2d_errors_upper, kernel_method=args.kernel, \
-                                         optimise_all_params=False, slices_nbr=10, plot_fit=True,x_fix_data=None, \
+                                         optimise_all_params=False, slices_nbr=30, plot_fit=True,x_fix_data=None, \
                                          dy_fix_data=None, dy_fix_err=None, Time_real=time_real_upp, file_name = 'upper_GPPlots_r')
 
             # output the data necessary for the boundary conditions
@@ -661,17 +668,17 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
                 # output the data necessary for the boundary conditions
                 out_put_R_upper = fit_data(R_meters_mask_upper, ne_line_interpolated_R_2d_upper, R_meters_2d_errors_upper, \
                                            ne_line_interpolated_R_2d_errors_upper , kernel_method=args.kernel, \
-                                           optimise_all_params=False, slices_nbr=10, plot_fit=True, x_fix_data=None, \
+                                           optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, \
                                            dy_fix_data=None, dy_fix_err=None, Time_real=time_real_upp, file_name = 'upper_GPPlots_rcon', \
                                            boundary_max=upper_maximum_R, boundary_min=upper_minimum_R, boundary_derv=upper_derivative_R)
             else:
                 out_put_R_upper = fit_data(upper_x_fix, upper_fit_y , upper_x_error, upper_y_error, kernel_method=args.kernel, \
-                                          optimise_all_params=False, slices_nbr=10, plot_fit=True, x_fix_data=None, \
+                                          optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, \
                                           dy_fix_data=None, dy_fix_err=None, Time_real=time_real_upp, file_name = 'upper_GPPlots_rcon')
         else:
             out_put_R_upper = fit_data(R_meters_mask_upper, ne_line_interpolated_R_2d_upper, R_meters_2d_errors_upper, \
                                        ne_line_interpolated_R_2d_errors_upper , kernel_method=args.kernel, \
-                                       optimise_all_params=False, slices_nbr=10, plot_fit=True, x_fix_data=None, \
+                                       optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, \
                                        dy_fix_data=None, dy_fix_err=None, Time_real=time_real_upp, file_name = 'upper_GPPlots_rcon')
       
 
@@ -766,7 +773,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         
         out_put_lower = fit_data(rho_total_sort_lower_nonan, ne_line_total_sort_lower_nonan, rho_total_errors_lower, \
                                  ne_line_total_errors_lower, kernel_method=args.kernel, \
-                                 optimise_all_params=False, slices_nbr=10, plot_fit=True, x_fix_data=None, \
+                                 optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, \
                                  dy_fix_data=None, dy_fix_err=None, Time_real=TimeReference, file_name = 'lower_GPPlots_Rho')
 
 
@@ -840,7 +847,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         if output_as_input_lower:
             out_put_R_lower12 = fit_data(R_meters_mask_lower, ne_line_interpolated_R_2d_lower, R_meters_2d_errors_lower, \
                                          ne_line_interpolated_R_2d_errors_lower, kernel_method=args.kernel, \
-                                         optimise_all_params=False, slices_nbr=10, plot_fit=True,x_fix_data=None, \
+                                         optimise_all_params=False, slices_nbr=30, plot_fit=True,x_fix_data=None, \
                                          dy_fix_data=None, dy_fix_err=None, Time_real=time_real_low, file_name = 'lower_GPPlots_r')
 
             # output the data necessary for the boundary conditions
@@ -859,17 +866,17 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             if boundary_conditions:
                 out_put_R_lower = fit_data(R_meters_mask_lower, ne_line_interpolated_R_2d_lower, R_meters_2d_errors_lower, \
                                            ne_line_interpolated_R_2d_errors_lower, kernel_method=args.kernel, \
-                                           optimise_all_params=False, slices_nbr=10, plot_fit=True, x_fix_data=None, \
+                                           optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, \
                                            dy_fix_data=None, dy_fix_err=None, Time_real=time_real_low, file_name = 'lower_GPPlots_rcon', \
                                            boundary_max=lower_maximum_R, boundary_min=lower_minimum_R, boundary_derv=lower_derivative_R)
             else:
                 out_put_R_lower = fit_data(lower_x_fix, lower_fit_y ,lower_x_error , lower_y_error, kernel_method=args.kernel, \
-                                          optimise_all_params=False, slices_nbr=10, plot_fit=True, x_fix_data=None, \
+                                          optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, \
                                           dy_fix_data=None, dy_fix_err=None, Time_real=time_real_low, file_name = 'lower_GPPlots_rcon')
         else:
             out_put_R_lower = fit_data(R_meters_mask_lower, ne_line_interpolated_R_2d_lower, R_meters_2d_errors_lower, \
                                        ne_line_interpolated_R_2d_errors_lower, kernel_method=args.kernel, \
-                                       optimise_all_params=False, slices_nbr=10, plot_fit=True, x_fix_data=None, \
+                                       optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, \
                                        dy_fix_data=None, dy_fix_err=None, Time_real=time_real_low, file_name = 'lower_GPPlots_rcon')
               
 
@@ -1162,7 +1169,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         if output_as_input_final:
             out_put_final12 = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan, \
                                        rho_total_sort_final_error , ne_line_total_sort_final_error , kernel_method='Gibbs_Kernel', \
-                                       optimise_all_params=False, slices_nbr=10, plot_fit=True, x_fix_data=None, \
+                                       optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, \
                                        dy_fix_data=None, dy_fix_err=None, Time_real=time_global,)
             # output the data necessary for the boundary conditions
             final_maximum_R    = (np.asarray(out_put_final12['fit_x'])).max(axis=1)
@@ -1179,19 +1186,19 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             if boundary_to_be_used : 
                 out_put_final = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan, \
                                          rho_total_sort_final_error , ne_line_total_sort_final_error , kernel_method='Gibbs_Kernel', \
-                                         optimise_all_params=False, slices_nbr=10, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
+                                         optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
                                          dy_fix_err=None, Time_real=time_global, file_name = 'GPPlots_resultant_baoundary', boundary_max=final_maximum_R, boundary_min=final_minimum_R, boundary_derv=final_derivative_R)
 
             else :
                 out_put_final = fit_data(final_x_fix ,final_fit_y  , final_x_error , final_y_error , kernel_method='Gibbs_Kernel', \
-                                         optimise_all_params=False, slices_nbr=10, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
+                                         optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
                                          dy_fix_err=None, Time_real=time_global, file_name = 'GPPlots_resultant_baoundary')#, boundary_max=final_maximum_R, boundary_min=final_minimum_R, boundary_derv=final_derivative_R)
 
 
         else:
             out_put_final = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan , rho_total_sort_final_error, \
                                      ne_line_total_sort_final_error , kernel_method='Gibbs_Kernel', \
-                                     optimise_all_params=False, slices_nbr=10, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
+                                     optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
                                      dy_fix_err=None, Time_real=time_global, file_name = 'GPPlots_resultant_noboundary')#, boundary_max=final_maximum_R, boundary_min=final_minimum_R, boundary_derv=final_derivative_R)
 
         ne_density_fit = (np.asarray(out_put_final['fit_y']))
@@ -1235,16 +1242,15 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
 
-        density_check = 2*(electron_density_ne/Normalization_constant)
+        density_check = 4*(electron_density_ne/Normalization_constant)
         density_check[np.isnan(density_check)] = 0
 
         error_difference = integrale_density_final - density_check[:,Time_index]
-        error_difference_percent  = (integrale_density_final - density_check[:,Time_index])/(2*density_check[:,Time_index])
+        error_difference_percent  = (integrale_density_final - density_check[:,Time_index])/(density_check[:,Time_index])
         error_difference_percent[np.isinf(error_difference_percent)] = 0
         RMS = np.sqrt(np.mean((error_difference)**2, axis=0))
         RMSE = (np.sqrt(np.mean((error_difference_percent)**2, axis=0)))*100
-
-
+        
         ###Some basic setup
         #create the test directory to save  output files
         #user can add as much as he wants here
@@ -1255,13 +1261,15 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             os.makedirs(output_save_directory)
         os.chdir(output_save_directory)
         #save the outputs to files to be loaded and used in plots
+        np.savez('statistics', RMSE_mean=np.nanmean(RMSE) , RMSE_median=np.nanmedian(RMSE), RMSE_min=np.nanmin(RMSE), RMSE_max=np.nanmax(RMSE) )
         np.savez('Time_file', Time_index=Time_index, time_slices_red_upper=time_slices_red_upper , time_slices_red_lower=time_slices_red_lower)
         np.savez('Error_files', error_difference=error_difference, error_difference_percent=error_difference_percent, RMSE=RMSE, RMS=RMS)
         np.savez('Compare_density', R_meters_mask_lower=R_meters_mask_lower , R_meters_mask_upper=R_meters_mask_upper , average_der_density=average_der_density, derivative_density_upper=derivative_density_upper , derivative_density_lower=derivative_density_lower)
         np.savez('Rhos_vs_ne', rho_pol_norm_base_min=rho_pol_norm_base_min , rho_pol_norm_ref=rho_pol_norm_ref , electron_density_ne=electron_density_ne , integrale_density_ref=integrale_density_ref, density_check=density_check, integrale_density_final=integrale_density_final)
         os.chdir('../')
-
-
+        os.chdir('../')
+        print('current working directory')
+        print(os.getcwd())
         import pdb; pdb.set_trace()
 
         return rho_total_sort_upper.T, ne_line_total_sort_upper.T, rho_total_errors_upper.T, ne_line_total_errors_upper.T
@@ -1325,6 +1333,6 @@ if __name__ == '__main__':
     import ipdb; ipdb.set_trace()
     '''
     #out = fit_data(x, y, ex , ey, kernel_method=args.kernel, \
-                       #optimise_all_params=False, slices_nbr=10, plot_fit=True)
+                       #optimise_all_params=False, slices_nbr=30, plot_fit=True)
     #import pdb; pdb.set_trace()
 
