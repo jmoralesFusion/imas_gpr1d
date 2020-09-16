@@ -226,29 +226,42 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         Time_eq = idd_in.equilibrium.time
         Time_inter = idd_in.interferometer.time
         Time_ref   = idd_in.reflectometer_profile.time
-        import pdb; pdb.set_trace()
+        if ((Time_ref.size==0 ) or (Time_inter.size==0) or (Time_eq.size==0)) :
+            raise RuntimeError('choose another shot that have a non zero time')
+
         if ((Time_ref is None) or (Time_inter is None) or (Time_eq is None)) :
             raise RuntimeError('choose another shot that have a valid time')
 
         time_min = np.asarray([Time_eq.min(),Time_inter.min(),Time_ref.min()]).max()
         time_max = np.asarray([Time_eq.max(),Time_inter.max(),Time_ref.max()]).min()
-
+        
         #mask over the times of reflectometer and interferometer
         mask_time_reflec = (Time_ref > time_min) & (Time_ref < time_max)
         mask_time_interf = (Time_inter > time_min) & (Time_inter < time_max)
+        mask_time_eq     = (Time_eq > time_min) & (Time_eq < time_max)
+        
 
+        '''
         if (len(Time_ref[mask_time_reflec])< len(Time_inter[mask_time_interf])):
             TimeReference = Time_ref[mask_time_reflec]
         else:
             TimeReference = Time_inter[mask_time_interf]
-
+        '''
+        TimeReference = Time_eq[mask_time_eq]
         ##########################
         ##########################
         #grab the reflectometer data and mask them
-        R_real_ref       = idd_in.reflectometer_profile.channel[0].position.r
-        electron_density = idd_in.reflectometer_profile.channel[0].n_e.data
-        R_real_ref       = R_real_ref[:,mask_time_reflec]
-        electron_density = electron_density[:,mask_time_reflec]
+        R_real_ref_data       = idd_in.reflectometer_profile.channel[0].position.r
+        electron_density_data = idd_in.reflectometer_profile.channel[0].n_e.data
+        R_real_ref = np.full((R_real_ref_data.shape[0], TimeReference.shape[0]),np.nan)
+        electron_density = np.full((electron_density_data.shape[0], TimeReference.shape[0]),np.nan)
+
+        for ii in range(electron_density.shape[0]):
+            electron_density[ii] = np.interp(TimeReference, Time_ref, electron_density_data[ii,:])
+            R_real_ref[ii]       =np.interp(TimeReference, Time_ref, R_real_ref_data[ii,:])
+
+        #R_real_ref       = R_real_ref[:,mask_time_reflec]
+        #electron_density = electron_density[:,mask_time_reflec]
 
         integrale_density_ref = np.full((electron_density.shape), np.nan)
         for jj in np.arange(0,integrale_density_ref.shape[1]):
@@ -257,14 +270,18 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         R_base_ref = np.linspace(R_real_ref.min(), R_real_ref.max(), 1000)
         Phi_ref = np.zeros(1000)
         Z_ref = np.zeros(1000)
-        rho_pol_norm_base_ref = equimap.get(shot, Time_ref, R_base_ref, Phi_ref, Z_ref, 'rho_pol_norm')
+        #rho_pol_norm_base_ref = equimap.get(shot, Time_ref, R_base_ref, Phi_ref, Z_ref, 'rho_pol_norm')
+        rho_pol_norm_base_ref = equimap.get(shot,TimeReference , R_base_ref, Phi_ref, Z_ref, 'rho_pol_norm')
+
         if rho_pol_norm_base_ref.shape != electron_density.shape :
             rho_pol_norm_base_ref = rho_pol_norm_base_ref.T
         else :
             rho_pol_norm_base_ref = rho_pol_norm_base_ref
 
-        rho_pol_norm_base_ref = rho_pol_norm_base_ref[:,mask_time_reflec]
+        #rho_pol_norm_base_ref = rho_pol_norm_base_ref[:,mask_time_reflec]
+
         rho_pol_norm_ref = np.full(R_real_ref.shape, np.nan)
+
         for ii in range(rho_pol_norm_base_ref.shape[1]):
             rho_pol_norm_ref[:, ii] = np.interp(R_real_ref[:, ii], R_base_ref, rho_pol_norm_base_ref[:, ii])
 
@@ -420,7 +437,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         length_2 = np.sqrt((R_mid_right-R_mid_left)**2)
-        #the normalization constant used uppon normalizing the electron density from interferometry
+        #the normalization constant used upon normalizing the electron density from interferometry
         Normalization_constant  = length_2/length_1
 
         #####################################################################################################
@@ -500,32 +517,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             ne_line_total_sort_upper_nonan = ne_line_total_sort_upper_nan.filled(np.nan)
 
         #step one: remove nans and then interpolate over 100
-
-        '''
-        #check the new length of the data and prepare to remove nans
-        new_space_dimension_upper = len(rho_total_sort_upper[:,0][~np.isnan(rho_total_sort_upper[:,0])])
-        new_time_dimension_upper = ne_line_total_sort_upper.shape[1]
-
-        for ii in range(ne_line_total_sort_upper.shape[1]):
-            if (len(rho_total_sort_upper[:,ii][~np.isnan(rho_total_sort_upper[:,ii])])<new_space_dimension_upper):
-                new_space_dimension_upper = len(rho_total_sort_upper[:,ii][~np.isnan(rho_total_sort_upper[:,ii])])
-
-        rho_total_sort_upper_nonan     = np.full((new_space_dimension_upper, new_time_dimension_upper), np.nan)
-        ne_line_total_sort_upper_nonan = np.full((new_space_dimension_upper, new_time_dimension_upper), np.nan)
-
-        for ii in range(ne_line_total_sort_upper.shape[1]):
-            if(len(rho_total_sort_upper[:,ii][~np.isnan(rho_total_sort_upper[:,ii])])>new_space_dimension_upper):
-                difference_upper = len(rho_total_sort_upper[:,ii][~np.isnan(rho_total_sort_upper[:,ii])])-new_space_dimension_upper
-                rho_total_sort_upper_nonan[:,ii] = (rho_total_sort_upper[:,ii][~np.isnan(rho_total_sort_upper[:,ii])])[:-difference_upper]
-                ne_line_total_sort_upper_nonan[:,ii] = (ne_line_total_sort_upper[:,ii][~np.isnan(ne_line_total_sort_upper[:,ii])])[:-difference_upper]
-            else:
-                rho_total_sort_upper_nonan[:,ii] = (rho_total_sort_upper[:,ii][~np.isnan(rho_total_sort_upper[:,ii])])
-                ne_line_total_sort_upper_nonan[:,ii] = (ne_line_total_sort_upper[:,ii][~np.isnan(ne_line_total_sort_upper[:,ii])])
-                
-        '''
-
-
-        #start the new procedure concerning fisation of the grid
+        #start the new procedure concerning fixation of the grid
 
         from scipy import interpolate
         
@@ -727,7 +719,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             ne_line_total_sort_lower = ne_line_total_sort_lower_nan.filled(np.nan)
 
 
-        #start the new procedure concerning fisation of the grid
+        #start the new procedure concerning fixation of the grid
 
         from scipy import interpolate
         
@@ -926,8 +918,59 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         derivative_density_upper_masked = np.ma.array(derivative_density_upper_fit_output, mask = ~mask_upper_rho, fill_value=np.nan)
         derivative_density_lower_masked = np.ma.array(derivative_density_lower_fit_output, mask = ~mask_lower_rho, fill_value=np.nan)
+
+        #these are the derivative desities to be used and averaged on and saved to the ids:
         derivative_density_upper = derivative_density_upper_masked.filled(np.nan)
         derivative_density_lower = derivative_density_lower_masked.filled(np.nan)
+
+
+
+        if (write_edge_profiles):
+            #####################################################################################################
+            ### save the output to the edge profiles as a start
+
+            # Create or open IDS
+            # ------------------
+            run_number = '{:04d}'.format(run_out)
+            shot_file  = os.path.expanduser('~' + user_out + '/public/imasdb/' \
+                                                + machine_out + '/3/0/' + 'ids_' + str(shot) \
+                                                + run_number + '_upper.datafile')
+
+            idd_out = imas.ids(shot, run_out)
+
+            if (os.path.isfile(shot_file)):
+                print('open the IDS')
+                idd_out.open_env(user_out, machine_out, '3')
+            else:
+                if (user_out == 'imas_public'):
+                    print('ERROR IDS file does not exist, the IDS file must be')
+                    print('created first for imas_public user_out')
+                    raise FileNotFoundError
+                else:
+                    print('Create the IDS')
+                    idd_out.create_env(user_out, machine_out, '3')
+
+            # Write data
+            # ----------
+            import ipdb; ipdb.set_trace()
+            print(' ')
+            print('Write data')
+            print('----------')
+            idd_out.edge_profiles.profiles_1d.resize(100)
+            idd_out.edge_profiles.ids_properties.homogeneous_time = 0
+            idd_out.edge_profiles.time.resize(5)
+            print('rho_mid_plane_upper_masked =', rho_mid_plane_upper_masked)
+            for ii in range(rho_mid_plane_upper_masked.shape[0]):
+                idd_out.edge_profiles.profiles_1d[0].grid.rho_tor_norm = rho_mid_plane_upper_masked[0]
+                idd_out.edge_profiles.time[ii] = ii
+            import ipdb; ipdb.set_trace()
+            idd_out.edge_profiles.put()
+            idd_out.close()
+
+
+
+
+
 
 
         electron_density_der_upper = np.full(rho_mid_plane_upper_masked.shape, np.nan)
@@ -1146,6 +1189,28 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             rho_total_sort_final_nonan = np.asarray(rho_total_sort_final_nonan)
             ne_line_total_sort_final_nonan = np.asarray(ne_line_total_sort_final_nonan)
         
+
+
+
+        #import pdb; pdb.set_trace()
+        
+        ne_line_total_sort_final_nonan_corrected = np.full(ne_line_total_sort_final_nonan.shape, np.nan)
+        for ii in range(ne_line_total_sort_final_nonan.shape[0]):
+            density_max_index = np.argmax(ne_line_total_sort_final_nonan[ii])
+            if density_max_index==0:
+                ne_line_total_sort_final_nonan_corrected[ii] = ne_line_total_sort_final_nonan[ii]
+            else:
+                for jj in range(ne_line_total_sort_final_nonan.shape[1]):
+                    if jj<density_max_index:
+                        ne_line_total_sort_final_nonan_corrected[ii,jj] = np.nanmax(ne_line_total_sort_final_nonan[ii])
+                    else:
+                        ne_line_total_sort_final_nonan_corrected[ii,jj] = ne_line_total_sort_final_nonan[ii,jj]
+        #import pdb; pdb.set_trace()
+
+        ne_line_total_sort_final_nonan = ne_line_total_sort_final_nonan_corrected
+        
+
+
         ############################################################################
         ############################################################################
         ############################################################################
@@ -1242,6 +1307,23 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
 
+
+
+        '''
+        import pdb; pdb.set_trace()
+        density_check = ne_line_total_sort#4*(electron_density_ne/Normalization_constant)
+        density_check[np.isnan(density_check)] = 0
+
+        error_difference = integrale_density_final - density_check[:,Time_index]
+        error_difference_percent  = (integrale_density_final - density_check[:,Time_index])/(density_check[:,Time_index])
+        error_difference_percent[np.isinf(error_difference_percent)] = 0
+        RMS = np.sqrt(np.mean((error_difference)**2, axis=0))
+        RMSE = (np.sqrt(np.mean((error_difference_percent)**2, axis=0)))*100
+        '''
+
+
+
+        
         density_check = 4*(electron_density_ne/Normalization_constant)
         density_check[np.isnan(density_check)] = 0
 
@@ -1251,6 +1333,12 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         RMS = np.sqrt(np.mean((error_difference)**2, axis=0))
         RMSE = (np.sqrt(np.mean((error_difference_percent)**2, axis=0)))*100
         
+
+
+
+
+
+
         ###Some basic setup
         #create the test directory to save  output files
         #user can add as much as he wants here
@@ -1270,7 +1358,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         os.chdir('../')
         print('current working directory')
         print(os.getcwd())
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
 
         return rho_total_sort_upper.T, ne_line_total_sort_upper.T, rho_total_errors_upper.T, ne_line_total_errors_upper.T
 

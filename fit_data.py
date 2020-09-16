@@ -131,7 +131,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
     else:
         raise RuntimeError("The Fit method is not know, please provide a method from the List")
-    ece = 1
+    ece = 2
     if (X_coordinates.ndim==1 and Y_coordinates.ndim==1 and ece==1 ) :
         print(' --------------> we are in the if statement')
         print(' --------------> the data are of size 1D')
@@ -771,9 +771,12 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                 os.makedirs(save_directory)
             os.chdir(save_directory)
             
-        for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
-        #for i in range(5):#0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
+        #for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
+        #for i in range(4):#0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
         #for i in range(0, 1000):
+        print(Y_coordinates.shape[0])
+        for i in range(0, Y_coordinates.shape[0]):
+            
             print('slice number : ', i)
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
