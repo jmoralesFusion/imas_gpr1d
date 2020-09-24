@@ -770,10 +770,11 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             if not os.path.isdir(save_directory):
                 os.makedirs(save_directory)
             os.chdir(save_directory)
-            
-        for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
-        #for i in range(5):#0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
-        #for i in range(0, 1000):
+        print(Y_coordinates.shape[0])
+    
+        #for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
+        for i in range(5):#0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
+        #for i in range(0, Y_coordinates.shape[0]):
             print('slice number : ', i)
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
