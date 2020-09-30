@@ -635,7 +635,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             (ni_fit_y_values,ni_fit_y_errors,ni_fit_dydx_values,ni_fit_dydx_errors) = nigpr_object.get_gp_results()
             ni_fit_lml = nigpr_object.get_gp_lml()
 
-
         if ((X_coordinates_errors is not None and plot_fit) or (X_coordinates_errors is None and plot_fit)):
             print_data(gp_kernel_name,gp_kernel_hyppars,gp_fit_regpar,fit_lml,\
                            hsgp_kernel_name,hsgp_fit_regpar,hsgp_kernel_hyppars,\

@@ -494,16 +494,15 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_total_sort_final_nonan = rho_total_sort
 
 
-
-        ne_line_total_sort_final_error = np.full(ne_line_total_sort_final_nonan.shape, (ne_line_total_sort_final_nonan)*0.03)
-        rho_total_sort_final_error = np.full(rho_total_sort_final_nonan.shape,np.mean(rho_total_sort_final_nonan)*0.01)
-        ne_line_total_sort_final_error= np.clip(ne_line_total_sort_final_error, 6*1e17, None)
+        ne_line_total_sort_final_error_added = np.full(ne_line_total_sort_final_nonan.shape, (ne_line_total_sort_final_nonan)*0.03)
+        rho_total_sort_final_error_added = np.full(rho_total_sort_final_nonan.shape,np.mean(rho_total_sort_final_nonan)*0.01)
+        ne_line_total_sort_final_error_added= np.clip(ne_line_total_sort_final_error_added, 6*1e17, None)
 
         time_global= TimeReference
 
 
-        out_put_All_added12 = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan , rho_total_sort_final_error, \
-                                ne_line_total_sort_final_error , kernel_method='Gibbs_Kernel', \
+        out_put_All_added12 = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan , rho_total_sort_final_error_added, \
+                                ne_line_total_sort_final_error_added , kernel_method='Gibbs_Kernel', \
                                 optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
                                 dy_fix_err=None, Time_real=time_global, file_name = 'GPPlots_resultant_noboundary123345')
 
@@ -715,8 +714,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
 
-            rho_total_sort_final_nonan     = rho_final_fixed_grid 
-            ne_line_total_sort_final_nonan = ne_line_final_fixed_grid
+            rho_total_sort_nonans_final     = rho_final_fixed_grid 
+            ne_line_total_sort_nonans_final = ne_line_final_fixed_grid
 
             ################
             ################
@@ -724,25 +723,25 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             ne_line_final_fixed_grid_error = np.full((channel_dim, time_dim), np.nan)
             rho_final_fixed_grid_error = np.full((channel_dim, time_dim), np.nan)
 
-            rho_total_sort_final_nonan_list_error = []
-            ne_line_total_sort_final_nonan_list_error = []
+            rho_total_sort_nonans_final_list_error = []
+            ne_line_total_sort_nonans_final_list_error = []
 
             for ii in range(ne_line_total_sort_final_error.shape[0]):
-                    rho_total_sort_final_nonan_list_error.append(rho_total_sort_final_error[ii][~np.isnan(rho_total_sort_final_error[ii])])
-                    ne_line_total_sort_final_nonan_list_error.append(ne_line_total_sort_final_error[ii][~np.isnan(ne_line_total_sort_final_error[ii])])
-                    min_in_rho_error = min(rho_total_sort_final_nonan_list_error[ii])
-                    max_in_rho_error = max(rho_total_sort_final_nonan_list_error[ii])
+                    rho_total_sort_nonans_final_list_error.append(rho_total_sort_final_error[ii][~np.isnan(rho_total_sort_final_error[ii])])
+                    ne_line_total_sort_nonans_final_list_error.append(ne_line_total_sort_final_error[ii][~np.isnan(ne_line_total_sort_final_error[ii])])
+                    min_in_rho_error = min(rho_total_sort_nonans_final_list_error[ii])
+                    max_in_rho_error = max(rho_total_sort_nonans_final_list_error[ii])
                     array_to_interpolate_into_error  = np.linspace(min_in_rho_error, max_in_rho_error, time_dim)
-                    rho_total_sort_final_nonan_list_error[ii] = np.asarray(rho_total_sort_final_nonan_list_error[ii])
-                    ne_line_total_sort_final_nonan_list_error[ii] = np.asarray(ne_line_total_sort_final_nonan_list_error[ii])
-                    interpolation_func_error = interpolate.interp1d(rho_total_sort_final_nonan_list_error[ii], ne_line_total_sort_final_nonan_list_error[ii])
+                    rho_total_sort_nonans_final_list_error[ii] = np.asarray(rho_total_sort_nonans_final_list_error[ii])
+                    ne_line_total_sort_nonans_final_list_error[ii] = np.asarray(ne_line_total_sort_nonans_final_list_error[ii])
+                    interpolation_func_error = interpolate.interp1d(rho_total_sort_nonans_final_list_error[ii], ne_line_total_sort_nonans_final_list_error[ii])
                     rho_final_fixed_grid_error[ii] = array_to_interpolate_into_error
                     ne_line_final_fixed_grid_error[ii] = interpolation_func_error(array_to_interpolate_into_error)
 
 
 
-            rho_total_sort_final_nonan_error     = rho_final_fixed_grid_error
-            ne_line_total_sort_final_nonan_error = ne_line_final_fixed_grid_error
+            rho_total_sort_nonans_final_error     = rho_final_fixed_grid_error
+            ne_line_total_sort_nonans_final_error = ne_line_final_fixed_grid_error
 
 
 
@@ -752,35 +751,78 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         ############################################################################
         ############################################################################
 
-
-
-        rho_total_sort_final_error = rho_total_sort_final_nonan_error
-        ne_line_total_sort_final_error = ne_line_total_sort_final_nonan_error
-
-        #ne_line_total_sort_final_error = np.full(ne_line_total_sort_final_nonan.shape, (ne_line_total_sort_final_nonan)*0.03)
-        #rho_total_sort_final_error = np.full(rho_total_sort_final_nonan.shape,np.mean(rho_total_sort_final_nonan)*0.01)
-        ne_line_total_sort_final_error= np.clip(ne_line_total_sort_final_error, 6*1e17, None)
+        #ne_line_total_sort_final_error = np.full(ne_line_total_sort_nonans_final.shape, (ne_line_total_sort_nonans_final)*0.03)
+        #rho_total_sort_final_error = np.full(rho_total_sort_nonans_final.shape,np.mean(rho_total_sort_nonans_final)*0.01)
+        ne_line_total_sort_nonans_final_error= np.clip(ne_line_total_sort_nonans_final_error, 6*1e17, None)
 
 
 
 
-        out_put_final = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan , rho_total_sort_final_error, \
-                                ne_line_total_sort_final_error , kernel_method='Gibbs_Kernel', \
+        out_put_final = fit_data(rho_total_sort_nonans_final , ne_line_total_sort_nonans_final , rho_total_sort_nonans_final_error, \
+                               ne_line_total_sort_nonans_final_error , kernel_method='Gibbs_Kernel', \
                                 optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
                                 dy_fix_err=None, Time_real=time_global, file_name = 'GPPlots_resultant_noboundaryholahola')
 
         ne_density_fit = (np.asarray(out_put_final['fit_y']))
         rho_total_fit =  (np.asarray(out_put_final['fit_x']))
+        ne_density_fit_error = (np.asarray(out_put_final['fit_y_error']))
         Time_index = np.asarray(out_put_final['fit_time_slice'])
 
 
+        if (write_edge_profiles):
+            #####################################################################################################
+            ### save the output to the edge profiles as a start
+
+            # Create or open IDS
+            # ------------------
+            run_number = '{:04d}'.format(run_out)
+            shot_file  = os.path.expanduser('~' + user_out + '/public/imasdb/' \
+                                                + machine_out + '/3/0/' + 'ids_' + str(shot) \
+                                                + run_number + '.datafile')
+
+            idd_out = imas.ids(shot, run_out)
+
+            if (os.path.isfile(shot_file)):
+                print('open the IDS')
+                idd_out.open_env(user_out, machine_out, '3')
+            else:
+                if (user_out == 'imas_public'):
+                    print('ERROR IDS file does not exist, the IDS file must be')
+                    print('created first for imas_public user_out')
+                    raise FileNotFoundError
+                else:
+                    print('Create the IDS')
+                    idd_out.create_env(user_out, machine_out, '3')
+            # Write data
+            # ----------
+            print(' ')
+            print('Write data')
+            print('----------')
+
+            idd_out.edge_profiles.profiles_1d.resize(rho_total_fit.shape[0])
+            #import pdb; pdb.set_trace()
+            for ii in range(rho_total_fit.shape[0]):
+                idd_out.edge_profiles.profiles_1d[ii].grid.rho_pol_norm = rho_total_fit[ii, :]
+                idd_out.edge_profiles.profiles_1d[ii].grid.rho_pol_norm_error_upper =rho_total_sort_nonans_final_error[ii, :] 
+                idd_out.edge_profiles.profiles_1d[ii].electrons.density = ne_density_fit[ii, :]
+                idd_out.edge_profiles.profiles_1d[ii].electrons.density_error_upper = ne_density_fit_error[ii, :]
+                idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.reconstructed = ne_line_total_sort_nonans_final[ii, :]
+                idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.reconstructed_error_upper = ne_line_total_sort_nonans_final_error[ii, :]
+                idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.measured = ne_line_total_sort_final_nonan[ii, :]
+                idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.measured_error_upper = ne_line_total_sort_final_error_added[ii, :]
+                idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.time_measurement = time_global[ii]
+
+            idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.source = ['reflectometer_profile.channel[0].n_e.data' , 'interferometer.channel[zz].n_e_line.data'] 
+            idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.parameters = ['rho_total_fit', 'ne_density_fit', 'time_global', 'rho_total_fit_error', 'ne_density_fit_error']
+            #import pdb; pdb.set_trace()
+
+            idd_out.edge_profiles.put()
+            idd_out.close()
 
 
 
 
 
-
-        #import pdb; pdb.set_trace()
 
 
         #interpolate rho_pol_norm_base along time and space to rho_total_fit
@@ -839,7 +881,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         os.chdir(output_save_directory)
         #save the outputs to files to be loaded and used in plots
         np.savez('statistics', RMSE_mean=np.nanmean(RMSE) , RMSE_median=np.nanmedian(RMSE), RMSE_min=np.nanmin(RMSE), RMSE_max=np.nanmax(RMSE) )
-        np.savez('Time_file', Time_index=Time_index)
+        np.savez('Time_file', Time_index=Time_index, time_global=time_global)
         np.savez('Error_files', error_difference=error_difference, error_difference_percent=error_difference_percent, RMSE=RMSE, RMS=RMS)
         np.savez('Rhos_vs_ne', rho_pol_norm_base_min=rho_pol_norm_base_min , rho_pol_norm_ref=rho_pol_norm_ref , electron_density_ne=electron_density_ne , integrale_density_ref=integrale_density_ref, density_check=density_check, integrale_density_final=integrale_density_final)
         os.chdir('../')
@@ -848,7 +890,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         print(os.getcwd())
         #import pdb; pdb.set_trace()
 
-        #return rho_total_fit, ne_density_fit, fit_x_error, fit_y_error
+        return rho_total_fit, ne_density_fit, rho_total_sort_nonans_final_error, ne_density_fit_error
         #import pdb; pdb.set_trace()
 
 
@@ -879,37 +921,13 @@ if __name__ == '__main__':
                         help='IDS source of data for profile fit, default=reflectometer_profile')
     parser.add_argument('-k', '--kernel', type=str, default='RQ_Kernel', \
                         help='Kernel to use for profile fit, default=RQ_Kernel')
-    parser.add_argument('-wep', '--write-edge-profiles', action='store_true', \
+    parser.add_argument('-wep', '--write_edge_profiles', action='store_true', \
                         help='Write IDS edge_profiles')
-    parser.add_argument('-plt', '--plot-fit', action='store_true', \
+    parser.add_argument('-plt', '--plot_fit', action='store_true', \
                         help='Save fit plots')
 
     args = parser.parse_args()
 
     # Call wrapper function
-    x, y, ex, ey = get_data(args.shot, \
-                                args.run_out, args.occurrence_out, args.user_out, args.machine_out, \
-                                args.run_in, args.occurrence_in, args.user_in, args.machine_in, \
-                                args.ids, args.write_edge_profiles)
-
-    '''
-    if x.ndim == 1:
-        x = np.transpose(np.atleast_2d(x))
-
-
-    if y.ndim == 1:
-        y = np.transpose(np.atleast_2d(y))
-
-    if ex.ndim == 1:
-        ex = np.transpose(np.atleast_2d(ex))
-
-    if ey.ndim == 1:
-        ey = np.transpose(np.atleast_2d(ey))
-    print(x.shape, y.shape)
-
-    import ipdb; ipdb.set_trace()
-    '''
-    #out = fit_data(x, y, ex , ey, kernel_method=args.kernel, \
-                       #optimise_all_params=False, slices_nbr=30, plot_fit=True)
-    #import pdb; pdb.set_trace()
+    x, y, ex, ey = get_data(args.shot, args.run_out, args.occurrence_out, args.user_out, args.machine_out, args.run_in, args.occurrence_in, args.user_in, args.machine_in, args.ids, args.write_edge_profiles)
 
