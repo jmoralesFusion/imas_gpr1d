@@ -88,7 +88,7 @@ def plot_data(fit_x_values, minimum, maximum, \
         plt.gca().legend(('gpr fit','2$\\sigma$ plot region','Raw data', Time_real_sec), loc = 'best')
         fig.savefig(plot_save_directory+'gpr_data.png')
         plt.close(fig)
-        
+
         # Derivative of GPR fit and error
         fig = plt.figure()
         fig.suptitle('Derivative of GPR fit and error', fontdict={'fontsize': 8, 'fontweight': 'medium'})

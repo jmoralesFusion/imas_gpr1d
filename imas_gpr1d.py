@@ -504,7 +504,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         out_put_All_added12 = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan , rho_total_sort_final_error_added, \
                                 ne_line_total_sort_final_error_added , kernel_method='Gibbs_Kernel', \
                                 optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
-                                dy_fix_err=None, Time_real=time_global, file_name = 'GPPlots_resultant_noboundary123345')
+                                dy_fix_err=None, Time_real=time_global, file_name = 'GPPlots_Data_Rho')
 
 
         #extract the fit results:
@@ -575,7 +575,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         out_put_R_All_added = fit_data(R_meters_mask_All_added, ne_line_interpolated_R_2d_All_added, R_meters_2d_errors_All_added, \
                                    ne_line_interpolated_R_2d_errors_All_added , kernel_method=args.kernel, \
                                    optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, \
-                                   dy_fix_data=None, dy_fix_err=None, Time_real=time_real_upp, file_name = 'All_added_GPPlots_rcon')
+                                   dy_fix_data=None, dy_fix_err=None, Time_real=time_real_upp, file_name = 'GPPlots_Data_Meters')
       
 
 
@@ -751,9 +751,24 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         ############################################################################
         ############################################################################
 
-        #ne_line_total_sort_final_error = np.full(ne_line_total_sort_nonans_final.shape, (ne_line_total_sort_nonans_final)*0.03)
-        #rho_total_sort_final_error = np.full(rho_total_sort_nonans_final.shape,np.mean(rho_total_sort_nonans_final)*0.01)
         ne_line_total_sort_nonans_final_error= np.clip(ne_line_total_sort_nonans_final_error, 6*1e17, None)
+
+        
+        #add an extra point to rho total
+        rho_total_sort_nonans_final = np.insert(rho_total_sort_nonans_final, 0, 0, axis=1)#index, value
+        rho_total_sort_nonans_final_error = np.insert(rho_total_sort_nonans_final_error, 0, 0, axis=1)#index, value
+        #the maximum should be by time slice and should
+        maximum_elements_array = []
+        for ii in range(ne_line_total_sort_nonans_final.shape[0]):
+            maximum_elements_array.append(np.nanmax(ne_line_total_sort_nonans_final[ii]))
+        maximum_elements_array = np.asarray(maximum_elements_array)
+
+        #concatenate the array of the first elements with the total density elements
+        ne_line_total_sort_nonans_final = np.concatenate((maximum_elements_array[:,None], ne_line_total_sort_nonans_final),axis=1)
+        ne_line_total_sort_nonans_final_error = np.concatenate((maximum_elements_array[:,None]*0.2,ne_line_total_sort_nonans_final_error),axis=1)
+        error_max_added = max(1.2*1e17, np.max(maximum_elements_array[:,None]*0.2))
+        
+        ne_line_total_sort_nonans_final_error = np.clip(ne_line_total_sort_nonans_final_error, 6*1e17, error_max_added)
 
 
 
@@ -761,12 +776,86 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         out_put_final = fit_data(rho_total_sort_nonans_final , ne_line_total_sort_nonans_final , rho_total_sort_nonans_final_error, \
                                ne_line_total_sort_nonans_final_error , kernel_method='Gibbs_Kernel', \
                                 optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
-                                dy_fix_err=None, Time_real=time_global, file_name = 'GPPlots_resultant_noboundaryholahola')
+                                dy_fix_err=None, Time_real=time_global, file_name = 'GPPlots_final_FITS')
 
         ne_density_fit = (np.asarray(out_put_final['fit_y']))
         rho_total_fit =  (np.asarray(out_put_final['fit_x']))
         ne_density_fit_error = (np.asarray(out_put_final['fit_y_error']))
         Time_index = np.asarray(out_put_final['fit_time_slice'])
+        import pdb; pdb.set_trace()
+
+
+
+        #interpolate rho_pol_norm_base along time and space to rho_total_fit
+
+        density_pol_norm_base_interp = np.full((rho_pol_norm_base.shape[0],rho_total_fit.shape[0],rho_pol_norm_base.shape[2]),np.nan)
+
+        for ii in range(density_pol_norm_base_interp.shape[0]):
+            for jj in range(density_pol_norm_base_interp.shape[1]):
+                density_pol_norm_base_interp[ii,jj] = np.interp(rho_pol_norm_base[ii, Time_index[jj]], \
+                                                                rho_total_fit[jj],  ne_density_fit[jj])#, left=0, right=0)
+
+
+        rho_pol_norm_base_sample = rho_pol_norm_base[:, Time_index, :] #will have the size of (line of sight, Time_index, space)
+        mask_profile_rho = np.ones(rho_pol_norm_base_sample.shape, dtype=bool)
+        for ii in range(mask_profile_rho.shape[1]):
+            mask_profile_rho[:,ii,:] = rho_pol_norm_base_sample[:,ii,:]<np.nanmax(rho_total_fit[ii])#loop on time slices for the rho_total_fit
+
+        R_0 = np.full((R.shape[0]), np.nan)
+        Z_0 = np.full((R.shape[0]), np.nan)
+        distance_length = np.full((R.shape), np.nan)
+
+        #create a loop over the line of sight
+        for ii in range(R.shape[0]):
+            R_0[ii] = R[ii,0]
+            Z_0[ii] = Z[ii,0]
+            distance_length[ii] = np.sqrt((R[ii]-R_0[ii])**2 + (Z[ii]-Z_0[ii])**2)
+
+
+        #the final step will be to integrate the density
+        #over the distance in space, trapizodal integration.
+        integrale_density_final = np.full((density_pol_norm_base_interp.shape[0],density_pol_norm_base_interp.shape[1]),np.nan)
+        density_pol_norm_base_interp[np.isnan(density_pol_norm_base_interp)]=0
+
+        for ii in range(density_pol_norm_base_interp.shape[0]):
+            for jj in range(density_pol_norm_base_interp.shape[1]):
+                integrale_density_final[ii, jj] = 0.5*(integrate.trapz(density_pol_norm_base_interp[ii, jj],distance_length[ii]))
+
+
+        density_check = (electron_density_ne/Normalization_constant)
+        density_check[np.isnan(density_check)] = 0
+
+        error_difference = integrale_density_final - density_check[:,Time_index]
+        error_difference_percent  = (integrale_density_final - density_check[:,Time_index])/(density_check[:,Time_index])
+        error_difference_percent[np.isinf(error_difference_percent)] = 0
+        RMS = np.sqrt(np.mean((error_difference)**2, axis=0))
+        RMSE = (np.sqrt(np.mean((error_difference_percent)**2, axis=0)))*100
+
+        import pdb; pdb.set_trace()
+
+
+
+
+        chi_sqaure = ((ne_line_total_sort_nonans_final - ne_density_fit)**2)/((ne_density_fit_error)**2)
+        ###Some basic setup
+        #create the test directory to save  output files
+        #user can add as much as he wants here
+        output_save_directory = './output_directory'
+        if not output_save_directory.endswith('/'):
+            test_save_directory = output_save_directory+'/'
+        if not os.path.isdir(output_save_directory):
+            os.makedirs(output_save_directory)
+        os.chdir(output_save_directory)
+        #save the outputs to files to be loaded and used in plots
+        np.savez('statistics', RMSE_mean=np.nanmean(RMSE) , RMSE_median=np.nanmedian(RMSE), RMSE_min=np.nanmin(RMSE), RMSE_max=np.nanmax(RMSE) )
+        np.savez('Time_file', Time_index=Time_index, time_global=time_global)
+        np.savez('Error_files', error_difference=error_difference, error_difference_percent=error_difference_percent, RMSE=RMSE, RMS=RMS)
+        np.savez('Rhos_vs_ne', rho_pol_norm_base_min=rho_pol_norm_base_min , rho_pol_norm_ref=rho_pol_norm_ref , electron_density_ne=electron_density_ne , integrale_density_ref=integrale_density_ref, density_check=density_check, integrale_density_final=integrale_density_final)
+        os.chdir('../')
+        os.chdir('../')
+        print('current working directory')
+        print(os.getcwd())
+        #import pdb; pdb.set_trace()
 
 
         if (write_edge_profiles):
@@ -806,89 +895,33 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
                 idd_out.edge_profiles.profiles_1d[ii].grid.rho_pol_norm_error_upper =rho_total_sort_nonans_final_error[ii, :] 
                 idd_out.edge_profiles.profiles_1d[ii].electrons.density = ne_density_fit[ii, :]
                 idd_out.edge_profiles.profiles_1d[ii].electrons.density_error_upper = ne_density_fit_error[ii, :]
-                idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.reconstructed = ne_line_total_sort_nonans_final[ii, :]
-                idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.reconstructed_error_upper = ne_line_total_sort_nonans_final_error[ii, :]
+                idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.reconstructed = ne_density_fit[ii, :]
+                idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.reconstructed_error_upper = ne_density_fit_error[ii, :]
                 idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.measured = ne_line_total_sort_final_nonan[ii, :]
                 idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.measured_error_upper = ne_line_total_sort_final_error_added[ii, :]
                 idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.time_measurement = time_global[ii]
 
             idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.source = ['reflectometer_profile.channel[0].n_e.data' , 'interferometer.channel[zz].n_e_line.data'] 
             idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.parameters = ['rho_total_fit', 'ne_density_fit', 'time_global', 'rho_total_fit_error', 'ne_density_fit_error']
-            #import pdb; pdb.set_trace()
+            idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.time_measurement_slice_method.name = 'time_measurement_slice_method'
+            idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.time_measurement_slice_method.index = 1
+            idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.time_measurement_slice_method.description = 'linear interpolation'
+            idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.weight = 1
 
+
+
+
+            import pdb; pdb.set_trace()
+            #add the time global 
+            #add an extra artifical 
+            idd_out.edge_profiles.time = time_global
             idd_out.edge_profiles.put()
             idd_out.close()
+            print('finish Writing data')
 
 
 
 
-
-
-
-        #interpolate rho_pol_norm_base along time and space to rho_total_fit
-
-        density_pol_norm_base_interp = np.full((rho_pol_norm_base.shape[0],rho_total_fit.shape[0],rho_pol_norm_base.shape[2]),np.nan)
-
-        for ii in range(density_pol_norm_base_interp.shape[0]):
-            for jj in range(density_pol_norm_base_interp.shape[1]):
-                density_pol_norm_base_interp[ii,jj] = np.interp(rho_pol_norm_base[ii, Time_index[jj]], \
-                                                                rho_total_fit[jj],  ne_density_fit[jj], left=0, right=0)
-
-
-        rho_pol_norm_base_sample = rho_pol_norm_base[:, Time_index, :] #will have the size of (line of sight, Time_index, space)
-        mask_profile_rho = np.ones(rho_pol_norm_base_sample.shape, dtype=bool)
-        for ii in range(mask_profile_rho.shape[1]):
-            mask_profile_rho[:,ii,:] = rho_pol_norm_base_sample[:,ii,:]<np.nanmax(rho_total_fit[ii])#loop on time slices for the rho_total_fit
-
-        R_0 = np.full((R.shape[0]), np.nan)
-        Z_0 = np.full((R.shape[0]), np.nan)
-        distance_length = np.full((R.shape), np.nan)
-
-        #create a loop over the line of sight
-        for ii in range(R.shape[0]):
-            R_0[ii] = R[ii,0]
-            Z_0[ii] = Z[ii,0]
-            distance_length[ii] = np.sqrt((R[ii]-R_0[ii])**2 + (Z[ii]-Z_0[ii])**2)
-
-
-        #the final step will be to integrate the density
-        #over the distance in space, trapizodal integration.
-        integrale_density_final = np.full((density_pol_norm_base_interp.shape[0],density_pol_norm_base_interp.shape[1]),np.nan)
-        density_pol_norm_base_interp[np.isnan(density_pol_norm_base_interp)]=0
-
-        for ii in range(density_pol_norm_base_interp.shape[0]):
-            for jj in range(density_pol_norm_base_interp.shape[1]):
-                integrale_density_final[ii, jj] = (integrate.trapz(density_pol_norm_base_interp[ii, jj],distance_length[ii]))
-
-
-        density_check = 4*(electron_density_ne/Normalization_constant)
-        density_check[np.isnan(density_check)] = 0
-
-        error_difference = integrale_density_final - density_check[:,Time_index]
-        error_difference_percent  = (integrale_density_final - density_check[:,Time_index])/(density_check[:,Time_index])
-        error_difference_percent[np.isinf(error_difference_percent)] = 0
-        RMS = np.sqrt(np.mean((error_difference)**2, axis=0))
-        RMSE = (np.sqrt(np.mean((error_difference_percent)**2, axis=0)))*100
-
-        ###Some basic setup
-        #create the test directory to save  output files
-        #user can add as much as he wants here
-        output_save_directory = './output_directory'
-        if not output_save_directory.endswith('/'):
-            test_save_directory = output_save_directory+'/'
-        if not os.path.isdir(output_save_directory):
-            os.makedirs(output_save_directory)
-        os.chdir(output_save_directory)
-        #save the outputs to files to be loaded and used in plots
-        np.savez('statistics', RMSE_mean=np.nanmean(RMSE) , RMSE_median=np.nanmedian(RMSE), RMSE_min=np.nanmin(RMSE), RMSE_max=np.nanmax(RMSE) )
-        np.savez('Time_file', Time_index=Time_index, time_global=time_global)
-        np.savez('Error_files', error_difference=error_difference, error_difference_percent=error_difference_percent, RMSE=RMSE, RMS=RMS)
-        np.savez('Rhos_vs_ne', rho_pol_norm_base_min=rho_pol_norm_base_min , rho_pol_norm_ref=rho_pol_norm_ref , electron_density_ne=electron_density_ne , integrale_density_ref=integrale_density_ref, density_check=density_check, integrale_density_final=integrale_density_final)
-        os.chdir('../')
-        os.chdir('../')
-        print('current working directory')
-        print(os.getcwd())
-        #import pdb; pdb.set_trace()
 
         return rho_total_fit, ne_density_fit, rho_total_sort_nonans_final_error, ne_density_fit_error
         #import pdb; pdb.set_trace()
