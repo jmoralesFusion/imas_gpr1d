@@ -740,15 +740,19 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
         nbr_time = Y_coordinates.shape[0]
 
         fit_data = {'fit_x': [], \
-                    'fit_y': [], \
                     'fit_x_error': [], \
-                    'fit_y_error': [], \
+                    'hs_fit_y': [], \
+                    'hs_fit_y_error': [], \
+                    'ni_fit_y': [], \
+                    'ni_fit_y_error': [], \
                     'fit_y_weighted': [], \
                     'fit_dydx_weighted': [], \
                     'fit_dydx_errors_weighted': [], \
-                    'fit_dydx': [], \
+                    'hs_fit_dydx': [], \
+                    'hs_fit_dydy_y_error': [], \
+                    'ni_fit_dydx': [], \
+                    'ni_fit_dydy_y_error': [], \
                     'fit_dydx_x_error': [], \
-                    'fit_dydy_y_error': [], \
                     'fit_zinteg_array': [], \
                     'fit_time_slice': [], \
                     'x': X_coordinates, \
@@ -756,6 +760,7 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
                     'x_error': X_coordinates_errors , \
                     'y_error': Y_coordinates_errors , \
                    }
+
 
 
 
@@ -1107,24 +1112,32 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
             # -------
             if (X_coordinates_errors is None):
                 fit_data['fit_x'].append(fit_x_values)
-                fit_data['fit_y'].append(hs_fit_y_values)
-                fit_data['fit_y_error'].append(hs_fit_y_errors)
-                fit_data['fit_dydx'].append(hs_fit_dydx_values)
-                fit_data['fit_dydy_y_error'].append(hs_fit_dydx_errors)
+                fit_data['hs_fit_y'].append(hs_fit_y_values)
+                fit_data['hs_fit_y_error'].append(hs_fit_y_errors)
+                fit_data['hs_fit_dydx'].append(hs_fit_dydx_values)
+                fit_data['hs_fit_dydy_y_error'].append(hs_fit_dydx_errors)
                 fit_data['fit_y_weighted'].append(fit_y_values)
                 fit_data['fit_dydx_weighted'].append(fit_dydx_values)   
                 fit_data['fit_dydx_errors_weighted'].append(fit_dydx_errors) 
-                #fit_data['fit_zinteg_array'].append(integ_array)
                 fit_data['fit_time_slice'].append(i)
+
             if (X_coordinates_errors is not None):
                 fit_data['fit_x'].append(fit_x_values)
-                fit_data['fit_y'].append(ni_fit_y_values)
+                fit_data['hs_fit_y'].append(hs_fit_y_values)
+                fit_data['hs_fit_y_error'].append(hs_fit_y_errors)
+                fit_data['hs_fit_dydx'].append(hs_fit_dydx_values)
+                fit_data['hs_fit_dydy_y_error'].append(hs_fit_dydx_errors)
                 fit_data['fit_y_weighted'].append(fit_y_values)
                 fit_data['fit_dydx_weighted'].append(fit_dydx_values)   
                 fit_data['fit_dydx_errors_weighted'].append(fit_dydx_errors) 
-                fit_data['fit_y_error'].append(ni_fit_y_errors)
-                fit_data['fit_dydx'].append(ni_fit_dydx_values)
-                fit_data['fit_dydy_y_error'].append(ni_fit_dydx_errors)
+                #fit_data['fit_x'].append(fit_x_values)
+                #fit_data['fit_y_weighted'].append(fit_y_values)
+                #fit_data['fit_dydx_weighted'].append(fit_dydx_values)   
+                #fit_data['fit_dydx_errors_weighted'].append(fit_dydx_errors)
+                fit_data['ni_fit_y'].append(ni_fit_y_values) 
+                fit_data['ni_fit_y_error'].append(ni_fit_y_errors)
+                fit_data['ni_fit_dydx'].append(ni_fit_dydx_values)
+                fit_data['ni_fit_dydy_y_error'].append(ni_fit_dydx_errors)
                 fit_data['fit_zinteg_array'].append(integ_array[i])
                 fit_data['fit_time_slice'].append(i)
 

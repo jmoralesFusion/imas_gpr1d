@@ -24,7 +24,8 @@ import imas
 
 # Project libraries
 from fit_data import fit_data
-
+#define global errors
+absolute_error_ne = 6*1e17
 
 def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user_in, machine_in, \
              datatype, write_edge_profiles):
@@ -226,75 +227,90 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         Time_eq = idd_in.equilibrium.time
         Time_inter = idd_in.interferometer.time
         Time_ref   = idd_in.reflectometer_profile.time
-        if ((Time_ref is None) or (Time_inter is None) or (Time_eq is None)) :
-            raise RuntimeError('choose another shot that have a valid time')
+        #if ((Time_ref.size == 0) or (Time_inter == 0) or (Time_eq == 0 )) :
+        #    raise RuntimeError('choose another shot that have a valid time')
 
-        time_min = np.asarray([Time_eq.min(),Time_inter.min(),Time_ref.min()]).max()
-        time_max = np.asarray([Time_eq.max(),Time_inter.max(),Time_ref.max()]).min()
+        mask_reflectometer_exist = (Time_ref.size != 0)
+        #import pdb; pdb.set_trace()
+        if mask_reflectometer_exist :
+            time_min = np.asarray([Time_eq.min(),Time_inter.min(),Time_ref.min()]).max()
+            time_max = np.asarray([Time_eq.max(),Time_inter.max(),Time_ref.max()]).min()
 
-        #mask over the times of reflectometer and interferometer
-        mask_time_reflec = (Time_ref > time_min) & (Time_ref < time_max)
-        mask_time_interf = (Time_inter > time_min) & (Time_inter < time_max)
-        mask_time_equi   = (Time_eq > time_min)&(Time_eq < time_max)
-        '''
-        if (len(Time_ref[mask_time_reflec])< len(Time_inter[mask_time_interf])):
-            TimeReference = Time_ref[mask_time_reflec]
-        else:
-            TimeReference = Time_inter[mask_time_interf]
+            #mask over the times of reflectometer and interferometer
+            mask_time_reflec = (Time_ref > time_min) & (Time_ref < time_max)
+            mask_time_interf = (Time_inter > time_min) & (Time_inter < time_max)
+            mask_time_equi   = (Time_eq > time_min)&(Time_eq < time_max)
 
-        '''
+        else: 
+            time_min = np.asarray([Time_eq.min(),Time_inter.min()]).max()
+            time_max = np.asarray([Time_eq.max(),Time_inter.max()]).min()
+
+            #mask over the times of reflectometer and interferometer
+            mask_time_reflec = (Time_ref > time_min) & (Time_ref < time_max)
+            mask_time_interf = (Time_inter > time_min) & (Time_inter < time_max)
+            mask_time_equi   = (Time_eq > time_min)&(Time_eq < time_max)
+            
         TimeReference = Time_eq[mask_time_equi]
-        
+            
+        if not mask_reflectometer_exist :
+            Phi_meters = np.zeros(1000)
+            Z_meters = np.zeros(1000)
+            R_meters = np.linspace(2, 3.5, 1000)
+            rho_mid_plane = equimap.get(shot, TimeReference,R_meters,Phi_meters,Z_meters, 'rho_pol_norm')
 
-        ##########################
-        ##########################
-        #grab the reflectometer data and mask them
-        R_real_ref1       = idd_in.reflectometer_profile.channel[0].position.r
-        electron_density1 = idd_in.reflectometer_profile.channel[0].n_e.data
-        R_real_ref1       = R_real_ref1[:,mask_time_reflec]
-        electron_density1 = electron_density1[:,mask_time_reflec]
-        electron_density  = []
-        R_real_ref  = []
+            list_of_nans = []
+            for ii in range(rho_mid_plane.shape[0]):
+                if (np.isnan(rho_mid_plane[ii]).all()):
+                    list_of_nans.append(ii)
+            
+            if list_of_nans :
+                TimeReference = np.delete(TimeReference, list_of_nans)
 
-        for ii in range(electron_density1.shape[0]):
-            electron_density.append(np.interp(TimeReference,Time_ref[mask_time_reflec],electron_density1[ii]))
-            R_real_ref.append(np.interp(TimeReference,Time_ref[mask_time_reflec],R_real_ref1[ii]))
+        #mask_time_ref = (TimeReference > 32.2824614) & (TimeReference < 47.06669449)
+        #TimeReference = TimeReference[mask_time_ref]
+        #TimeReference[0] =  TimeReference[0] + 0.001
+        #TimeReference[-1] =  TimeReference[-1] - 0.001
 
+        if mask_reflectometer_exist :
+            ##########################
+            ##########################
+            #grab the reflectometer data and mask them
+            R_real_ref1       = idd_in.reflectometer_profile.channel[0].position.r
+            electron_density1 = idd_in.reflectometer_profile.channel[0].n_e.data
+            R_real_ref1       = R_real_ref1[:,mask_time_reflec]
+            electron_density1 = electron_density1[:,mask_time_reflec]
+            electron_density  = []
+            R_real_ref  = []
 
-        electron_density = np.asarray(electron_density)
-        R_real_ref = np.asarray(R_real_ref)
-
-
-        integrale_density_ref = np.full((electron_density.shape), np.nan)
-        for jj in np.arange(0,integrale_density_ref.shape[1]):
-            integrale_density_ref[:,jj] = (-1)*(integrate.cumtrapz(electron_density[:,jj],R_real_ref[:,jj], initial=0))
-
-        R_base_ref = np.linspace(R_real_ref.min(), R_real_ref.max(), 1000)
-        Phi_ref = np.zeros(1000)
-        Z_ref = np.zeros(1000)
-
-        rho_pol_norm_base_ref1 = equimap.get(shot, Time_ref, R_base_ref, Phi_ref, Z_ref, 'rho_pol_norm')
-        rho_pol_norm_base_ref = []
-        for ii in range(rho_pol_norm_base_ref1.shape[1]):
-            rho_pol_norm_base_ref.append(np.interp(TimeReference,Time_ref, rho_pol_norm_base_ref1[:,ii]))
+            for ii in range(electron_density1.shape[0]):
+                electron_density.append(np.interp(TimeReference,Time_ref[mask_time_reflec],electron_density1[ii]))
+                R_real_ref.append(np.interp(TimeReference,Time_ref[mask_time_reflec],R_real_ref1[ii]))
 
 
-        rho_pol_norm_base_ref = np.asarray(rho_pol_norm_base_ref)
-        #import pdb; pdb.set_trace()
+            electron_density = np.asarray(electron_density)
+            R_real_ref = np.asarray(R_real_ref)
 
-        #if rho_pol_norm_base_ref.shape != electron_density.shape :
-        #    rho_pol_norm_base_ref = rho_pol_norm_base_ref.T
-        #else :
-        #    rho_pol_norm_base_ref = rho_pol_norm_base_ref
-        #import pdb; pdb.set_trace()
 
-        #rho_pol_norm_base_ref = rho_pol_norm_base_ref[:,mask_time_reflec]
-        rho_pol_norm_ref = np.full(R_real_ref.shape, np.nan)
-        for ii in range(rho_pol_norm_base_ref.shape[1]):
-            rho_pol_norm_ref[:, ii] = np.interp(R_real_ref[:, ii], R_base_ref, rho_pol_norm_base_ref[:,ii])
+            integrale_density_ref = np.full((electron_density.shape), np.nan)
+            for jj in np.arange(0,integrale_density_ref.shape[1]):
+                integrale_density_ref[:,jj] = (-1)*(integrate.cumtrapz(electron_density[:,jj],R_real_ref[:,jj], initial=0))
+
+            R_base_ref = np.linspace(R_real_ref.min(), R_real_ref.max(), 1000)
+            Phi_ref = np.zeros(1000)
+            Z_ref = np.zeros(1000)
+
+            rho_pol_norm_base_ref1 = equimap.get(shot, Time_ref, R_base_ref, Phi_ref, Z_ref, 'rho_pol_norm')
+            rho_pol_norm_base_ref = []
+            for ii in range(rho_pol_norm_base_ref1.shape[1]):
+                rho_pol_norm_base_ref.append(np.interp(TimeReference,Time_ref, rho_pol_norm_base_ref1[:,ii]))
+
+
+            rho_pol_norm_base_ref = np.asarray(rho_pol_norm_base_ref)
+            rho_pol_norm_ref = np.full(R_real_ref.shape, np.nan)
+            for ii in range(rho_pol_norm_base_ref.shape[1]):
+                rho_pol_norm_ref[:, ii] = np.interp(R_real_ref[:, ii], R_base_ref, rho_pol_norm_base_ref[:,ii])
 
          ##################################################################################
-        #import pdb; pdb.set_trace()
 
         #list of r and z boundary positions
         nbr_channels = len(idd_in.interferometer.channel)
@@ -337,24 +353,32 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         Z = np.asarray(Z)
         R = np.asarray(R)
 
+        r_outboard = []
+        r_outboard_interpolated = []
         r_axis = np.full(len(idd_in.equilibrium.time_slice), np.nan)
         z_axis = np.full(len(idd_in.equilibrium.time_slice), np.nan)
 
         for ii in range(r_axis.shape[0]):
             r_axis[ii] = idd_in.equilibrium.time_slice[ii].global_quantities.magnetic_axis.r
             z_axis[ii] = idd_in.equilibrium.time_slice[ii].global_quantities.magnetic_axis.z
+            r_outboard.append(idd_in.equilibrium.time_slice[ii].profiles_1d.r_outboard)
 
+        r_outboard = np.asarray(r_outboard)
 
         #interpolation from the equilibruim time to the Time Reference we are using
         r_axis_interp = np.interp(TimeReference, Time_eq, r_axis)
         z_axis_interp = np.interp(TimeReference, Time_eq, z_axis)
+        for ii in range(r_outboard.shape[1]):
+            r_outboard_interpolated.append(np.interp(TimeReference, Time_eq, r_outboard[:,ii]))
 
+        r_outboard_interpolated = np.asarray(r_outboard_interpolated)
         index_r_axis = np.full((R.shape[0],r_axis_interp.shape[0]), np.nan)
 
         #create two masks for the line of sight regarding their
         #with respect to z-axis in order to study the asymmetry
         #we call them upper(z>0) and lower(z<0)
-        mask_upper_LOS = []; mask_lower_LOS = []
+        mask_upper_LOS = []
+        mask_lower_LOS = []
 
         for ii in range(R.shape[0]):
             for jj in range(r_axis_interp.shape[0]):
@@ -370,16 +394,29 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         #start the equimap procedure:
         Phi = np.zeros(1000)
-        rho_pol_norm_base = []; rho_pol_norm_base_min = []; electron_density_line=[]; mask_inter=[]
-
+        rho_pol_norm_base = []
+        rho_pol_norm_base_min = []
+        electron_density_line=[]
+        mask_inter=[]
+        
         for zz in range(0,nbr_channels):
-            rho_pol_norm_base.append(equimap.get(shot, TimeReference, R[zz], Phi, Z[zz], 'rho_pol_norm', occ=1))
-            rho_pol_norm_base_min.append(np.nanmin(rho_pol_norm_base[zz], axis=1))
             mask_inter.append((idd_in.interferometer.channel[zz].n_e_line.validity) > -1)
+        
+        for zz in range(0,nbr_channels):
             if mask_inter[zz] == True :
+                rho_pol_norm_base.append(equimap.get(shot, TimeReference, R[zz], Phi, Z[zz], 'rho_pol_norm', occ=1))
                 electron_density_line.append(idd_in.interferometer.channel[zz].n_e_line.data)
-            else:
-                raise RuntimeError('please be aware that data in channel' + zz + 'are not valid')
+            #else:
+            #    raise RuntimeError('please be aware that data in channel' + zz + 'are not valid')
+
+        rho_pol_norm_base     = np.asarray(rho_pol_norm_base)
+        electron_density_line = 0.25*np.asarray(electron_density_line)
+
+        for zz in range(0,rho_pol_norm_base.shape[0]):
+            rho_pol_norm_base_min.append(np.nanmin(rho_pol_norm_base[zz], axis=1))
+        
+        rho_pol_norm_base_min = np.asarray(rho_pol_norm_base_min)
+
         if all(mask_inter) == True :
             print('################################################################################')
             print('################################################################################')
@@ -388,11 +425,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             print('################################################################################')
         time.sleep(3) # Sleep for 3 seconds
         
-        rho_pol_norm_base     = np.asarray(rho_pol_norm_base)
-        rho_pol_norm_base_min = np.asarray(rho_pol_norm_base_min)
-        electron_density_line = 0.25*np.asarray(electron_density_line)
-
-
 
         #####################################################################################################
         ##################################### equimaps in meters ############################################
@@ -401,12 +433,41 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         #The procedure here now is to calculate the desnity along line of sight (integrated density)
         #and also find the density along the rho_mid_plane i.e z=0
         #in order to normalise the desnity
-        R_meters = np.linspace(r_axis.min(), R_real_ref.max(), 1000)
+        if mask_reflectometer_exist :
+            R_meters = np.linspace(r_axis.min(), R_real_ref.max(), 1000)
+        else:
+            r_outboard_interpolated_max = np.nanmax(r_outboard_interpolated[0])
+            r_outboard_interpolated_min = np.nanmin(r_outboard_interpolated[0])
+
+            
+            for ii in range(r_outboard_interpolated.shape[0]):
+                if r_outboard_interpolated_max < np.nanmax(r_outboard_interpolated[ii]):
+                    r_outboard_interpolated_max = np.nanmax(r_outboard_interpolated[ii])
+                if r_outboard_interpolated_min < np.nanmin(r_outboard_interpolated[ii]):
+                    r_outboard_interpolated_min = np.nanmin(r_outboard_interpolated[ii])
+                
+
+            R_meters = np.linspace(r_outboard_interpolated_min, r_outboard_interpolated_max, 1000)
+
         Phi_meters = np.zeros(1000)
         Z_meters = np.zeros(1000)
-
         rho_mid_plane = equimap.get(shot, TimeReference,R_meters,Phi_meters,Z_meters, 'rho_pol_norm')
+        '''
+        list_of_nans = []
+        for ii in range(rho_mid_plane.shape[0]):
+            if (np.isnan(rho_mid_plane[ii]).all()):
+                list_of_nans.append(ii)
+ 
+            
+        #### add a small lines to check if the rho_mid_plane_All_added contains raws full of nans and then drop the times that 
+        #### are responsible for the presence of the whole raw in nans 
+        if list_of_nans :
+            TimeReference = np.delete(TimeReference, list_of_nans)
+            rho_mid_plane = equimap.get(shot, TimeReference,R_meters,Phi_meters,Z_meters, 'rho_pol_norm')
 
+        '''    
+        #hon 3ed l nans w lµ8ehon w rj3 3ml l equimaps 
+        #import pdb; pdb.set_trace()
         index_rho_min = np.full(rho_pol_norm_base_min.shape, np.nan)
         index_separatrix = np.full(rho_pol_norm_base_min.shape, np.nan)
 
@@ -429,54 +490,67 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         length_1 = np.sqrt((R_separatrix-R_LOS)**2 + (Z_separatrix-Z_LOS)**2)
-
         #rho_mid_plane calculations
 
         index_rho_mid_plane_min = np.full(rho_pol_norm_base_min.shape, np.nan)
         index_sep_mid_plane_min = np.full(index_rho_mid_plane_min.shape[1], np.nan)
         R_mid_left = np.full(rho_pol_norm_base_min.shape, np.nan)
         R_mid_right = np.full(rho_pol_norm_base_min.shape[1], np.nan)
-
+        
         for ii in range(index_rho_mid_plane_min.shape[0]):
             for jj in range(index_rho_mid_plane_min.shape[1]):
-                index_rho_mid_plane_min[ii,jj]  =  np.nanargmin((np.abs(rho_mid_plane[jj] - rho_pol_norm_base_min[ii,jj])))
-                R_mid_left[ii,jj]               =  R_meters[index_rho_mid_plane_min[ii,jj].astype(int)]
-                index_sep_mid_plane_min[jj]     =  np.nanargmin((np.abs(rho_mid_plane[jj] - 1)))
-                R_mid_right[jj]                 =  R_meters[index_sep_mid_plane_min[jj].astype(int)]
-
+                if not (np.isnan(rho_mid_plane[jj]).all()):
+                    index_rho_mid_plane_min[ii,jj]  =  np.nanargmin((np.abs(rho_mid_plane[jj] - rho_pol_norm_base_min[ii,jj])))
+                    R_mid_left[ii,jj]               =  R_meters[index_rho_mid_plane_min[ii,jj].astype(int)]
+                    index_sep_mid_plane_min[jj]     =  np.nanargmin((np.abs(rho_mid_plane[jj] - 1)))
+                    R_mid_right[jj]                 =  R_meters[index_sep_mid_plane_min[jj].astype(int)]
 
         length_2 = np.sqrt((R_mid_right-R_mid_left)**2)
+
         #the normalization constant used uppon normalizing the electron density from interferometry
-        Normalization_constant  = length_2/length_1
+        if mask_reflectometer_exist :
+            Normalization_constant  = length_2/length_1
+        else:
+            Normalization_constant = length_2/length_1#1
+            Normalization_constant_prime = length_2/length_1
+            Normalization_constant[np.isnan(Normalization_constant)] = 0
+            Normalization_constant[np.isinf(Normalization_constant)] = 0
 
         #####################################################################################################
-
-
         #interpolate the reflectometer integrals and the electron density from the interferometer
         # to the same time window
-        electron_density_ne = np.full((len(electron_density_line),len(TimeReference)), np.nan)
         #import pdb; pdb.set_trace()
+        electron_density_ne = np.full((len(electron_density_line),len(TimeReference)), np.nan)
 
-        for jj in range(10):
+        for jj in range(electron_density_line.shape[0]):
             electron_density_ne[jj] = np.interp(TimeReference, Time_inter, electron_density_line[jj,:])
 
         electron_density_ne = Normalization_constant*electron_density_ne
-
-        #prepare for concatenation of density from interferometry and reflectometry:
-        ne_line_total = np.concatenate((electron_density_ne,integrale_density_ref))
-
         #import pdb; pdb.set_trace()
 
-        #prepare for concatenation of rho from interferometry and reflectometry:
-        rho_total = np.full((ne_line_total.shape) , np.nan)
-        for jj in range(rho_total.shape[1]):
-            rho_total[:,jj] = np.concatenate((rho_pol_norm_base_min[:,jj],rho_pol_norm_ref[:,jj]))
-        #import pdb; pdb.set_trace()
+        if mask_reflectometer_exist :
+            #prepare for concatenation of density from interferometry and reflectometry:
+            ne_line_total = np.concatenate((electron_density_ne,integrale_density_ref))
+            #prepare for concatenation of rho from interferometry and reflectometry:
+            rho_total = np.full((ne_line_total.shape) , np.nan)
+            for jj in range(rho_total.shape[1]):
+                rho_total[:,jj] = np.concatenate((rho_pol_norm_base_min[:,jj],rho_pol_norm_ref[:,jj]))
+
+
+        else:
+            #prepare for concatenation of density from interferometry and reflectometry:
+            ne_line_total = ((electron_density_ne))
+            #prepare for concatenation of rho from interferometry and reflectometry:
+            rho_total = np.full((ne_line_total.shape) , np.nan)
+            for jj in range(rho_total.shape[1]):
+                rho_total[:,jj] = (rho_pol_norm_base_min[:,jj])
+            
 
         #prepare for sorting arrays :
         index_sort = np.argsort(rho_total, axis=0)
-        rho_total_sort = (np.array(list(map(lambda x, y: y[x], index_sort.T, rho_total.T))))#.T
-        ne_line_total_sort = np.array(list(map(lambda x, y: y[x], index_sort.T, ne_line_total.T)))#.T
+        rho_total_sort = (np.array(list(map(lambda x, y: y[x], index_sort.T, rho_total.T))))
+        ne_line_total_sort = np.array(list(map(lambda x, y: y[x], index_sort.T, ne_line_total.T)))
+        '''
         if((np.any(np.isnan(ne_line_total_sort))) or (np.any(np.isinf(ne_line_total_sort)))):
             print('please check the following non finite data elements')
             NaNs_index = np.argwhere(np.isnan(ne_line_total_sort))
@@ -484,11 +558,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             print('NaNs_index = '  ,NaNs_index)
             print('Infs_index = '  ,Infs_index)
             raise RuntimeError('array must not contain infs or NaNs')
-
-
-
-        #import pdb; pdb.set_trace()
-        print('I am here 1')
+            '''
 
         ne_line_total_sort_final_nonan = ne_line_total_sort
         rho_total_sort_final_nonan = rho_total_sort
@@ -496,11 +566,13 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         ne_line_total_sort_final_error_added = np.full(ne_line_total_sort_final_nonan.shape, (ne_line_total_sort_final_nonan)*0.03)
         rho_total_sort_final_error_added = np.full(rho_total_sort_final_nonan.shape,np.mean(rho_total_sort_final_nonan)*0.01)
-        ne_line_total_sort_final_error_added= np.clip(ne_line_total_sort_final_error_added, 6*1e17, None)
+        ne_line_total_sort_final_error_added= np.clip(ne_line_total_sort_final_error_added, absolute_error_ne, None)
 
         time_global= TimeReference
 
 
+
+        #import pdb; pdb.set_trace()
         out_put_All_added12 = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan , rho_total_sort_final_error_added, \
                                 ne_line_total_sort_final_error_added , kernel_method='Gibbs_Kernel', \
                                 optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
@@ -508,57 +580,109 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         #extract the fit results:
-        ne_line_density_fit_All_added = (np.asarray(out_put_All_added12['fit_y']))
+        #ne_line_density_fit_All_added = (np.asarray(out_put_All_added12['hs_fit_y']))
+        ne_line_density_fit_All_added = (np.asarray(out_put_All_added12['ni_fit_y']))
         rho_total_fit_x_All_added =  (np.asarray(out_put_All_added12['fit_x']))
 
         #add the time slices as an output for the data_fit function
         time_slices_red_All_added = out_put_All_added12['fit_time_slice']
-        mask_total_All_added = []
-        ne_line_interpolated_R_All_added = []
-        derivative_interp_array_All_added = []
-
-        for ii in range(len(time_slices_red_All_added)):
-            mask_diff_All_added = np.diff(rho_mid_plane[time_slices_red_All_added[ii],:]) > 0
-            mask_rho_fit_All_added = ((rho_mid_plane[time_slices_red_All_added[ii],:]>rho_total_fit_x_All_added[ii].min()) \
-                               & (rho_mid_plane[time_slices_red_All_added[ii],:]<rho_total_fit_x_All_added[ii].max()))
-
-            mask_diff_All_added = np.insert(mask_diff_All_added, False, 0)
-            mask_total_All_added.append(mask_rho_fit_All_added & mask_diff_All_added)
-
-        mask_total_All_added = np.asarray(mask_total_All_added)
-
-        for ii in range(len(time_slices_red_All_added)):
-            ne_line_interpolated_R_All_added.append(np.interp(rho_mid_plane[time_slices_red_All_added[ii],mask_total_All_added[ii]], \
-                                                rho_total_fit_x_All_added[ii,:], ne_line_density_fit_All_added[ii,:]))
-
-        ne_line_interpolated_R_All_added = np.asarray(ne_line_interpolated_R_All_added)
-
-        ######################################################################################################
-        #derivative of the interpolated density over space
-        for ii in range(len(time_slices_red_All_added)):
-            derivative_interp_array_All_added.append(np.gradient(ne_line_interpolated_R_All_added[ii], R_meters[mask_total_All_added[ii]]))
-
-        derivative_interp_array_All_added = np.asarray(derivative_interp_array_All_added)
-        ######################################################################################################
-
-        R_meters_mask_All_added = np.full((len(time_slices_red_All_added), 100),np.nan)
-        ne_line_interpolated_R_2d_All_added = np.full(R_meters_mask_All_added.shape, np.nan)
-        ne_derivative_interpolated_2d_All_added = np.full(R_meters_mask_All_added.shape, np.nan)
-
-        for ii in range(len(time_slices_red_All_added)):
-            R_meters_mask_All_added[ii]=np.linspace(np.nanmin(R_meters[mask_total_All_added[ii]]), np.nanmax(R_meters[mask_total_All_added[ii]]), 100)
-            ne_line_interpolated_R_2d_All_added[ii] = np.interp(R_meters_mask_All_added[ii], (R_meters[mask_total_All_added[ii]]), \
-                                                            ne_line_interpolated_R_All_added[ii])
-            ne_derivative_interpolated_2d_All_added[ii] = np.interp(R_meters_mask_All_added[ii], (R_meters[mask_total_All_added[ii]]), \
-                                                                derivative_interp_array_All_added[ii])
 
 
-        #import pdb; pdb.set_trace()
+
+
+
+        if mask_reflectometer_exist :
+            mask_total_All_added = []
+            ne_line_interpolated_R_All_added = []
+            derivative_interp_array_All_added = []
+            for ii in range(len(time_slices_red_All_added)):
+                mask_diff_All_added = np.diff(rho_mid_plane[time_slices_red_All_added[ii],:]) > 0
+                mask_rho_fit_All_added = ((rho_mid_plane[time_slices_red_All_added[ii],:]>rho_total_fit_x_All_added[ii].min()) \
+                                   & (rho_mid_plane[time_slices_red_All_added[ii],:]<rho_total_fit_x_All_added[ii].max()))
+
+                mask_diff_All_added = np.insert(mask_diff_All_added, False, 0)
+                mask_total_All_added.append(mask_rho_fit_All_added & mask_diff_All_added)
+
+            mask_total_All_added = np.asarray(mask_total_All_added)
+
+            for ii in range(len(time_slices_red_All_added)):
+                ne_line_interpolated_R_All_added.append(np.interp(rho_mid_plane[time_slices_red_All_added[ii],mask_total_All_added[ii]], \
+                                                    rho_total_fit_x_All_added[ii,:], ne_line_density_fit_All_added[ii,:]))
+
+            ne_line_interpolated_R_All_added = np.asarray(ne_line_interpolated_R_All_added)
+
+
+
+            ######################################################################################################
+            #derivative of the interpolated density over space
+            for ii in range(len(time_slices_red_All_added)):
+                derivative_interp_array_All_added.append(np.gradient(ne_line_interpolated_R_All_added[ii], R_meters[mask_total_All_added[ii]]))
+
+            derivative_interp_array_All_added = np.asarray(derivative_interp_array_All_added)
+            ######################################################################################################
+
+            R_meters_mask_All_added = np.full((len(time_slices_red_All_added), 100),np.nan)
+            ne_line_interpolated_R_2d_All_added = np.full(R_meters_mask_All_added.shape, np.nan)
+            ne_derivative_interpolated_2d_All_added = np.full(R_meters_mask_All_added.shape, np.nan)
+
+            for ii in range(len(time_slices_red_All_added)):
+                R_meters_mask_All_added[ii]=np.linspace(np.nanmin(R_meters[mask_total_All_added[ii]]), np.nanmax(R_meters[mask_total_All_added[ii]]), 100)
+                ne_line_interpolated_R_2d_All_added[ii] = np.interp(R_meters_mask_All_added[ii], (R_meters[mask_total_All_added[ii]]), \
+                                                                ne_line_interpolated_R_All_added[ii])
+                ne_derivative_interpolated_2d_All_added[ii] = np.interp(R_meters_mask_All_added[ii], (R_meters[mask_total_All_added[ii]]), \
+                                                                    derivative_interp_array_All_added[ii])
+
+
+
+
+
+        else:
+            ######################################################################################################
+            mask_total_All_added = []
+            ne_line_interpolated_R_All_added = []
+            derivative_interp_array_All_added = []
+            for ii in range(len(time_slices_red_All_added)):
+                mask_diff_All_added = np.diff(rho_mid_plane[time_slices_red_All_added[ii],:]) > 0
+                mask_rho_fit_All_added = ((rho_mid_plane[time_slices_red_All_added[ii],:]>rho_total_fit_x_All_added[ii].min()) \
+                                   & (rho_mid_plane[time_slices_red_All_added[ii],:]<rho_total_fit_x_All_added[ii].max()))
+
+                mask_diff_All_added = np.insert(mask_diff_All_added, True, 0)
+                mask_total_All_added.append(mask_rho_fit_All_added & mask_diff_All_added)
+
+            mask_total_All_added = np.asarray(mask_total_All_added)
+
+            for ii in range(len(time_slices_red_All_added)):
+                ne_line_interpolated_R_All_added.append(np.interp(rho_mid_plane[time_slices_red_All_added[ii],mask_total_All_added[ii]], \
+                                                    rho_total_fit_x_All_added[ii,:], ne_line_density_fit_All_added[ii,:]))
+
+            ne_line_interpolated_R_All_added = np.asarray(ne_line_interpolated_R_All_added)
+
+
+
+            #derivative of the interpolated density over space
+
+            derivative_interp_array_All_added = []
+            for ii in range(len(time_slices_red_All_added)):
+                derivative_interp_array_All_added.append(np.gradient(ne_line_interpolated_R_All_added[ii], R_meters[mask_total_All_added[ii]]))
+
+            derivative_interp_array_All_added = np.asarray(derivative_interp_array_All_added)
+            ######################################################################################################
+
+            R_meters_mask_All_added = np.full((len(time_slices_red_All_added), 100),np.nan)
+            ne_line_interpolated_R_2d_All_added = np.full(R_meters_mask_All_added.shape, np.nan)
+            ne_derivative_interpolated_2d_All_added = np.full(R_meters_mask_All_added.shape, np.nan)
+            for ii in range(len(time_slices_red_All_added)):
+                R_meters_mask_All_added[ii]=np.linspace(np.nanmin(R_meters), np.nanmax(R_meters), 100)
+
+            ne_line_interpolated_R_2d_All_added = ne_line_density_fit_All_added
+            ne_derivative_interpolated_2d_All_added = derivative_interp_array_All_added
+
+
 
         #create the errors assigned to each of density and space:
         ne_line_interpolated_R_2d_errors_All_added = np.full(ne_line_interpolated_R_2d_All_added.shape, ((ne_line_interpolated_R_2d_All_added))*0.1)
         R_meters_2d_errors_All_added =  np.full(R_meters_mask_All_added.shape, np.mean((R_meters_mask_All_added))*0.01)
-        ne_line_interpolated_R_2d_errors_All_added      = np.clip(ne_line_interpolated_R_2d_errors_All_added, 6*1e17, None)
+        ne_line_interpolated_R_2d_errors_All_added      = np.clip(ne_line_interpolated_R_2d_errors_All_added, absolute_error_ne, None)
 
         print('------------------------------------------')
         print('------------------------------------------')
@@ -566,12 +690,9 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         print('------------------------------------------')
         print('------------------------------------------')
 
-        #in this step the user have the possiblity to use the
-        #output results of the fit_data function as the inputs
-        #for a second fit_data in order to smooth the results more
-        #just by setting the output_as_input_All_added = True
+
         time_real_upp = TimeReference[time_slices_red_All_added]
-        
+
         out_put_R_All_added = fit_data(R_meters_mask_All_added, ne_line_interpolated_R_2d_All_added, R_meters_2d_errors_All_added, \
                                    ne_line_interpolated_R_2d_errors_All_added , kernel_method=args.kernel, \
                                    optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, \
@@ -580,11 +701,11 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
 
-        print('-----------------------------------------------------------')
-        print('-----------------------------------------------------------')
+        print('---------------------------------------------------------------')
+        print('---------------------------------------------------------------')
         print('----Transformation from R_space to rho_space for All_added ----')
-        print('-----------------------------------------------------------')
-        print('-----------------------------------------------------------')
+        print('---------------------------------------------------------------')
+        print('---------------------------------------------------------------')
 
 
         time_slices_real_All_added = np.asarray(TimeReference[time_slices_red_All_added])
@@ -592,12 +713,10 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_mid_plane_All_added = np.full((R_meters_mask_All_added.shape), np.nan)
         Phi_meters_trans = np.zeros(100)
         Z_meters_trans = np.zeros(100)
-
         #loop over time in the time array
         for ii in range(R_meters_mask_All_added.shape[0]):
             rho_mid_plane_All_added[ii] = equimap.get(shot,time_slices_real_All_added[ii] , R_meters_mask_All_added[ii], \
                                                   Phi_meters_trans, Z_meters_trans, 'rho_pol_norm')
-
 
 
         mask_All_added_rho = rho_mid_plane_All_added<np.nanmax(rho_pol_norm_base_min)
@@ -606,7 +725,12 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         #apply the mask to both the All_added and lower densities
-        derivative_density_All_added_fit_output = -(np.asarray(out_put_R_All_added['fit_dydx']))
+        #if mask_reflectometer_exist :
+        #derivative_density_All_added_fit_output = -(np.asarray(out_put_R_All_added['hs_fit_dydx']))
+        derivative_density_All_added_fit_output = -(np.asarray(out_put_R_All_added['ni_fit_dydx']))
+        #else :
+        #derivative_density_All_added_fit_output = -(np.asarray(out_put_R_All_added['fit_dydx_weighted']))
+            
 
         derivative_density_All_added_masked = np.ma.array(derivative_density_All_added_fit_output, mask = ~mask_All_added_rho, fill_value=np.nan)
         derivative_density_All_added = derivative_density_All_added_masked.filled(np.nan)
@@ -615,34 +739,42 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_total_final = rho_mid_plane_All_added_masked
 
 
-        #import pdb; pdb.set_trace()
+        if mask_reflectometer_exist :
+            #Interpolate the electron density to the time slices that we are working in
+            #Interpolate the rho_pol_norm_ref that is associated to the electron density to the same time slices
+            electron_density_interpolated=[]
+            rho_pol_norm_ref_interpolated = []
+            for ii in range(electron_density.shape[0]):
+                rho_pol_norm_ref_interpolated.append(np.interp(time_slices_real_All_added, TimeReference, rho_pol_norm_ref[ii,:]))
+                electron_density_interpolated.append(np.interp(time_slices_real_All_added, TimeReference, electron_density[ii,:]))
+            electron_density_interpolated = (np.asarray(electron_density_interpolated)).T # transpose from (space,time) to (time, space)  shape
+            rho_pol_norm_ref_interpolated = (np.asarray(rho_pol_norm_ref_interpolated)).T # transpose from (space,time) to (time, space)  shape
 
-
-
-        #Interpolate the electron density to the time slices that we are working in
-        #Interpolate the rho_pol_norm_ref that is associated to the electron density to the same time slices
-        electron_density_interpolated=[]
-        rho_pol_norm_ref_interpolated = []
-        for ii in range(electron_density.shape[0]):
-            rho_pol_norm_ref_interpolated.append(np.interp(time_slices_real_All_added, TimeReference, rho_pol_norm_ref[ii,:]))
-            electron_density_interpolated.append(np.interp(time_slices_real_All_added, TimeReference, electron_density[ii,:]))
-        electron_density_interpolated = (np.asarray(electron_density_interpolated)).T # transpose from (space,time) to (time, space)  shape
-        rho_pol_norm_ref_interpolated = (np.asarray(rho_pol_norm_ref_interpolated)).T # transpose from (space,time) to (time, space)  shape
-        #import ipdb;ipdb.set_trace()
-
-        #create a mask and remove the value in the average density from the interferometry that are greater than 0.8 in rho
-        rho_pol_norm_ref_concat = (np.concatenate((rho_total_final,rho_pol_norm_ref_interpolated), axis=1))#concatenate along the second axis ======> in space
-        electron_density_concat = (np.concatenate((average_der_density, electron_density_interpolated), axis=1))#concatenate along the second axis ======> in space
+            rho_pol_norm_ref_concat = (np.concatenate((rho_total_final,rho_pol_norm_ref_interpolated), axis=1))#concatenate along the second axis ======> in space
+            electron_density_concat = (np.concatenate((average_der_density, electron_density_interpolated), axis=1))#concatenate along the second axis ======> in space
             #define the errors for the final results:
-        electron_density_interpolated_error = np.full(electron_density_interpolated.shape, electron_density_interpolated*0.03)
-        rho_pol_norm_ref_interpolated_error = np.full(rho_pol_norm_ref_interpolated.shape, rho_pol_norm_ref_interpolated*0.01)
-        
-        rho_total_final_error      = np.full(rho_total_final.shape, rho_total_final*0.01)
-        average_der_density_error  = np.full(average_der_density.shape, average_der_density*0.1)
+            electron_density_interpolated_error = np.full(electron_density_interpolated.shape, electron_density_interpolated*0.03)
+            rho_pol_norm_ref_interpolated_error = np.full(rho_pol_norm_ref_interpolated.shape, rho_pol_norm_ref_interpolated*0.01)
+
+            rho_total_final_error      = np.full(rho_total_final.shape, rho_total_final*0.01)
+            average_der_density_error  = np.full(average_der_density.shape, average_der_density*0.1)
 
             #concatenate the errors
-        rho_pol_norm_ref_concat_error = (np.concatenate((rho_total_final_error,rho_pol_norm_ref_interpolated_error), axis=1))
-        electron_density_concat_error = (np.concatenate((average_der_density_error,electron_density_interpolated_error), axis=1))
+            rho_pol_norm_ref_concat_error = (np.concatenate((rho_total_final_error,rho_pol_norm_ref_interpolated_error), axis=1))
+            electron_density_concat_error = (np.concatenate((average_der_density_error,electron_density_interpolated_error), axis=1))
+
+
+        else:
+            rho_pol_norm_ref_concat = rho_total_final
+            electron_density_concat = average_der_density
+            #define the errors for the final results:
+
+            rho_total_final_error      = np.full(rho_total_final.shape, rho_total_final*0.01)
+            average_der_density_error  = np.full(average_der_density.shape, average_der_density*0.1)
+
+                #concatenate the errors
+            rho_pol_norm_ref_concat_error = rho_total_final_error
+            electron_density_concat_error = average_der_density_error
 
 
 
@@ -655,9 +787,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_total_sort_final_error = np.asarray(list(map(lambda x, y: y[x], array_index, rho_pol_norm_ref_concat_error)))
         ne_line_total_sort_final_error = np.asarray(list(map(lambda x, y: y[x], array_index, electron_density_concat_error)))
 
-
-        #import pdb; pdb.set_trace()
-        print('I am here 13')
 
         #check for nans in density and mask over the values that corresponds to the nans in the rho
         if np.isnan(ne_line_total_sort_final).any():
@@ -674,19 +803,21 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         #check for nans in density error and mask over the values that corresponds to the nans in the rho
         if np.isnan(ne_line_total_sort_final_error).any():
             mask_rho_total_sort_final_error  = np.ma.array(rho_total_sort_final_error , mask = np.isnan(ne_line_total_sort_final_error ), fill_value=np.nan)
-            rho_total_sort_final_error  = mask_rho_total_sort_final_error .filled(np.nan)
+            rho_total_sort_final_error  = mask_rho_total_sort_final_error.filled(np.nan)
             
         #check for nans in rho error and mask over the values that corresponds to the nans in the ne_profile
         if np.isnan(rho_total_sort_final_error).any():
             mask_ne_line_total_sort_error  = np.ma.array(ne_line_total_sort_final_error , mask = np.isnan(rho_total_sort_final_error ), fill_value=np.nan)
-            ne_line_total_sort_final_error  = mask_ne_line_total_sort_error .filled(np.nan)
+            ne_line_total_sort_final_error  = mask_ne_line_total_sort_error.filled(np.nan)
+            print('1')
 
 
         ############################################################################
         ############################################################################
         ############################################################################
 
-
+        ##check for the deleting the nans and times from the same matrices indices
+        
         #start the new procedure concerning fisation of the grid
         fixed_grid = True
         if fixed_grid:
@@ -699,7 +830,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
             rho_total_sort_final_nonan_list = []
             ne_line_total_sort_final_nonan_list = []
-
+            
             for ii in range(ne_line_total_sort_final.shape[0]):
                     rho_total_sort_final_nonan_list.append(rho_total_sort_final[ii][~np.isnan(rho_total_sort_final[ii])])
                     ne_line_total_sort_final_nonan_list.append(ne_line_total_sort_final[ii][~np.isnan(ne_line_total_sort_final[ii])])
@@ -711,7 +842,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
                     interpolation_func = interpolate.interp1d(rho_total_sort_final_nonan_list[ii], ne_line_total_sort_final_nonan_list[ii])
                     rho_final_fixed_grid[ii] = array_to_interpolate_into
                     ne_line_final_fixed_grid[ii] = interpolation_func(array_to_interpolate_into)
-
 
 
             rho_total_sort_nonans_final     = rho_final_fixed_grid 
@@ -746,17 +876,26 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
 
-
         ############################################################################
         ############################################################################
         ############################################################################
-
-        ne_line_total_sort_nonans_final_error= np.clip(ne_line_total_sort_nonans_final_error, 6*1e17, None)
+        #change the error to global parameter
+        # for inter and reflectormetry and for the meters 
+        ne_line_total_sort_nonans_final_error= np.clip(ne_line_total_sort_nonans_final_error, absolute_error_ne, None)
 
         
         #add an extra point to rho total
-        rho_total_sort_nonans_final = np.insert(rho_total_sort_nonans_final, 0, 0, axis=1)#index, value
-        rho_total_sort_nonans_final_error = np.insert(rho_total_sort_nonans_final_error, 0, 0, axis=1)#index, value
+        minimuim_rho_elements_array = []
+        for ii in range(rho_total_sort_nonans_final.shape[0]):
+            minimuim_rho_elements_array.append(np.nanmin(rho_total_sort_nonans_final[ii]))
+        minimuim_rho_elements_array = np.asarray(minimuim_rho_elements_array)
+
+        rho_total_sort_nonans_final = np.concatenate((minimuim_rho_elements_array[:,None], rho_total_sort_nonans_final),axis=1)
+        rho_total_sort_nonans_final_error = np.concatenate((minimuim_rho_elements_array[:,None]*0.01, rho_total_sort_nonans_final_error),axis=1)
+
+        #rho_total_sort_nonans_final = np.insert(rho_total_sort_nonans_final, 0, 0, axis=1)#index, value
+        #rho_total_sort_nonans_final_error = np.insert(rho_total_sort_nonans_final_error, 0, 0, axis=1)#index, value
+        
         #the maximum should be by time slice and should
         maximum_elements_array = []
         for ii in range(ne_line_total_sort_nonans_final.shape[0]):
@@ -766,9 +905,9 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         #concatenate the array of the first elements with the total density elements
         ne_line_total_sort_nonans_final = np.concatenate((maximum_elements_array[:,None], ne_line_total_sort_nonans_final),axis=1)
         ne_line_total_sort_nonans_final_error = np.concatenate((maximum_elements_array[:,None]*0.2,ne_line_total_sort_nonans_final_error),axis=1)
-        error_max_added = max(1.2*1e17, np.max(maximum_elements_array[:,None]*0.2))
+        error_max_added = max(0.2*absolute_error_ne, np.max(maximum_elements_array[:,None]*0.2))
         
-        ne_line_total_sort_nonans_final_error = np.clip(ne_line_total_sort_nonans_final_error, 6*1e17, error_max_added)
+        ne_line_total_sort_nonans_final_error = np.clip(ne_line_total_sort_nonans_final_error, absolute_error_ne, error_max_added)
 
 
 
@@ -778,11 +917,12 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
                                 optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
                                 dy_fix_err=None, Time_real=time_global, file_name = 'GPPlots_final_FITS')
 
-        ne_density_fit = (np.asarray(out_put_final['fit_y']))
+        ne_density_fit = (np.asarray(out_put_final['ni_fit_y']))
+        ne_density_fit_error = (np.asarray(out_put_final['ni_fit_y_error']))
+        #ne_density_fit = (np.asarray(out_put_final['hs_fit_y']))
+        #ne_density_fit_error = (np.asarray(out_put_final['hs_fit_y_error']))
         rho_total_fit =  (np.asarray(out_put_final['fit_x']))
-        ne_density_fit_error = (np.asarray(out_put_final['fit_y_error']))
         Time_index = np.asarray(out_put_final['fit_time_slice'])
-        import pdb; pdb.set_trace()
 
 
 
@@ -813,7 +953,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         #the final step will be to integrate the density
-        #over the distance in space, trapizodal integration.
+        #over the distance in space, trapizodal integration
         integrale_density_final = np.full((density_pol_norm_base_interp.shape[0],density_pol_norm_base_interp.shape[1]),np.nan)
         density_pol_norm_base_interp[np.isnan(density_pol_norm_base_interp)]=0
 
@@ -824,19 +964,15 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         density_check = (electron_density_ne/Normalization_constant)
         density_check[np.isnan(density_check)] = 0
-
+       
         error_difference = integrale_density_final - density_check[:,Time_index]
         error_difference_percent  = (integrale_density_final - density_check[:,Time_index])/(density_check[:,Time_index])
         error_difference_percent[np.isinf(error_difference_percent)] = 0
-        RMS = np.sqrt(np.mean((error_difference)**2, axis=0))
-        RMSE = (np.sqrt(np.mean((error_difference_percent)**2, axis=0)))*100
+        RMS = np.sqrt(np.mean((error_difference)**2, axis=0)) 
+        RMSE = (np.sqrt(np.mean((error_difference_percent)**2, axis=0)))*100 # it is the mean along the time axis
 
-        import pdb; pdb.set_trace()
+        chi_sqaure = ((ne_line_total_sort_nonans_final[:,1:] - ne_density_fit)**2)/((ne_density_fit_error)**2)
 
-
-
-
-        chi_sqaure = ((ne_line_total_sort_nonans_final - ne_density_fit)**2)/((ne_density_fit_error)**2)
         ###Some basic setup
         #create the test directory to save  output files
         #user can add as much as he wants here
@@ -847,15 +983,19 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             os.makedirs(output_save_directory)
         os.chdir(output_save_directory)
         #save the outputs to files to be loaded and used in plots
-        np.savez('statistics', RMSE_mean=np.nanmean(RMSE) , RMSE_median=np.nanmedian(RMSE), RMSE_min=np.nanmin(RMSE), RMSE_max=np.nanmax(RMSE) )
+        np.savez('statistics', RMSE_mean=np.nanmean(RMSE) , RMSE_median=np.nanmedian(RMSE), RMSE_min=np.nanmin(RMSE), RMSE_max=np.nanmax(RMSE) , Chi_sqaure=chi_sqaure)
         np.savez('Time_file', Time_index=Time_index, time_global=time_global)
         np.savez('Error_files', error_difference=error_difference, error_difference_percent=error_difference_percent, RMSE=RMSE, RMS=RMS)
-        np.savez('Rhos_vs_ne', rho_pol_norm_base_min=rho_pol_norm_base_min , rho_pol_norm_ref=rho_pol_norm_ref , electron_density_ne=electron_density_ne , integrale_density_ref=integrale_density_ref, density_check=density_check, integrale_density_final=integrale_density_final)
+        if mask_reflectometer_exist :
+            np.savez('Rhos_vs_ne', rho_pol_norm_base_min=rho_pol_norm_base_min , rho_pol_norm_ref=rho_pol_norm_ref , electron_density_ne=electron_density_ne , integrale_density_ref=integrale_density_ref, density_check=density_check, integrale_density_final=integrale_density_final)
+        else:
+            np.savez('Rhos_vs_ne', rho_pol_norm_base_min=rho_pol_norm_base_min , electron_density_ne=electron_density_ne ,  density_check=density_check, integrale_density_final=integrale_density_final)
+            
         os.chdir('../')
         os.chdir('../')
         print('current working directory')
         print(os.getcwd())
-        #import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
 
 
         if (write_edge_profiles):
@@ -889,7 +1029,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             print('----------')
 
             idd_out.edge_profiles.profiles_1d.resize(rho_total_fit.shape[0])
-            #import pdb; pdb.set_trace()
             for ii in range(rho_total_fit.shape[0]):
                 idd_out.edge_profiles.profiles_1d[ii].grid.rho_pol_norm = rho_total_fit[ii, :]
                 idd_out.edge_profiles.profiles_1d[ii].grid.rho_pol_norm_error_upper =rho_total_sort_nonans_final_error[ii, :] 
@@ -900,31 +1039,31 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
                 idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.measured = ne_line_total_sort_final_nonan[ii, :]
                 idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.measured_error_upper = ne_line_total_sort_final_error_added[ii, :]
                 idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.time_measurement = time_global[ii]
+                idd_out.edge_profiles.profiles_1d[ii].electrons.density_fit.chi_squared = chi_sqaure[ii]
 
             idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.source = ['reflectometer_profile.channel[0].n_e.data' , 'interferometer.channel[zz].n_e_line.data'] 
-            idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.parameters = ['rho_total_fit', 'ne_density_fit', 'time_global', 'rho_total_fit_error', 'ne_density_fit_error']
             idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.time_measurement_slice_method.name = 'time_measurement_slice_method'
             idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.time_measurement_slice_method.index = 1
             idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.time_measurement_slice_method.description = 'linear interpolation'
             idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.weight = 1
-
-
-
-
-            import pdb; pdb.set_trace()
+            #add the chi_square and save it 
+            #add an put to interferomtry ids with input occurance (>4)
+            #import pdb; pdb.set_trace()
             #add the time global 
-            #add an extra artifical 
-            idd_out.edge_profiles.time = time_global
+            idd_out.edge_profiles.time = time_global 
             idd_out.edge_profiles.put()
+            
+
+
+            #add an put to interferomtry ids with input occurance (>4)
+            #idd_out.interferometry.put(occ=4)
+            
             idd_out.close()
             print('finish Writing data')
 
 
 
-
-
         return rho_total_fit, ne_density_fit, rho_total_sort_nonans_final_error, ne_density_fit_error
-        #import pdb; pdb.set_trace()
 
 
 if __name__ == '__main__':
