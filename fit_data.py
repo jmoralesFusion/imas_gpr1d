@@ -1015,8 +1015,6 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
 
 
 
-
-
             if (X_coordinates_errors is not None or plot_fit):
                 # GPR fit rigourously accounting for y-errors AND x-errors
                 #     Procedure is nearly identical to above, except for the addition of an extra option

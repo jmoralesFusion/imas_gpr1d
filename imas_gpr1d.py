@@ -265,6 +265,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             
             if list_of_nans :
                 TimeReference = np.delete(TimeReference, list_of_nans)
+                #Time_eq = np.delete(Time_eq, list_of_nans)
+                #Time_inter = np.delete(Time_inter, list_of_nans)
 
         #mask_time_ref = (TimeReference > 32.2824614) & (TimeReference < 47.06669449)
         #TimeReference = TimeReference[mask_time_ref]
@@ -366,31 +368,10 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         r_outboard = np.asarray(r_outboard)
 
         #interpolation from the equilibruim time to the Time Reference we are using
-        r_axis_interp = np.interp(TimeReference, Time_eq, r_axis)
-        z_axis_interp = np.interp(TimeReference, Time_eq, z_axis)
         for ii in range(r_outboard.shape[1]):
             r_outboard_interpolated.append(np.interp(TimeReference, Time_eq, r_outboard[:,ii]))
 
         r_outboard_interpolated = np.asarray(r_outboard_interpolated)
-        index_r_axis = np.full((R.shape[0],r_axis_interp.shape[0]), np.nan)
-
-        #create two masks for the line of sight regarding their
-        #with respect to z-axis in order to study the asymmetry
-        #we call them upper(z>0) and lower(z<0)
-        mask_upper_LOS = []
-        mask_lower_LOS = []
-
-        for ii in range(R.shape[0]):
-            for jj in range(r_axis_interp.shape[0]):
-                index_r_axis[ii,jj] =np.nanargmin(np.abs( R[ii] - r_axis_interp[jj]))
-
-        #introduce the upper and lower masks:
-        for ii in range(R.shape[0]):
-            mask_upper_LOS.append(Z[ii, index_r_axis[ii,:].astype(int)]>z_axis_interp)
-            mask_lower_LOS.append(Z[ii, index_r_axis[ii,:].astype(int)]<z_axis_interp)
-
-        mask_upper_LOS = np.asarray(mask_upper_LOS)
-        mask_lower_LOS = np.asarray(mask_lower_LOS)
 
         #start the equimap procedure:
         Phi = np.zeros(1000)
@@ -452,21 +433,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         Phi_meters = np.zeros(1000)
         Z_meters = np.zeros(1000)
         rho_mid_plane = equimap.get(shot, TimeReference,R_meters,Phi_meters,Z_meters, 'rho_pol_norm')
-        '''
-        list_of_nans = []
-        for ii in range(rho_mid_plane.shape[0]):
-            if (np.isnan(rho_mid_plane[ii]).all()):
-                list_of_nans.append(ii)
- 
-            
-        #### add a small lines to check if the rho_mid_plane_All_added contains raws full of nans and then drop the times that 
-        #### are responsible for the presence of the whole raw in nans 
-        if list_of_nans :
-            TimeReference = np.delete(TimeReference, list_of_nans)
-            rho_mid_plane = equimap.get(shot, TimeReference,R_meters,Phi_meters,Z_meters, 'rho_pol_norm')
 
-        '''    
-        #hon 3ed l nans w lµ8ehon w rj3 3ml l equimaps 
         #import pdb; pdb.set_trace()
         index_rho_min = np.full(rho_pol_norm_base_min.shape, np.nan)
         index_separatrix = np.full(rho_pol_norm_base_min.shape, np.nan)
