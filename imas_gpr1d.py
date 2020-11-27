@@ -231,7 +231,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         #    raise RuntimeError('choose another shot that have a valid time')
 
         mask_reflectometer_exist = (Time_ref.size != 0)
-        #import pdb; pdb.set_trace()
+
         if mask_reflectometer_exist :
             time_min = np.asarray([Time_eq.min(),Time_inter.min(),Time_ref.min()]).max()
             time_max = np.asarray([Time_eq.max(),Time_inter.max(),Time_ref.max()]).min()
@@ -265,13 +265,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             
             if list_of_nans :
                 TimeReference = np.delete(TimeReference, list_of_nans)
-                #Time_eq = np.delete(Time_eq, list_of_nans)
-                #Time_inter = np.delete(Time_inter, list_of_nans)
-
-        #mask_time_ref = (TimeReference > 32.2824614) & (TimeReference < 47.06669449)
-        #TimeReference = TimeReference[mask_time_ref]
-        #TimeReference[0] =  TimeReference[0] + 0.001
-        #TimeReference[-1] =  TimeReference[-1] - 0.001
+                Time_eq = np.delete(Time_eq, list_of_nans)
+                Time_inter = np.delete(Time_inter, list_of_nans)
 
         if mask_reflectometer_exist :
             ##########################
@@ -324,6 +319,10 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         boundary_r = np.asarray(boundary_r)
         boundary_z = np.asarray(boundary_z)
+        if not mask_reflectometer_exist :
+            if list_of_nans :
+                boundary_r = np.delete(boundary_r, list_of_nans)
+                boundary_z = np.delete(boundary_z, list_of_nans)
 
         #extract the minimum and the maximum of the raduis
         maximum = (boundary_r[0]).max()
@@ -367,7 +366,13 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         r_outboard = np.asarray(r_outboard)
 
+        if not mask_reflectometer_exist :
+            if list_of_nans :
+               r_axis  = np.delete(r_axis, list_of_nans)
+               z_axis  = np.delete(z_axis, list_of_nans)
+               r_outboard = np.delete(r_outboard, list_of_nans, axis=0)
         #interpolation from the equilibruim time to the Time Reference we are using
+        #import pdb; pdb.set_trace()
         for ii in range(r_outboard.shape[1]):
             r_outboard_interpolated.append(np.interp(TimeReference, Time_eq, r_outboard[:,ii]))
 
@@ -428,13 +433,15 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
                     r_outboard_interpolated_min = np.nanmin(r_outboard_interpolated[ii])
                 
 
-            R_meters = np.linspace(r_outboard_interpolated_min, r_outboard_interpolated_max, 1000)
+            #R_meters = np.linspace(r_outboard_interpolated_min, r_outboard_interpolated_max, 1000)
+            R_meters = np.linspace(r_axis.min(), r_axis.max(), 1000)
 
         Phi_meters = np.zeros(1000)
         Z_meters = np.zeros(1000)
         rho_mid_plane = equimap.get(shot, TimeReference,R_meters,Phi_meters,Z_meters, 'rho_pol_norm')
 
         #import pdb; pdb.set_trace()
+
         index_rho_min = np.full(rho_pol_norm_base_min.shape, np.nan)
         index_separatrix = np.full(rho_pol_norm_base_min.shape, np.nan)
 
@@ -450,8 +457,12 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         for ii in range(rho_pol_norm_base_min.shape[0]):
             for jj in range(rho_pol_norm_base_min.shape[1]):
-                R_separatrix[ii,jj] = R[ii, (index_rho_min[ii,jj].astype(int)):][index_separatrix[ii,jj].astype(int)]
-                Z_separatrix[ii,jj] = Z[ii, (index_rho_min[ii,jj].astype(int)):][index_separatrix[ii,jj].astype(int)]
+                if mask_reflectometer_exist :
+                    R_separatrix[ii,jj] = R[ii, (index_rho_min[ii,jj].astype(int)):][index_separatrix[ii,jj].astype(int)]
+                    Z_separatrix[ii,jj] = Z[ii, (index_rho_min[ii,jj].astype(int)):][index_separatrix[ii,jj].astype(int)]
+                else:
+                    R_separatrix[ii,jj] = R[ii, (index_separatrix[ii,jj].astype(int))]
+                    Z_separatrix[ii,jj] = Z[ii, (index_separatrix[ii,jj].astype(int))]
                 R_LOS[ii,jj] = R[ii, index_rho_min[ii,jj].astype(int)]
                 Z_LOS[ii,jj] = Z[ii, index_rho_min[ii,jj].astype(int)]
 
@@ -486,7 +497,10 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         #####################################################################################################
         #interpolate the reflectometer integrals and the electron density from the interferometer
         # to the same time window
-        #import pdb; pdb.set_trace()
+        if not mask_reflectometer_exist :
+            if list_of_nans:
+                electron_density_line = np.delete(electron_density_line,list_of_nans, axis =1)
+
         electron_density_ne = np.full((len(electron_density_line),len(TimeReference)), np.nan)
 
         for jj in range(electron_density_line.shape[0]):
@@ -517,15 +531,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         index_sort = np.argsort(rho_total, axis=0)
         rho_total_sort = (np.array(list(map(lambda x, y: y[x], index_sort.T, rho_total.T))))
         ne_line_total_sort = np.array(list(map(lambda x, y: y[x], index_sort.T, ne_line_total.T)))
-        '''
-        if((np.any(np.isnan(ne_line_total_sort))) or (np.any(np.isinf(ne_line_total_sort)))):
-            print('please check the following non finite data elements')
-            NaNs_index = np.argwhere(np.isnan(ne_line_total_sort))
-            Infs_index = np.argwhere(np.isinf(ne_line_total_sort))
-            print('NaNs_index = '  ,NaNs_index)
-            print('Infs_index = '  ,Infs_index)
-            raise RuntimeError('array must not contain infs or NaNs')
-            '''
 
         ne_line_total_sort_final_nonan = ne_line_total_sort
         rho_total_sort_final_nonan = rho_total_sort
@@ -539,7 +544,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
 
-        #import pdb; pdb.set_trace()
         out_put_All_added12 = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan , rho_total_sort_final_error_added, \
                                 ne_line_total_sort_final_error_added , kernel_method='Gibbs_Kernel', \
                                 optimise_all_params=False, slices_nbr=30, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
@@ -692,18 +696,14 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         #apply the mask to both the All_added and lower densities
-        #if mask_reflectometer_exist :
-        #derivative_density_All_added_fit_output = -(np.asarray(out_put_R_All_added['hs_fit_dydx']))
-        derivative_density_All_added_fit_output = -(np.asarray(out_put_R_All_added['ni_fit_dydx']))
-        #else :
-        #derivative_density_All_added_fit_output = -(np.asarray(out_put_R_All_added['fit_dydx_weighted']))
-            
 
+        derivative_density_All_added_fit_output = -(np.asarray(out_put_R_All_added['ni_fit_dydx']))
+            
         derivative_density_All_added_masked = np.ma.array(derivative_density_All_added_fit_output, mask = ~mask_All_added_rho, fill_value=np.nan)
         derivative_density_All_added = derivative_density_All_added_masked.filled(np.nan)
 
-        average_der_density = derivative_density_All_added
-        rho_total_final = rho_mid_plane_All_added_masked
+        average_der_density = derivative_density_All_added#derivative_density_All_added_fit_output
+        rho_total_final = rho_mid_plane_All_added_masked#rho_mid_plane_All_added
 
 
         if mask_reflectometer_exist :
@@ -776,7 +776,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         if np.isnan(rho_total_sort_final_error).any():
             mask_ne_line_total_sort_error  = np.ma.array(ne_line_total_sort_final_error , mask = np.isnan(rho_total_sort_final_error ), fill_value=np.nan)
             ne_line_total_sort_final_error  = mask_ne_line_total_sort_error.filled(np.nan)
-            print('1')
 
 
         ############################################################################
@@ -842,7 +841,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
 
-
+            
         ############################################################################
         ############################################################################
         ############################################################################
@@ -903,11 +902,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
                                                                 rho_total_fit[jj],  ne_density_fit[jj])#, left=0, right=0)
 
 
-        rho_pol_norm_base_sample = rho_pol_norm_base[:, Time_index, :] #will have the size of (line of sight, Time_index, space)
-        mask_profile_rho = np.ones(rho_pol_norm_base_sample.shape, dtype=bool)
-        for ii in range(mask_profile_rho.shape[1]):
-            mask_profile_rho[:,ii,:] = rho_pol_norm_base_sample[:,ii,:]<np.nanmax(rho_total_fit[ii])#loop on time slices for the rho_total_fit
-
         R_0 = np.full((R.shape[0]), np.nan)
         Z_0 = np.full((R.shape[0]), np.nan)
         distance_length = np.full((R.shape), np.nan)
@@ -926,10 +920,30 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         for ii in range(density_pol_norm_base_interp.shape[0]):
             for jj in range(density_pol_norm_base_interp.shape[1]):
-                integrale_density_final[ii, jj] = 0.5*(integrate.trapz(density_pol_norm_base_interp[ii, jj],distance_length[ii]))
+                #integrale_density_final[ii, jj] = 0.25*(integrate.trapz(density_pol_norm_base_interp[ii, jj],distance_length[ii]))
+                #integrale_density_final[ii, jj] = 0.5*(integrate.trapz(density_pol_norm_base_interp[ii, jj],distance_length[ii]))
+                integrale_density_final[ii, jj] = (integrate.trapz(density_pol_norm_base_interp[ii, jj],distance_length[ii]))
+        
 
 
-        density_check = (electron_density_ne/Normalization_constant)
+        #due to the trapizoidal integration procedure, 
+        #one should add an integration constant that is related to the initial data
+        integration_constant = integrale_density_final - electron_density_ne[:,Time_index]
+        #integrale_density_final = integrale_density_final - integration_constant
+        division_constant = integrale_density_final/electron_density_ne[:,Time_index]
+        #integrale_density_final = integrale_density_final/division
+        #division_constant[np.isinf(division_constant)] = 0
+        for ii in range(integrale_density_final.shape[0]):
+            integrale_density_final[ii]= integrale_density_final[ii]/np.nanmean(division_constant[ii])
+
+
+
+
+
+
+
+
+        density_check = (electron_density_ne)#/Normalization_constant)
         density_check[np.isnan(density_check)] = 0
        
         error_difference = integrale_density_final - density_check[:,Time_index]
@@ -942,7 +956,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         ###Some basic setup
         #create the test directory to save  output files
-        #user can add as much as he wants here
+
         output_save_directory = './output_directory'
         if not output_save_directory.endswith('/'):
             test_save_directory = output_save_directory+'/'
@@ -954,7 +968,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         np.savez('Time_file', Time_index=Time_index, time_global=time_global)
         np.savez('Error_files', error_difference=error_difference, error_difference_percent=error_difference_percent, RMSE=RMSE, RMS=RMS)
         if mask_reflectometer_exist :
-            np.savez('Rhos_vs_ne', rho_pol_norm_base_min=rho_pol_norm_base_min , rho_pol_norm_ref=rho_pol_norm_ref , electron_density_ne=electron_density_ne , integrale_density_ref=integrale_density_ref, density_check=density_check, integrale_density_final=integrale_density_final)
+            np.savez('Rhos_vs_ne', rho_pol_norm_base_min=rho_pol_norm_base_min , rho_pol_norm_ref=rho_pol_norm_ref , electron_density_ne=electron_density_ne , integrale_density_ref=integrale_density_ref, density_check=density_check, integrale_density_final=integrale_density_final, electron_density_line = electron_density_line)
         else:
             np.savez('Rhos_vs_ne', rho_pol_norm_base_min=rho_pol_norm_base_min , electron_density_ne=electron_density_ne ,  density_check=density_check, integrale_density_final=integrale_density_final)
             
@@ -962,7 +976,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         os.chdir('../')
         print('current working directory')
         print(os.getcwd())
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
 
 
         if (write_edge_profiles):
@@ -1013,18 +1027,18 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.time_measurement_slice_method.index = 1
             idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.time_measurement_slice_method.description = 'linear interpolation'
             idd_out.edge_profiles.profiles_1d[0].electrons.density_fit.weight = 1
-            #add the chi_square and save it 
-            #add an put to interferomtry ids with input occurance (>4)
             #import pdb; pdb.set_trace()
             #add the time global 
             idd_out.edge_profiles.time = time_global 
             idd_out.edge_profiles.put()
             
 
-
+            #import pdb; pdb.set_trace()
             #add an put to interferomtry ids with input occurance (>4)
-            #idd_out.interferometry.put(occ=4)
-            
+            idd_out.interferometer.channel.resize(integrale_density_final.shape[0])
+            for ii in range(integrale_density_final.shape[0]):
+                idd_out.interferometer.channel[ii].n_e_line.data = integrale_density_final[ii]
+            idd_out.interferometer.put(occurrence=3)
             idd_out.close()
             print('finish Writing data')
 
