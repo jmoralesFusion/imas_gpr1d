@@ -777,8 +777,8 @@ def fit_data(X_coordinates, Y_coordinates, X_coordinates_errors=None, Y_coordina
         print(Y_coordinates.shape[0])
     
         #for i in range(0, Y_coordinates.shape[0], int((Y_coordinates.shape[0])/(slices_nbr))):
-        #for i in range(3):
-        for i in range(0, Y_coordinates.shape[0]):
+        for i in range(3):
+        #for i in range(0, Y_coordinates.shape[0]):
             print('slice number : ', i)
             Y_reduced = Y_coordinates[i]
             X_reduced = X_coordinates[i]
