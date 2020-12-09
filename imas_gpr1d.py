@@ -958,7 +958,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         os.chdir('../')
         print('current working directory')
         print(os.getcwd())
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
 
 
         if (write_edge_profiles):
