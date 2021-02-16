@@ -46,7 +46,8 @@ def plot_data(fit_x_values, minimum, maximum, \
     if not os.path.isdir(plot_save_directory):
         os.makedirs(plot_save_directory)
             
-            
+        
+        
     ### Plotting
     Noise = False
     
@@ -70,6 +71,7 @@ def plot_data(fit_x_values, minimum, maximum, \
         fig.suptitle('Raw Data', fontdict={'fontsize': 8, 'fontweight': 'medium'})
         ax = fig.add_subplot(111)
         plt.plot(X_reduced, Y_reduced)
+        ax.set_ylabel('Density [m^-3]')
         plt.gca().legend(('Raw data'),loc = 'best')
         fig.savefig(plot_save_directory+'Raw_data.png')
         plt.close(fig)
@@ -85,6 +87,11 @@ def plot_data(fit_x_values, minimum, maximum, \
         plot_hs_fit_y_upper = hs_fit_y_values + plot_sigma * hs_fit_y_errors
         ax.fill_between(fit_x_values, plot_hs_fit_y_lower, plot_hs_fit_y_upper, facecolor='r', edgecolor='None', alpha=0.2)
         ax.set_xlim(minimum, maximum)
+        if ((minimum>=0) & (maximum<1.5)):
+            ax.set_xlabel('Normalized Rho')
+        else:
+            ax.set_xlabel('Raduis [m]')
+        ax.set_ylabel('Density [m^-3]')
         plt.gca().legend(('gpr fit','2$\\sigma$ plot region','Raw data', Time_real_sec), loc = 'best')
         fig.savefig(plot_save_directory+'gpr_data.png')
         plt.close(fig)
@@ -98,6 +105,11 @@ def plot_data(fit_x_values, minimum, maximum, \
         plot_fit_dydx_upper = fit_dydx_values + plot_sigma * fit_dydx_errors
         ax.fill_between(fit_x_values, plot_fit_dydx_lower, plot_fit_dydx_upper, facecolor='r', edgecolor='None', alpha=0.2)
         ax.set_xlim(minimum, maximum)
+        if ((minimum>=0) & (maximum<1.5)):
+            ax.set_xlabel('Normalized Rho')
+        else:
+            ax.set_xlabel('Raduis [m]')
+        ax.set_ylabel('Density [m^-3]')
         plt.gca().legend(('derv gpr fit','2$\\sigma$ plot region ','Raw data'))
         fig.savefig(plot_save_directory+'gpr_derivative_data_weighted.png')
         plt.close(fig)
@@ -112,6 +124,11 @@ def plot_data(fit_x_values, minimum, maximum, \
         plot_hs_fit_dydx_upper = hs_fit_dydx_values + plot_sigma * hs_fit_dydx_errors
         ax.fill_between(fit_x_values, plot_hs_fit_dydx_lower, plot_hs_fit_dydx_upper, facecolor='r', edgecolor='None', alpha=0.2)
         ax.set_xlim(minimum, maximum)
+        if ((minimum>=0) & (maximum<1.5)):
+            ax.set_xlabel('Normalized Rho')
+        else:
+            ax.set_xlabel('Raduis [m]')
+        ax.set_ylabel('Density [m^-3]')
         plt.gca().legend(('derv gpr fit','2$\\sigma$ plot region ','Raw data'))
         fig.savefig(plot_save_directory+'gpr_derivative_data.png')
         plt.close(fig)
@@ -124,6 +141,11 @@ def plot_data(fit_x_values, minimum, maximum, \
         plot_ni_fit_dydx_upper = ni_fit_dydx_values + plot_sigma * ni_fit_dydx_errors
         ax.fill_between(fit_x_values, plot_ni_fit_dydx_lower, plot_ni_fit_dydx_upper, facecolor='r', edgecolor='None', alpha=0.2)
         ax.set_xlim(minimum, maximum)
+        if ((minimum>=0) & (maximum<1.5)):
+            ax.set_xlabel('Normalized Rho')
+        else:
+            ax.set_xlabel('Raduis [m]')
+        ax.set_ylabel('Density [m^-3]')
         plt.gca().legend(('derv gpr fit','2$\\sigma$ plot region ','Raw data'))
         fig.savefig(plot_save_directory+'ni_gpr_derivative_data.png')
         plt.close(fig)
@@ -153,6 +175,11 @@ def plot_data(fit_x_values, minimum, maximum, \
         ax.plot(fit_x_values, plot_ni_fit_y_upper, color='b', ls='--')
         ax.fill_between(fit_x_values, plot_ni_fit_y_lower, plot_ni_fit_y_upper, facecolor='b', edgecolor='None', alpha=0.2, label = '2$\\sigma$ account for ey & ex')
         ax.set_xlim(minimum, maximum)
+        if ((minimum>=0) & (maximum<1.5)):
+            ax.set_xlabel('Normalized Rho')
+        else:
+            ax.set_xlabel('Raduis [m]')
+        ax.set_ylabel('Density [m^-3]')
         plt.legend()
         fig.savefig(plot_save_directory+'gp_options_test.png')
         plt.close(fig)
@@ -178,10 +205,16 @@ def plot_data(fit_x_values, minimum, maximum, \
         ax.plot(fit_x_values, plot_ni_fit_dydx_upper, color='b', ls='--')
         ax.fill_between(fit_x_values, plot_ni_fit_dydx_lower, plot_ni_fit_dydx_upper, facecolor='b', edgecolor='None', alpha=0.2, label = '2$\\sigma$ account for ey & ex')
         ax.set_xlim(minimum, maximum)
+        if ((minimum>=0) & (maximum<1.5)):
+            ax.set_xlabel('Normalized Rho')
+        else:
+            ax.set_xlabel('Raduis [m]')
+        ax.set_ylabel('Density [m^-3]')
         plt.legend()
         fig.savefig(plot_save_directory+'gp_options_dtest.png')
         plt.close(fig)
         
+
        
         if Noise is True:
             # Sampled fit curves (true noise) against GPR fit distribution
@@ -192,6 +225,11 @@ def plot_data(fit_x_values, minimum, maximum, \
             for ii in np.arange(0, plot_num_samples):
                 ax.plot(fit_x_values, nsample_array[ii, :], color='k', alpha=0.5)
             ax.set_xlim(minimum, maximum)
+            if ((minimum>=0) & (maximum<1.5)):
+                ax.set_xlabel('Normalized Rho')
+            else:
+                ax.set_xlabel('Raduis [m]')
+            ax.set_ylabel('Density [m^-3]')
             fig.savefig(plot_save_directory+'sample_gp_noisy_test.png')
             plt.close(fig)
 
@@ -203,6 +241,11 @@ def plot_data(fit_x_values, minimum, maximum, \
             for ii in np.arange(0, plot_num_samples):
                 ax.plot(fit_x_values, ndsample_array[ii, :], color='k', alpha=0.5)
             ax.set_xlim(minimum, maximum)
+            if ((minimum>=0) & (maximum<1.5)):
+                ax.set_xlabel('Normalized Rho')
+            else:
+                ax.set_xlabel('Raduis [m]')
+            ax.set_ylabel('Density [m^-3]')
             fig.savefig(plot_save_directory+'sample_gp_noisy_dtest.png')
             plt.close(fig)
 
@@ -219,6 +262,11 @@ def plot_data(fit_x_values, minimum, maximum, \
             plot_hs_zsample_y_upper = zsample_mean + plot_sigma * zsample_std
             ax.fill_between(fit_x_values, plot_hs_sample_y_lower, plot_hs_sample_y_upper, facecolor='b', edgecolor='None', alpha=0.2)
             ax.set_xlim(minimum, maximum)
+            if ((minimum>=0) & (maximum<1.5)):
+                ax.set_xlabel('Normalized Rho')
+            else:
+                ax.set_xlabel('Raduis [m]')
+            ax.set_ylabel('Density [m^-3]')
             fig.savefig(plot_save_directory+'sample_gp_no_noise_test.png')
             plt.close(fig)
 
@@ -235,6 +283,11 @@ def plot_data(fit_x_values, minimum, maximum, \
             plot_hs_zsample_dydx_upper = zderiv_mean + plot_sigma * zderiv_std
             ax.fill_between(dfit_x_values, plot_hs_zsample_dydx_lower, plot_hs_zsample_dydx_upper, facecolor='b', edgecolor='None', alpha=0.2)
             ax.set_xlim(minimum, maximum)
+            if ((minimum>=0) & (maximum<1.5)):
+                ax.set_xlabel('Normalized Rho')
+            else:
+                ax.set_xlabel('Raduis [m]')
+            ax.set_ylabel('Density [m^-3]')
             fig.savefig(plot_save_directory+'sample_gp_drv_no_noise_test.png')
             plt.close(fig)
 
@@ -249,6 +302,11 @@ def plot_data(fit_x_values, minimum, maximum, \
             plot_hs_zdsample_dydx_upper = zdsample_mean + plot_sigma * zdsample_std
             ax.fill_between(fit_x_values, plot_hs_zdsample_dydx_lower, plot_hs_zdsample_dydx_upper, facecolor='b', edgecolor='None', alpha=0.2)
             ax.set_xlim(minimum, maximum)
+            if ((minimum>0) & (maximum<1.5)):
+                ax.set_xlabel('Normalized Rho')
+            else:
+                ax.set_xlabel('Raduis [m]')
+            ax.set_ylabel('Density [m^-3]')
             fig.savefig(plot_save_directory+'sample_gp_no_noise_dtest.png')
             plt.close(fig)
 
@@ -262,6 +320,11 @@ def plot_data(fit_x_values, minimum, maximum, \
             plot_hs_zdsample_y_upper = zinteg_mean + plot_sigma * zinteg_std
             ax.fill_between(ifit_x_values, plot_hs_zdsample_y_lower, plot_hs_zdsample_y_upper, facecolor='b', edgecolor='None', alpha=0.2)
             ax.set_xlim(minimum, maximum)
+            if ((minimum>0) & (maximum<1.5)):
+                ax.set_xlabel('Normalized Rho')
+            else:
+                ax.set_xlabel('Raduis [m]')
+            ax.set_ylabel('Density [m^-3]')
             fig.savefig(plot_save_directory+'sample_gp_itg_zero_noise_test.png')
             plt.close(fig)
 
@@ -276,6 +339,11 @@ def plot_data(fit_x_values, minimum, maximum, \
             plot_hs_zdsample_y_upper = integ_mean + plot_sigma * integ_std
             ax.fill_between(ifit_x_values, plot_hs_zdsample_y_lower, plot_hs_zdsample_y_upper, facecolor='b', edgecolor='None', alpha=0.2)
             ax.set_xlim(minimum, maximum)
+            if ((minimum>0) & (maximum<1.5)):
+                ax.set_xlabel('Normalized Rho')
+            else:
+                ax.set_xlabel('Raduis [m]')
+            ax.set_ylabel('Density [m^-3]')
             fig.savefig(plot_save_directory+'sample_gp_itg_no_noise_test.png')
             plt.close(fig)
 
