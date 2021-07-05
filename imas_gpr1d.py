@@ -75,14 +75,14 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         time_non_real = True
         t_igni = pw.tsbase(shot, 'RIGNITRON')
         if time_non_real:
-            mask_RIGNITRON = ((time_global - t_igni[0])>5.8)&((time_global - t_igni[0])<7.1)#55564
+            mask_RIGNITRON = ((time_global - t_igni[0])>5.8)&((time_global - t_igni[0])<8.1)#55564
             #mask_RIGNITRON = ((time_global - t_igni[0])>5.8)&((time_global - t_igni[0])<7.1)#55562
             #mask_RIGNITRON = ((time_global - t_igni[0])>5)&((time_global - t_igni[0])<7.1)#54601
             time_global = time_global[mask_RIGNITRON[0]]
             #time_global = time_global - t_igni[0]
         
 
-        
+        import pdb; pdb.set_trace()
         R_real = idd_in.reflectometer_profile.channel[0].position.r
         R_real = R_real[:,mask_time_reflec]
         electron_density = idd_in.reflectometer_profile.channel[0].n_e.data
@@ -298,11 +298,30 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         idd_in.ece.get()
         idd_in.equilibrium.get()
+        
+        time_global = idd_in.ece.time
+        #create a mask for the data over not real time
+        time_non_real = True
+        t_igni = pw.tsbase(shot, 'RIGNITRON')
+        if time_non_real:
+            mask_RIGNITRON = ((time_global - t_igni[0])>5.8)&((time_global - t_igni[0])<8.1)#55564
+            time_global = time_global[mask_RIGNITRON[0]]
+
+        
 
         mask_eq = np.asarray(idd_in.equilibrium.code.output_flag) > -1
+        if time_non_real:
+            mask_eq_time = (idd_in.ece.time > idd_in.equilibrium.time[mask_eq][0]) \
+                & (idd_in.ece.time < idd_in.equilibrium.time[mask_eq][-1])\
+                #&((time_global - t_igni[0])>5.8)&((time_global - t_igni[0])<8.1)
+        else:
+            mask_eq_time = (idd_in.ece.time > idd_in.equilibrium.time[mask_eq][0]) \
+                & (idd_in.ece.time < idd_in.equilibrium.time[mask_eq][-1])
+            
+        import pdb; pdb.set_trace()
 
-        mask_eq_time = (idd_in.ece.time > idd_in.equilibrium.time[mask_eq][0]) \
-                     & (idd_in.ece.time < idd_in.equilibrium.time[mask_eq][-1]) \
+
+
 
         nbr_channels        = len(idd_in.ece.channel)
         nbr_pts             = len(idd_in.ece.channel[0].position.r.data)
@@ -319,11 +338,16 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
                 matrix_temperature[temperature][channel] = idd_in.ece.channel[channel].t_e.data[temperature]
 
 
+
+
         Time                                            = idd_in.ece.time[mask_eq_time]
         R_real                                          = matrix_position[mask_eq_time]
         electron_temperature                            = matrix_temperature[mask_eq_time]
         electron_temperature[electron_temperature < 0]  = np.nan
         R_real[np.isnan(electron_temperature)]          = np.nan
+
+
+
 
         ## Get errors on the temperature
         nbr_errors_Up       = len(idd_in.ece.channel[0].t_e.data_error_upper)
@@ -366,6 +390,20 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         electron_temperature_2 = np.asarray(electron_temperature_2)
         rho_pol_norm_error     = np.asarray(rho_pol_norm_error)
         temperature_error_2    = np.asarray(temperature_error_2)
+
+        import pdb; pdb.set_trace()
+
+        time_global= Time
+        out_put_final = fit_data(rho_pol_norm.T, electron_temperature_2.T,rho_pol_norm_error.T , \
+                                  temperature_error_2.T, kernel_method='Gibbs_Kernel', \
+                                 optimise_all_params=Optimise_all_params, slices_nbr=SLICE_nbr, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
+                                 dy_fix_err=None, Time_real=time_global, file_name = 'GPPlots_final_FITS')
+
+
+
+
+
+
 
         return rho_pol_norm.T, electron_temperature_2.T, rho_pol_norm_error.T, temperature_error_2.T
 
@@ -412,7 +450,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         t_igni = pw.tsbase(shot, 'RIGNITRON')
         if time_non_real:
             #mask_RIGNITRON = ((TimeReference - t_igni[0])>6.4)&((TimeReference - t_igni[0])<7.1)#55564
-            mask_RIGNITRON = ((TimeReference - t_igni[0])>5.8)&((TimeReference - t_igni[0])<7.1)#55562
+            mask_RIGNITRON = ((TimeReference - t_igni[0])>5.8)&((TimeReference - t_igni[0])<8.1)#55562
             #mask_RIGNITRON = ((TimeReference - t_igni[0])>5)&((TimeReference - t_igni[0])<7.1)#54601
             #mask_RIGNITRON = ((TimeReference - t_igni[0])>7.5)&((TimeReference - t_igni[0])<10.2)#54719
 
@@ -821,7 +859,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         # Z_LOS are the Z coordinates of the intersection of the LOS with the plasma evaluated at the rho_min
 
         # first we sort the quantities in an increasing order with respect to rho_pol_min
-          
+
         rho_pol_norm_base_min_sort = rho_pol_norm_base_min[rho_pol_norm_base_min[:,0].argsort()]
         R_mid_left_sort            = R_mid_left[rho_pol_norm_base_min[:,0].argsort()]#R_mid_left[:,0].argsort()]
         R_mid_right_sort           = R_mid_right
@@ -915,8 +953,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         electron_density_ne_1 = Normalization_constant_prime*electron_density_ne
         electron_density_ne_12=electron_density_ne
 
+        electron_density_ne = electron_density_ne/(1 +(length_1_masked_left/length_1_masked_right))
         #electron_density_ne = Normalization_constant*electron_density_ne
-        electron_density_ne = electron_density_ne/(1 +(length_1_masked_left/length_1_masked_right))# (length_1_masked_right/length_1_masked_left))
 
         #electron_density_ne = electron_density_ne[rho_pol_norm_base_min[:,0].argsort()]
         array_index_sorted_from_rho_min = rho_pol_norm_base_min[:,0].argsort()
@@ -926,6 +964,124 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
 
+        #calculate the density now by hand:
+
+        length_1_3D_sort = length_1_3D[rho_pol_norm_base_min[:,0].argsort()]
+        length_2_sort = length_2[rho_pol_norm_base_min[:,0].argsort()]
+
+
+
+        electron_density_ne_corrected = np.full(electron_density_ne.shape, np.nan)
+        electron_density_ne_corrected[9] = \
+            (length_2_sort[9]/length_1_3D_sort[9][9])*electron_density_ne[9]
+
+
+
+
+
+
+        electron_density_ne_corrected[8] = \
+            ((length_2_sort[8] - length_2_sort[9])/(length_1_3D[9,9] - length_1_3D[9,8]))*(electron_density_ne[8] - ((length_1_3D[8,8] - length_1_3D[8,9])/(length_1_3D[9,9] - length_1_3D[9,8]))*electron_density_ne[9] )
+            
+
+
+        import pdb; pdb.set_trace()
+        electron_density_ne_corrected[7] = \
+            ((length_2_sort[9]/length_along_rho_min_3D[9][9] - (length_2_sort[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_2_sort[8]/length_along_rho_min_3D[8][8] - (length_2_sort[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  (length_2_sort[7]/length_along_rho_min_3D[7][7])*electron_density_ne[7]
+
+        
+
+        electron_density_ne_corrected[6] = \
+            ((length_2_sort[9]/length_along_rho_min_3D[9][9] - (length_2_sort[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_2_sort[8]/length_along_rho_min_3D[8][8] - (length_2_sort[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_2_sort[7]/length_along_rho_min_3D[7][7] - (length_2_sort[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  (length_2_sort[6]/length_along_rho_min_3D[6][6])*electron_density_ne[6]
+
+
+
+        electron_density_ne_corrected[5] = \
+            ((length_2_sort[9]/length_along_rho_min_3D[9][9] - (length_2_sort[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_2_sort[8]/length_along_rho_min_3D[8][8] - (length_2_sort[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_2_sort[7]/length_along_rho_min_3D[7][7] - (length_2_sort[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  ((length_2_sort[6]/length_along_rho_min_3D[6][6] - (length_2_sort[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6])))*electron_density_ne[6] \
+            +  (length_2_sort[5]/length_along_rho_min_3D[5][5])*electron_density_ne[5]
+
+        
+        
+        
+        electron_density_ne_corrected[4] = \
+            ((length_2_sort[9]/length_along_rho_min_3D[9][9] - (length_2_sort[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_2_sort[8]/length_along_rho_min_3D[8][8] - (length_2_sort[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_2_sort[7]/length_along_rho_min_3D[7][7] - (length_2_sort[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  ((length_2_sort[6]/length_along_rho_min_3D[6][6] - (length_2_sort[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6])))*electron_density_ne[6] \
+            +  ((length_2_sort[5]/length_along_rho_min_3D[5][5] - (length_2_sort[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5])))*electron_density_ne[5] \
+            +  (length_2_sort[4]/length_along_rho_min_3D[4][4])*electron_density_ne[4]
+        
+        
+        
+        
+        electron_density_ne_corrected[3] = \
+            ((length_2_sort[9]/length_along_rho_min_3D[9][9] - (length_2_sort[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_2_sort[8]/length_along_rho_min_3D[8][8] - (length_2_sort[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_2_sort[7]/length_along_rho_min_3D[7][7] - (length_2_sort[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  ((length_2_sort[6]/length_along_rho_min_3D[6][6] - (length_2_sort[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6])))*electron_density_ne[6] \
+            +  ((length_2_sort[5]/length_along_rho_min_3D[5][5] - (length_2_sort[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5])))*electron_density_ne[5] \
+            +  ((length_2_sort[4]/length_along_rho_min_3D[4][4] - (length_2_sort[3]/length_along_rho_min_3D[4][3])*(length_along_rho_min_3D[3][4]/length_along_rho_min_3D[4][4])))*electron_density_ne[4] \
+            +  (length_2_sort[3]/length_along_rho_min_3D[3][3])*electron_density_ne[3]
+        
+        
+        
+        
+        electron_density_ne_corrected[2] = \
+            ((length_2_sort[9]/length_along_rho_min_3D[9][9] - (length_2_sort[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_2_sort[8]/length_along_rho_min_3D[8][8] - (length_2_sort[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_2_sort[7]/length_along_rho_min_3D[7][7] - (length_2_sort[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  ((length_2_sort[6]/length_along_rho_min_3D[6][6] - (length_2_sort[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6])))*electron_density_ne[6] \
+            +  ((length_2_sort[5]/length_along_rho_min_3D[5][5] - (length_2_sort[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5])))*electron_density_ne[5] \
+            +  ((length_2_sort[4]/length_along_rho_min_3D[4][4] - (length_2_sort[3]/length_along_rho_min_3D[4][3])*(length_along_rho_min_3D[3][4]/length_along_rho_min_3D[4][4])))*electron_density_ne[4] \
+            +  ((length_2_sort[3]/length_along_rho_min_3D[3][3] - (length_2_sort[2]/length_along_rho_min_3D[3][2])*(length_along_rho_min_3D[2][3]/length_along_rho_min_3D[3][3])))*electron_density_ne[3] \
+            +  (length_2_sort[2]/length_along_rho_min_3D[2][2])*electron_density_ne[2]
+        
+        
+        
+        electron_density_ne_corrected[1] = \
+            ((length_2_sort[9]/length_along_rho_min_3D[9][9] - (length_2_sort[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_2_sort[8]/length_along_rho_min_3D[8][8] - (length_2_sort[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_2_sort[7]/length_along_rho_min_3D[7][7] - (length_2_sort[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  ((length_2_sort[6]/length_along_rho_min_3D[6][6] - (length_2_sort[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6])))*electron_density_ne[6] \
+            +  ((length_2_sort[5]/length_along_rho_min_3D[5][5] - (length_2_sort[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5])))*electron_density_ne[5] \
+            +  ((length_2_sort[4]/length_along_rho_min_3D[4][4] - (length_2_sort[3]/length_along_rho_min_3D[4][3])*(length_along_rho_min_3D[3][4]/length_along_rho_min_3D[4][4])))*electron_density_ne[4] \
+            +  ((length_2_sort[3]/length_along_rho_min_3D[3][3] - (length_2_sort[2]/length_along_rho_min_3D[3][2])*(length_along_rho_min_3D[2][3]/length_along_rho_min_3D[3][3])))*electron_density_ne[3] \
+            +  ((length_2_sort[2]/length_along_rho_min_3D[2][2] - (length_2_sort[1]/length_along_rho_min_3D[2][1])*(length_along_rho_min_3D[1][2]/length_along_rho_min_3D[2][2])))*electron_density_ne[2] \
+            +  (length_2_sort[1]/length_along_rho_min_3D[1][1])*electron_density_ne[1]
+        
+       
+        
+        
+        
+        electron_density_ne_corrected[0] = \
+            ((length_2_sort[9]/length_along_rho_min_3D[9][9] - (length_2_sort[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_2_sort[8]/length_along_rho_min_3D[8][8] - (length_2_sort[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_2_sort[7]/length_along_rho_min_3D[7][7] - (length_2_sort[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  ((length_2_sort[6]/length_along_rho_min_3D[6][6] - (length_2_sort[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6])))*electron_density_ne[6] \
+            +  ((length_2_sort[5]/length_along_rho_min_3D[5][5] - (length_2_sort[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5])))*electron_density_ne[5] \
+            +  ((length_2_sort[4]/length_along_rho_min_3D[4][4] - (length_2_sort[3]/length_along_rho_min_3D[4][3])*(length_along_rho_min_3D[3][4]/length_along_rho_min_3D[4][4])))*electron_density_ne[4] \
+            +  ((length_2_sort[3]/length_along_rho_min_3D[3][3] - (length_2_sort[2]/length_along_rho_min_3D[3][2])*(length_along_rho_min_3D[2][3]/length_along_rho_min_3D[3][3])))*electron_density_ne[3] \
+            +  ((length_2_sort[2]/length_along_rho_min_3D[2][2] - (length_2_sort[1]/length_along_rho_min_3D[2][1])*(length_along_rho_min_3D[1][2]/length_along_rho_min_3D[2][2])))*electron_density_ne[2] \
+            +  ((length_2_sort[1]/length_along_rho_min_3D[1][1] - (length_2_sort[0]/length_along_rho_min_3D[1][0])*(length_along_rho_min_3D[0][1]/length_along_rho_min_3D[1][1])))*electron_density_ne[1] \
+            +  (length_2_sort[0]/length_along_rho_min_3D[0][0])*electron_density_ne[0]
+        plt.ion()
+        plt.plot(electron_density_ne_corrected[:,1])
+
+
+
+        import pdb; pdb.set_trace()
+
+
+
+        '''
 
         #calculate the density now by hand:
         electron_density_ne_corrected = np.full(electron_density_ne.shape, np.nan)
@@ -933,81 +1089,85 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             (length_on_mid_plane[9]/length_along_rho_min_3D[9][9])*electron_density_ne[9]
 
 
+
+
+
+
         electron_density_ne_corrected[8] = \
-            (length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9]))*electron_density_ne[9] \
+            ((length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
             + (length_on_mid_plane[8]/length_along_rho_min_3D[8][8])*electron_density_ne[8]
 
 
 
         electron_density_ne_corrected[7] = \
-            (length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8]))*electron_density_ne[8] \
+            ((length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
             +  (length_on_mid_plane[7]/length_along_rho_min_3D[7][7])*electron_density_ne[7]
 
         
 
         electron_density_ne_corrected[6] = \
-            (length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7]))*electron_density_ne[7] \
+            ((length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
             +  (length_on_mid_plane[6]/length_along_rho_min_3D[6][6])*electron_density_ne[6]
 
 
 
         electron_density_ne_corrected[5] = \
-            (length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7]))*electron_density_ne[7] \
-            +  (length_on_mid_plane[6]/length_along_rho_min_3D[6][6] - (length_on_mid_plane[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6]))*electron_density_ne[6] \
+            ((length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  ((length_on_mid_plane[6]/length_along_rho_min_3D[6][6] - (length_on_mid_plane[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6])))*electron_density_ne[6] \
             +  (length_on_mid_plane[5]/length_along_rho_min_3D[5][5])*electron_density_ne[5]
 
         
         
         
         electron_density_ne_corrected[4] = \
-            (length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7]))*electron_density_ne[7] \
-            +  (length_on_mid_plane[6]/length_along_rho_min_3D[6][6] - (length_on_mid_plane[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6]))*electron_density_ne[6] \
-            +  (length_on_mid_plane[5]/length_along_rho_min_3D[5][5] - (length_on_mid_plane[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5]))*electron_density_ne[5] \
+            ((length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  ((length_on_mid_plane[6]/length_along_rho_min_3D[6][6] - (length_on_mid_plane[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6])))*electron_density_ne[6] \
+            +  ((length_on_mid_plane[5]/length_along_rho_min_3D[5][5] - (length_on_mid_plane[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5])))*electron_density_ne[5] \
             +  (length_on_mid_plane[4]/length_along_rho_min_3D[4][4])*electron_density_ne[4]
         
         
         
         
         electron_density_ne_corrected[3] = \
-            (length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7]))*electron_density_ne[7] \
-            +  (length_on_mid_plane[6]/length_along_rho_min_3D[6][6] - (length_on_mid_plane[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6]))*electron_density_ne[6] \
-            +  (length_on_mid_plane[5]/length_along_rho_min_3D[5][5] - (length_on_mid_plane[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5]))*electron_density_ne[5] \
-            +  (-length_on_mid_plane[4]/length_along_rho_min_3D[4][4] + (length_on_mid_plane[3]/length_along_rho_min_3D[4][3])*(length_along_rho_min_3D[3][4]/length_along_rho_min_3D[4][4]))*electron_density_ne[4] \
+            ((length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  ((length_on_mid_plane[6]/length_along_rho_min_3D[6][6] - (length_on_mid_plane[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6])))*electron_density_ne[6] \
+            +  ((length_on_mid_plane[5]/length_along_rho_min_3D[5][5] - (length_on_mid_plane[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5])))*electron_density_ne[5] \
+            +  ((length_on_mid_plane[4]/length_along_rho_min_3D[4][4] - (length_on_mid_plane[3]/length_along_rho_min_3D[4][3])*(length_along_rho_min_3D[3][4]/length_along_rho_min_3D[4][4])))*electron_density_ne[4] \
             +  (length_on_mid_plane[3]/length_along_rho_min_3D[3][3])*electron_density_ne[3]
         
         
         
         
         electron_density_ne_corrected[2] = \
-            (length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][8]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][7]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][6]))*electron_density_ne[7] \
-            +  (length_on_mid_plane[6]/length_along_rho_min_3D[6][6] - (length_on_mid_plane[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][5]))*electron_density_ne[6] \
-            +  (length_on_mid_plane[5]/length_along_rho_min_3D[5][5] - (length_on_mid_plane[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5]))*electron_density_ne[5] \
-            +  (-length_on_mid_plane[4]/length_along_rho_min_3D[4][4] + (length_on_mid_plane[3]/length_along_rho_min_3D[4][3])*(length_along_rho_min_3D[3][4]/length_along_rho_min_3D[4][4]))*electron_density_ne[4] \
-            +  (length_on_mid_plane[3]/length_along_rho_min_3D[3][3] - (length_on_mid_plane[2]/length_along_rho_min_3D[3][2])*(length_along_rho_min_3D[2][3]/length_along_rho_min_3D[3][3]))*electron_density_ne[3] \
+            ((length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  ((length_on_mid_plane[6]/length_along_rho_min_3D[6][6] - (length_on_mid_plane[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6])))*electron_density_ne[6] \
+            +  ((length_on_mid_plane[5]/length_along_rho_min_3D[5][5] - (length_on_mid_plane[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5])))*electron_density_ne[5] \
+            +  ((length_on_mid_plane[4]/length_along_rho_min_3D[4][4] - (length_on_mid_plane[3]/length_along_rho_min_3D[4][3])*(length_along_rho_min_3D[3][4]/length_along_rho_min_3D[4][4])))*electron_density_ne[4] \
+            +  ((length_on_mid_plane[3]/length_along_rho_min_3D[3][3] - (length_on_mid_plane[2]/length_along_rho_min_3D[3][2])*(length_along_rho_min_3D[2][3]/length_along_rho_min_3D[3][3])))*electron_density_ne[3] \
             +  (length_on_mid_plane[2]/length_along_rho_min_3D[2][2])*electron_density_ne[2]
         
         
         
         electron_density_ne_corrected[1] = \
-            (length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7]))*electron_density_ne[7] \
-            +  (length_on_mid_plane[6]/length_along_rho_min_3D[6][6] - (length_on_mid_plane[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6]))*electron_density_ne[6] \
-            +  (length_on_mid_plane[5]/length_along_rho_min_3D[5][5] - (length_on_mid_plane[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5]))*electron_density_ne[5] \
-            +  (-length_on_mid_plane[4]/length_along_rho_min_3D[4][4] + (length_on_mid_plane[3]/length_along_rho_min_3D[4][3])*(length_along_rho_min_3D[3][4]/length_along_rho_min_3D[4][4]))*electron_density_ne[4] \
-            +  (length_on_mid_plane[3]/length_along_rho_min_3D[3][3] - (length_on_mid_plane[2]/length_along_rho_min_3D[3][2])*(length_along_rho_min_3D[2][3]/length_along_rho_min_3D[3][3]))*electron_density_ne[3] \
-            +  (length_on_mid_plane[2]/length_along_rho_min_3D[2][2] - (length_on_mid_plane[1]/length_along_rho_min_3D[2][1])*(length_along_rho_min_3D[1][2]/length_along_rho_min_3D[2][2]))*electron_density_ne[2] \
+            ((length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  ((length_on_mid_plane[6]/length_along_rho_min_3D[6][6] - (length_on_mid_plane[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6])))*electron_density_ne[6] \
+            +  ((length_on_mid_plane[5]/length_along_rho_min_3D[5][5] - (length_on_mid_plane[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5])))*electron_density_ne[5] \
+            +  ((length_on_mid_plane[4]/length_along_rho_min_3D[4][4] - (length_on_mid_plane[3]/length_along_rho_min_3D[4][3])*(length_along_rho_min_3D[3][4]/length_along_rho_min_3D[4][4])))*electron_density_ne[4] \
+            +  ((length_on_mid_plane[3]/length_along_rho_min_3D[3][3] - (length_on_mid_plane[2]/length_along_rho_min_3D[3][2])*(length_along_rho_min_3D[2][3]/length_along_rho_min_3D[3][3])))*electron_density_ne[3] \
+            +  ((length_on_mid_plane[2]/length_along_rho_min_3D[2][2] - (length_on_mid_plane[1]/length_along_rho_min_3D[2][1])*(length_along_rho_min_3D[1][2]/length_along_rho_min_3D[2][2])))*electron_density_ne[2] \
             +  (length_on_mid_plane[1]/length_along_rho_min_3D[1][1])*electron_density_ne[1]
         
        
@@ -1015,220 +1175,25 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         
         
         electron_density_ne_corrected[0] = \
-            (length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][8]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][7]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][6]))*electron_density_ne[7] \
-            +  (length_on_mid_plane[6]/length_along_rho_min_3D[6][6] - (length_on_mid_plane[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][5]))*electron_density_ne[6] \
-            +  (length_on_mid_plane[5]/length_along_rho_min_3D[5][5] - (length_on_mid_plane[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5]))*electron_density_ne[5] \
-            +  (-length_on_mid_plane[4]/length_along_rho_min_3D[4][4] + (length_on_mid_plane[3]/length_along_rho_min_3D[4][3])*(length_along_rho_min_3D[3][4]/length_along_rho_min_3D[4][4]))*electron_density_ne[4] \
-            +  (length_on_mid_plane[3]/length_along_rho_min_3D[3][3] - (length_on_mid_plane[2]/length_along_rho_min_3D[3][2])*(length_along_rho_min_3D[2][3]/length_along_rho_min_3D[3][3]))*electron_density_ne[3] \
-            +  (length_on_mid_plane[2]/length_along_rho_min_3D[2][2] - (length_on_mid_plane[1]/length_along_rho_min_3D[2][1])*(length_along_rho_min_3D[1][2]/length_along_rho_min_3D[2][2]))*electron_density_ne[2] \
-            +  (length_on_mid_plane[1]/length_along_rho_min_3D[1][1] - (length_on_mid_plane[0]/length_along_rho_min_3D[1][0])*(length_along_rho_min_3D[0][1]/length_along_rho_min_3D[1][1]))*electron_density_ne[1] \
+            ((length_on_mid_plane[9]/length_along_rho_min_3D[9][9] - (length_on_mid_plane[8]/length_along_rho_min_3D[9][8])*(length_along_rho_min_3D[8][9]/length_along_rho_min_3D[9][9])))*electron_density_ne[9] \
+            +  ((length_on_mid_plane[8]/length_along_rho_min_3D[8][8] - (length_on_mid_plane[7]/length_along_rho_min_3D[8][7])*(length_along_rho_min_3D[7][8]/length_along_rho_min_3D[8][8])))*electron_density_ne[8] \
+            +  ((length_on_mid_plane[7]/length_along_rho_min_3D[7][7] - (length_on_mid_plane[6]/length_along_rho_min_3D[7][6])*(length_along_rho_min_3D[6][7]/length_along_rho_min_3D[7][7])))*electron_density_ne[7] \
+            +  ((length_on_mid_plane[6]/length_along_rho_min_3D[6][6] - (length_on_mid_plane[5]/length_along_rho_min_3D[6][5])*(length_along_rho_min_3D[5][6]/length_along_rho_min_3D[6][6])))*electron_density_ne[6] \
+            +  ((length_on_mid_plane[5]/length_along_rho_min_3D[5][5] - (length_on_mid_plane[4]/length_along_rho_min_3D[5][4])*(length_along_rho_min_3D[4][5]/length_along_rho_min_3D[5][5])))*electron_density_ne[5] \
+            +  ((length_on_mid_plane[4]/length_along_rho_min_3D[4][4] - (length_on_mid_plane[3]/length_along_rho_min_3D[4][3])*(length_along_rho_min_3D[3][4]/length_along_rho_min_3D[4][4])))*electron_density_ne[4] \
+            +  ((length_on_mid_plane[3]/length_along_rho_min_3D[3][3] - (length_on_mid_plane[2]/length_along_rho_min_3D[3][2])*(length_along_rho_min_3D[2][3]/length_along_rho_min_3D[3][3])))*electron_density_ne[3] \
+            +  ((length_on_mid_plane[2]/length_along_rho_min_3D[2][2] - (length_on_mid_plane[1]/length_along_rho_min_3D[2][1])*(length_along_rho_min_3D[1][2]/length_along_rho_min_3D[2][2])))*electron_density_ne[2] \
+            +  ((length_on_mid_plane[1]/length_along_rho_min_3D[1][1] - (length_on_mid_plane[0]/length_along_rho_min_3D[1][0])*(length_along_rho_min_3D[0][1]/length_along_rho_min_3D[1][1])))*electron_density_ne[1] \
             +  (length_on_mid_plane[0]/length_along_rho_min_3D[0][0])*electron_density_ne[0]
         plt.ion()
         plt.plot(electron_density_ne_corrected[:,1])
 
-        '''
-
-
-
-            '''
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            #(length_consecutive_mid_plane[9]/length_consecutive_rho_min_3D[9][9])*electron_density_ne[9]
-
-        '''
-        electron_density_ne_corrected[8] =  \
-            ((length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[9][8])*(length_consecutive_rho_min_3D[8][9]/length_consecutive_rho_min_3D[9][9]) - length_consecutive_mid_plane[9]/length_consecutive_rho_min_3D[9][9])*electron_density_ne[9] \
-            + (length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[8][8])*electron_density_ne[8]
-
-
-
-        electron_density_ne_corrected[7] =  \
-            ((length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[9][8])*(length_consecutive_rho_min_3D[8][9]/length_consecutive_rho_min_3D[9][9]) - length_on_mid_plane[9]/length_consecutive_rho_min_3D[9][9])*electron_density_ne[9] \
-            +  ((length_consecutive_mid_plane[7]/length_consecutive_rho_min_3D[8][7])*(length_consecutive_rho_min_3D[7][8]/length_consecutive_rho_min_3D[8][8]) - length_on_mid_plane[8]/length_consecutive_rho_min_3D[8][8])*electron_density_ne[8] \
-            +  (length_consecutive_mid_plane[7]/length_consecutive_rho_min_3D[7][7])*electron_density_ne[7]
-
-        
-
-
-        electron_density_ne_corrected[6] =  \
-            ((length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[9][8])*(length_consecutive_rho_min_3D[8][9]/length_consecutive_rho_min_3D[9][9]) - length_on_mid_plane[9]/length_consecutive_rho_min_3D[9][9])*electron_density_ne[9] \
-            +  ((length_consecutive_mid_plane[7]/length_consecutive_rho_min_3D[8][7])*(length_consecutive_rho_min_3D[7][8]/length_consecutive_rho_min_3D[8][8]) - length_on_mid_plane[8]/length_consecutive_rho_min_3D[8][8])*electron_density_ne[8] \
-            +  ((length_consecutive_mid_plane[6]/length_consecutive_rho_min_3D[7][6])*(length_consecutive_rho_min_3D[6][7]/length_consecutive_rho_min_3D[7][7]) - length_on_mid_plane[7]/length_consecutive_rho_min_3D[7][7])*electron_density_ne[7] \
-            +  (length_consecutive_mid_plane[6]/length_consecutive_rho_min_3D[6][6])*electron_density_ne[6]
 
 
         '''
 
-
-
-
-
-        '''
-        
-        electron_density_ne_corrected[8] = \
-            (length_consecutive_mid_plane[9]/length_consecutive_rho_min_3D[9][9] - (length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[9][8])*(length_consecutive_rho_min_3D[8][9]/length_consecutive_rho_min_3D[9][9]))*electron_density_ne[9] \
-            + (length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[8][8])*electron_density_ne[8]
-
-
-
-        electron_density_ne_corrected[7] = \
-            (length_on_mid_plane[9]/length_consecutive_rho_min_3D[9][9] - (length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[9][8])*(length_consecutive_rho_min_3D[8][9]/length_consecutive_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_consecutive_rho_min_3D[8][8] - (length_consecutive_mid_plane[7]/length_consecutive_rho_min_3D[8][7])*(length_consecutive_rho_min_3D[7][8]/length_consecutive_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_consecutive_mid_plane[7]/length_consecutive_rho_min_3D[7][7])*electron_density_ne[7]
-
-        
-
-        electron_density_ne_corrected[6] = \
-            (length_on_mid_plane[9]/length_consecutive_rho_min_3D[9][9] - (length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[9][8])*(length_consecutive_rho_min_3D[8][9]/length_consecutive_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_consecutive_rho_min_3D[8][8] - (length_consecutive_mid_plane[7]/length_consecutive_rho_min_3D[8][7])*(length_consecutive_rho_min_3D[7][8]/length_consecutive_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_consecutive_rho_min_3D[7][7] - (length_consecutive_mid_plane[6]/length_consecutive_rho_min_3D[7][6])*(length_consecutive_rho_min_3D[6][7]/length_consecutive_rho_min_3D[7][7]))*electron_density_ne[7] \
-            +  (length_consecutive_mid_plane[6]/length_consecutive_rho_min_3D[6][6])*electron_density_ne[6]
-
-          '''  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        '''
-
-        electron_density_ne_corrected[5] = \
-            (length_on_mid_plane[9]/length_consecutive_rho_min_3D[9][9] - (length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[8][8])*(length_consecutive_rho_min_3D[8][9]/length_consecutive_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_consecutive_rho_min_3D[8][8] - (length_consecutive_mid_plane[7]/length_consecutive_rho_min_3D[7][7])*(length_consecutive_rho_min_3D[7][8]/length_consecutive_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_consecutive_rho_min_3D[7][7] - (length_consecutive_mid_plane[6]/length_consecutive_rho_min_3D[6][6])*(length_consecutive_rho_min_3D[6][7]/length_consecutive_rho_min_3D[7][7]))*electron_density_ne[7] \
-            +  (length_on_mid_plane[6]/length_consecutive_rho_min_3D[6][6] - (length_consecutive_mid_plane[5]/length_consecutive_rho_min_3D[5][5])*(length_consecutive_rho_min_3D[5][6]/length_consecutive_rho_min_3D[6][6]))*electron_density_ne[6] \
-            +  (length_consecutive_mid_plane[5]/length_consecutive_rho_min_3D[5][5])*electron_density_ne[5]
-
-        
-        
-        
-        electron_density_ne_corrected[4] = \
-            (length_on_mid_plane[9]/length_consecutive_rho_min_3D[9][9] - (length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[8][8])*(length_consecutive_rho_min_3D[8][9]/length_consecutive_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_consecutive_rho_min_3D[8][8] - (length_consecutive_mid_plane[7]/length_consecutive_rho_min_3D[7][7])*(length_consecutive_rho_min_3D[7][8]/length_consecutive_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_consecutive_rho_min_3D[7][7] - (length_consecutive_mid_plane[6]/length_consecutive_rho_min_3D[6][6])*(length_consecutive_rho_min_3D[6][7]/length_consecutive_rho_min_3D[7][7]))*electron_density_ne[7] \
-            +  (length_on_mid_plane[6]/length_consecutive_rho_min_3D[6][6] - (length_consecutive_mid_plane[5]/length_consecutive_rho_min_3D[5][5])*(length_consecutive_rho_min_3D[5][6]/length_consecutive_rho_min_3D[6][6]))*electron_density_ne[6] \
-            +  (length_on_mid_plane[5]/length_consecutive_rho_min_3D[5][5] - (length_consecutive_mid_plane[4]/length_consecutive_rho_min_3D[4][4])*(length_consecutive_rho_min_3D[4][5]/length_consecutive_rho_min_3D[5][5]))*electron_density_ne[5] \
-            +  (length_consecutive_mid_plane[4]/length_consecutive_rho_min_3D[4][4])*electron_density_ne[4]
-        
-        
-
-        
-        electron_density_ne_corrected[3] = \
-            (length_on_mid_plane[9]/length_consecutive_rho_min_3D[9][9] - (length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[8][8])*(length_consecutive_rho_min_3D[8][9]/length_consecutive_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_consecutive_rho_min_3D[8][8] - (length_consecutive_mid_plane[7]/length_consecutive_rho_min_3D[7][7])*(length_consecutive_rho_min_3D[7][8]/length_consecutive_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_consecutive_rho_min_3D[7][7] - (length_consecutive_mid_plane[6]/length_consecutive_rho_min_3D[6][6])*(length_consecutive_rho_min_3D[6][7]/length_consecutive_rho_min_3D[7][7]))*electron_density_ne[7] \
-            +  (length_on_mid_plane[6]/length_consecutive_rho_min_3D[6][6] - (length_consecutive_mid_plane[5]/length_consecutive_rho_min_3D[5][5])*(length_consecutive_rho_min_3D[5][6]/length_consecutive_rho_min_3D[6][6]))*electron_density_ne[6] \
-            +  (length_on_mid_plane[5]/length_consecutive_rho_min_3D[5][5] - (length_consecutive_mid_plane[4]/length_consecutive_rho_min_3D[4][4])*(length_consecutive_rho_min_3D[4][5]/length_consecutive_rho_min_3D[5][5]))*electron_density_ne[5] \
-            +  (length_on_mid_plane[4]/length_consecutive_rho_min_3D[4][4] - (length_consecutive_mid_plane[3]/length_consecutive_rho_min_3D[3][3])*(length_consecutive_rho_min_3D[3][4]/length_consecutive_rho_min_3D[4][4]))*electron_density_ne[4] \
-            +  (length_consecutive_mid_plane[3]/length_consecutive_rho_min_3D[3][3])*electron_density_ne[3]
-        
-        
-        
-        
-        
-        
-        
-        electron_density_ne_corrected[2] = \
-            (length_on_mid_plane[9]/length_consecutive_rho_min_3D[9][9] - (length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[8][8])*(length_consecutive_rho_min_3D[8][9]/length_consecutive_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_consecutive_rho_min_3D[8][8] - (length_consecutive_mid_plane[7]/length_consecutive_rho_min_3D[7][7])*(length_consecutive_rho_min_3D[7][8]/length_consecutive_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_consecutive_rho_min_3D[7][7] - (length_consecutive_mid_plane[6]/length_consecutive_rho_min_3D[6][6])*(length_consecutive_rho_min_3D[6][7]/length_consecutive_rho_min_3D[7][7]))*electron_density_ne[7] \
-            +  (length_on_mid_plane[6]/length_consecutive_rho_min_3D[6][6] - (length_consecutive_mid_plane[5]/length_consecutive_rho_min_3D[5][5])*(length_consecutive_rho_min_3D[5][6]/length_consecutive_rho_min_3D[6][6]))*electron_density_ne[6] \
-            +  (length_on_mid_plane[5]/length_consecutive_rho_min_3D[5][5] - (length_consecutive_mid_plane[4]/length_consecutive_rho_min_3D[4][4])*(length_consecutive_rho_min_3D[4][5]/length_consecutive_rho_min_3D[5][5]))*electron_density_ne[5] \
-            +  (length_on_mid_plane[4]/length_consecutive_rho_min_3D[4][4] - (length_consecutive_mid_plane[3]/length_consecutive_rho_min_3D[3][3])*(length_consecutive_rho_min_3D[3][4]/length_consecutive_rho_min_3D[4][4]))*electron_density_ne[4] \
-            +  (length_on_mid_plane[3]/length_consecutive_rho_min_3D[3][3] - (length_consecutive_mid_plane[2]/length_consecutive_rho_min_3D[2][2])*(length_consecutive_rho_min_3D[2][3]/length_consecutive_rho_min_3D[3][3]))*electron_density_ne[3] \
-            +  (length_consecutive_mid_plane[2]/length_consecutive_rho_min_3D[2][2])*electron_density_ne[2]
-        
-                
-        
-        electron_density_ne_corrected[1] = \
-            (length_on_mid_plane[9]/length_consecutive_rho_min_3D[9][9] - (length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[8][8])*(length_consecutive_rho_min_3D[8][9]/length_consecutive_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_consecutive_rho_min_3D[8][8] - (length_consecutive_mid_plane[7]/length_consecutive_rho_min_3D[7][7])*(length_consecutive_rho_min_3D[7][8]/length_consecutive_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_consecutive_rho_min_3D[7][7] - (length_consecutive_mid_plane[6]/length_consecutive_rho_min_3D[6][6])*(length_consecutive_rho_min_3D[6][7]/length_consecutive_rho_min_3D[7][7]))*electron_density_ne[7] \
-            +  (length_on_mid_plane[6]/length_consecutive_rho_min_3D[6][6] - (length_consecutive_mid_plane[5]/length_consecutive_rho_min_3D[5][5])*(length_consecutive_rho_min_3D[5][6]/length_consecutive_rho_min_3D[6][6]))*electron_density_ne[6] \
-            +  (length_on_mid_plane[5]/length_consecutive_rho_min_3D[5][5] - (length_consecutive_mid_plane[4]/length_consecutive_rho_min_3D[4][4])*(length_consecutive_rho_min_3D[4][5]/length_consecutive_rho_min_3D[5][5]))*electron_density_ne[5] \
-            +  (length_on_mid_plane[4]/length_consecutive_rho_min_3D[4][4] - (length_consecutive_mid_plane[3]/length_consecutive_rho_min_3D[3][3])*(length_consecutive_rho_min_3D[3][4]/length_consecutive_rho_min_3D[4][4]))*electron_density_ne[4] \
-            +  (length_on_mid_plane[3]/length_consecutive_rho_min_3D[3][3] - (length_consecutive_mid_plane[2]/length_consecutive_rho_min_3D[2][2])*(length_consecutive_rho_min_3D[2][3]/length_consecutive_rho_min_3D[3][3]))*electron_density_ne[3] \
-            +  (length_on_mid_plane[2]/length_consecutive_rho_min_3D[2][2] - (length_consecutive_mid_plane[1]/length_consecutive_rho_min_3D[1][1])*(length_consecutive_rho_min_3D[1][2]/length_consecutive_rho_min_3D[2][2]))*electron_density_ne[2] \
-            +  (length_consecutive_mid_plane[1]/length_consecutive_rho_min_3D[1][1])*electron_density_ne[1]
-
-        
-        
-       
-        
-        
-        
-        electron_density_ne_corrected[0] = \
-            (length_on_mid_plane[9]/length_consecutive_rho_min_3D[9][9] - (length_consecutive_mid_plane[8]/length_consecutive_rho_min_3D[8][8])*(length_consecutive_rho_min_3D[8][9]/length_consecutive_rho_min_3D[9][9]))*electron_density_ne[9] \
-            +  (length_on_mid_plane[8]/length_consecutive_rho_min_3D[8][8] - (length_consecutive_mid_plane[7]/length_consecutive_rho_min_3D[7][7])*(length_consecutive_rho_min_3D[7][8]/length_consecutive_rho_min_3D[8][8]))*electron_density_ne[8] \
-            +  (length_on_mid_plane[7]/length_consecutive_rho_min_3D[7][7] - (length_consecutive_mid_plane[6]/length_consecutive_rho_min_3D[6][6])*(length_consecutive_rho_min_3D[6][7]/length_consecutive_rho_min_3D[7][7]))*electron_density_ne[7] \
-            +  (length_on_mid_plane[6]/length_consecutive_rho_min_3D[6][6] - (length_consecutive_mid_plane[5]/length_consecutive_rho_min_3D[5][5])*(length_consecutive_rho_min_3D[5][6]/length_consecutive_rho_min_3D[6][6]))*electron_density_ne[6] \
-            +  (length_on_mid_plane[5]/length_consecutive_rho_min_3D[5][5] - (length_consecutive_mid_plane[4]/length_consecutive_rho_min_3D[4][4])*(length_consecutive_rho_min_3D[4][5]/length_consecutive_rho_min_3D[5][5]))*electron_density_ne[5] \
-            +  (length_on_mid_plane[4]/length_consecutive_rho_min_3D[4][4] - (length_consecutive_mid_plane[3]/length_consecutive_rho_min_3D[3][3])*(length_consecutive_rho_min_3D[3][4]/length_consecutive_rho_min_3D[4][4]))*electron_density_ne[4] \
-            +  (length_on_mid_plane[3]/length_consecutive_rho_min_3D[3][3] - (length_consecutive_mid_plane[2]/length_consecutive_rho_min_3D[2][2])*(length_consecutive_rho_min_3D[2][3]/length_consecutive_rho_min_3D[3][3]))*electron_density_ne[3] \
-            +  (length_on_mid_plane[2]/length_consecutive_rho_min_3D[2][2] - (length_consecutive_mid_plane[1]/length_consecutive_rho_min_3D[1][1])*(length_consecutive_rho_min_3D[1][2]/length_consecutive_rho_min_3D[2][2]))*electron_density_ne[2] \
-            +  (length_on_mid_plane[1]/length_consecutive_rho_min_3D[1][1] - (length_consecutive_mid_plane[0]/length_consecutive_rho_min_3D[0][0])*(length_consecutive_rho_min_3D[0][1]/length_consecutive_rho_min_3D[1][1]))*electron_density_ne[1] \
-            +  (length_consecutive_mid_plane[0]/length_consecutive_rho_min_3D[0][0])*electron_density_ne[0]
-
-        '''
-
-
-
-        import pdb; pdb.set_trace()
         electron_density_ne_before = electron_density_ne
-        #electron_density_ne_corrected = np.abs(electron_density_ne_corrected)
-        electron_density_ne = electron_density_ne_corrected
-
-
-
-
-
-
-
-
-
-
-        import pdb; pdb.set_trace()
-
-
-
-
-
-
-
-
-
-
-
+        #electron_density_ne = electron_density_ne_corrected
 
 
 
@@ -1263,13 +1228,13 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         import pdb; pdb.set_trace()
         if mask_reflectometer_exist :
-            #prepare for concatenation of density from interferometry and reflectometry:  electron_density_line_average_ne       electron_density_ne
+            #prepare for concatenation of density from interferometry and reflectometry:
             ne_line_total = np.concatenate((electron_density_ne,integrale_density_ref))
             #prepare for concatenation of rho from interferometry and reflectometry:
             rho_total = np.full((ne_line_total.shape) , np.nan)
             for jj in range(rho_total.shape[1]):
-                rho_total[:,jj] = np.concatenate((rho_pol_norm_base_min_sort[:,jj],rho_pol_norm_ref[:,jj]))
-                #rho_total[:,jj] = np.concatenate((rho_pol_norm_base_min[:,jj],rho_pol_norm_ref[:,jj]))
+                #rho_total[:,jj] = np.concatenate((rho_pol_norm_base_min_sort[:,jj],rho_pol_norm_ref[:,jj]))
+                rho_total[:,jj] = np.concatenate((rho_pol_norm_base_min[:,jj],rho_pol_norm_ref[:,jj]))
 
 
         else:
@@ -1296,7 +1261,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         #time global to be defined
         time_global= TimeReference
-        import pdb; pdb.set_trace()
 
         out_put_All_added12 = fit_data(rho_total_sort_final_nonan , ne_line_total_sort_final_nonan , rho_total_sort_final_error_added, \
                                 ne_line_total_sort_final_error_added , kernel_method='Gibbs_Kernel', \
@@ -1306,7 +1270,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         #extract the fit results:
         #ne_line_density_fit_All_added = (np.asarray(out_put_All_added12['hs_fit_y']))
-        ne_line_density_fit_All_added = (np.asarray(out_put_All_added12['ni_fit_y']))
+        #ne_line_density_fit_All_added = (np.asarray(out_put_All_added12['ni_fit_y']))
+        ne_line_density_fit_All_added = (np.asarray(out_put_All_added12['fit_y_weighted']))
         rho_total_fit_x_All_added =  (np.asarray(out_put_All_added12['fit_x']))
 
         #add the time slices as an output for the data_fit function
@@ -1419,7 +1384,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         time_real_upp = TimeReference[time_slices_red_All_added]
-        import pdb; pdb.set_trace()
 
         out_put_R_All_added = fit_data(R_meters_mask_All_added, ne_line_interpolated_R_2d_All_added, R_meters_2d_errors_All_added, \
                                    ne_line_interpolated_R_2d_errors_All_added , kernel_method=args.kernel, \
@@ -1429,7 +1393,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
 
-        import pdb; pdb.set_trace()
         print('---------------------------------------------------------------')
         print('---------------------------------------------------------------')
         print('----Transformation from R_space to rho_space for All_added ----')
@@ -1455,6 +1418,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         #apply the mask to both the All_added and lower densities
 
+        #derivative_density_All_added_fit_output = -(np.asarray(out_put_R_All_added['fit_dydx_weighted']))#fit_x
         derivative_density_All_added_fit_output = -(np.asarray(out_put_R_All_added['ni_fit_dydx']))#fit_x
         #derivative_density_All_added_fit_output = -(np.asarray(out_put_R_All_added['hs_fit_dydx']))#fit_x
             
@@ -1502,7 +1466,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             rho_pol_norm_ref_interpolated_saved =rho_pol_norm_ref_interpolated
             average_der_density_saved =average_der_density
             rho_total_final_saved = rho_total_final
-            check = True
+            check = True #False
             if check:
                 list_slices_shifted = []
                 diff_rho_inter_ref = []
@@ -1542,7 +1506,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             rho_total_final_error      = np.full(rho_total_final.shape, rho_total_final*0.01)
             average_der_density_error  = np.full(average_der_density.shape, average_der_density*0.1)
 
-                #concatenate the errors
+            #concatenate the errors
             rho_pol_norm_ref_concat_error = rho_total_final_error
             electron_density_concat_error = average_der_density_error
 
@@ -1551,15 +1515,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
 
         #rho_mid_plane calculations
-        '''
-        if not mask_reflectometer_exist:
-            rho_pol_norm_ref_concat_prime = rho_pol_norm_ref_concat
-            mask_diff_rho_norm_concat = np.diff(rho_pol_norm_ref_concat) < 0
-            mask_diff_rho_norm_concat = np.insert(mask_diff_rho_norm_concat, 0, True, 1)
-
-            rho_pol_norm_ref_concat_masked = np.ma.array(rho_pol_norm_ref_concat, mask = mask_diff_rho_norm_concat, fill_value=np.nan)
-            rho_pol_norm_ref_concat = rho_pol_norm_ref_concat_masked.filled(np.nan)
-        '''
         #prepare for sorting arrays and the array errors:
        
         array_index = (np.argsort(rho_pol_norm_ref_concat, axis=1))
@@ -1659,7 +1614,6 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             ne_line_total_sort_nonans_final = []
             ne_line_total_sort_nonans_final_error = []
             rho_total_sort_nonans_final_error = []
-            #import pdb; pdb.set_trace()
 
             for ii in range(rho_total_sort_final.shape[0]):
                 rho_total_sort_nonans_final.append(rho_total_sort_final[ii][~np.isnan(rho_total_sort_final[ii])])
@@ -1707,7 +1661,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
                     ne_line_total_sort_nonans_final[ii,jj-1]=ne_line_total_sort_nonans_final[ii,jj-2]
                     ne_line_total_sort_nonans_final[ii,jj]=ne_line_total_sort_nonans_final[ii,jj-2]
 
-        
+        #import pdb; pdb.set_trace()
         out_put_final = fit_data(rho_total_sort_nonans_final , ne_line_total_sort_nonans_final , rho_total_sort_nonans_final_error, \
                                ne_line_total_sort_nonans_final_error , kernel_method='Gibbs_Kernel', \
                                 optimise_all_params=Optimise_all_params, slices_nbr=SLICE_nbr, plot_fit=True, x_fix_data=None, dy_fix_data=None, \
@@ -1720,7 +1674,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         rho_total_fit =  (np.asarray(out_put_final['fit_x']))
         Time_index = np.asarray(out_put_final['fit_time_slice'])
         out_put_final_derivative = np.asarray(out_put_final['ni_fit_dydx'])
-
+        integrale_density_fit = np.asarray(out_put_final['fit_zinteg_array'])
 
         rho_total_measured = np.delete(rho_total_sort_nonans_final, 0, axis = 1)
         rho_total_measured_error= np.delete(rho_total_sort_nonans_final_error, 0, axis = 1)
@@ -1742,14 +1696,19 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         density_pol_norm_base_interp = np.full((rho_pol_norm_base.shape[0],rho_total_fit.shape[0],rho_pol_norm_base.shape[2]),np.nan)
         density_pol_norm_base_interp_error = np.full((rho_pol_norm_base.shape[0],rho_total_fit.shape[0],rho_pol_norm_base.shape[2]),np.nan)
+        
 
+
+
+
+
+        import pdb; pdb.set_trace()
         for ii in range(density_pol_norm_base_interp.shape[0]):
             for jj in range(density_pol_norm_base_interp.shape[1]):
                 density_pol_norm_base_interp[ii,jj] = np.interp(rho_pol_norm_base[ii, Time_index[jj]], \
-                                                                rho_total_fit[jj],  ne_density_fit[jj])#, left=0, right=0)
+                                                                    rho_total_fit[jj],  ne_density_fit[jj])#, left=0, right=0)
                 density_pol_norm_base_interp_error[ii,jj] = np.interp(rho_pol_norm_base[ii, Time_index[jj]], \
-                                                                rho_total_fit[jj],  ne_density_fit_error[jj])#, left=0, right=0)
-
+                                                                          rho_total_fit[jj],  ne_density_fit_error[jj])#, left=0, right=0)
 
 
         R_0 = np.full((R.shape[0]), np.nan)
@@ -1761,7 +1720,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
             R_0[ii] = R[ii,0]
             Z_0[ii] = Z[ii,0]
             distance_length[ii] = np.sqrt((R[ii]-R_0[ii])**2 + (Z[ii]-Z_0[ii])**2)
-
+        
         #the final step will be to integrate the density
         #over the distance in space, trapizodal integration
         integrale_density_final = np.full((density_pol_norm_base_interp.shape[0],density_pol_norm_base_interp.shape[1]),np.nan)
@@ -1778,11 +1737,13 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         integrale_density_final_error =  np.clip(integrale_density_final_error, absolute_error_ne, None)
         
 
+        #integrale_density_final[rho_pol_norm_base_min[:,0].argsort()]
+        #R_meters_mask_All_added
 
+        density_pol_norm_base_interp = density_pol_norm_base_interp[rho_pol_norm_base_min[:,0].argsort(),:,:]
+        distance_length = distance_length[rho_pol_norm_base_min[:,0].argsort(),:]
 
-
-
-        #import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
         if ((electron_density_ne[:,Time_index]).shape[0]!=(integrale_density_final).shape[0]):
             electron_density_ne = np.insert(electron_density_ne,list_LOS_to_remove , np.zeros((electron_density_ne.shape[1])), 0)
 
@@ -1790,9 +1751,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         electron_density_ne_error =  np.clip(electron_density_ne_error, absolute_error_ne, None)
 
 
-        integral_density_final_corrected = (length_2[:,Time_index]/length_1[:,Time_index])*integrale_density_final #<----- this is good
+        integral_density_final_corrected = integrale_density_final #(length_2[:,Time_index]/length_1[:,Time_index])*integrale_density_final #<----- this is good
         integral_density_final_corrected[np.isinf(integral_density_final_corrected)] = 0
-
         density_check = (electron_density_ne) #<----- this is good
         density_check[np.isnan(density_check)] = 0
 
@@ -1819,7 +1779,8 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
 
         
 
-
+        #integral_density_final_corrected =integral_density_final_corrected[rho_pol_norm_base_min[:,0].argsort()]
+        #integrale_density_final_error= integrale_density_final_error[rho_pol_norm_base_min[:,0].argsort()]
         ###Some basic setup
         #create the test directory to save  output files
 
