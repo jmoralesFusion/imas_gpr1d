@@ -109,7 +109,7 @@ where :
 
 once choosing the interferometer diagnostics, it is worth noting that the work becomes 
 complicated and therefore you will find a little description of the fitting procedure within 
-the following lines. It is also worth mentiong that posing the optin interferometr enables 
+the following lines. It is also worth mentiong that posing the option interferometr enables 
 the complete reconstruction of the profile density form rho =0 to rho = 1
 
 
@@ -136,6 +136,9 @@ function that corresponds to the requested data by the routine.
 that gives the final profile density that we need in the following directory 
 /55564_interferometer_data/GPPlots_final_FITS/GPPlots_final_FITS_0.png
 
+
+In line 442, we have added an option to choose the time interval as the user wants, for example in the current 
+script the time was taken between 5.8 and 6.1 sec
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
