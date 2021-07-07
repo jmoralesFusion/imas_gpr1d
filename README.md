@@ -1,5 +1,6 @@
 Gaussian process regression fit routine for IMAS
 ================================================
+https://github.com/jmoralesFusion/imas_gpr1d
 
 If you need help please contact: Mohamad Kozeiha (mohamad.kozeiha@cea.fr)
 or Jorge Morales (jorge.morales2@cea.fr)
@@ -110,18 +111,27 @@ once choosing the interferometer diagnostics, it is worth noting that the work b
 complicated and therefore you will find a little description of the fitting procedure within 
 the following lines. It is also worth mentiong that posing the optin interferometr enables 
 the complete reconstruction of the profile density form rho =0 to rho = 1
+
+
 The result will be located in the following directories that is also created by the fitting/
 routine under a name that is combination between the shot number and the diagnostic name. 
 The use of the fit_fucntion.py has occurred three times and each time results a different fit/
 function that corresponds to the requested data by the routine.
+
+
 0)A combination of the measurements from both interferometery and reflectometry diagnostics is 
     done and therefore a complete full reconstruction of the Line Integrated Density is calculated 
     and therefore passed to the fitting routine
+
 1)fitting the Line Integrated density as a function of normalized rho 
+
 2)a series of interpolations and transoprting the density to rho mid plane is then done, and another
     measurements are then taken for the Line integrated density asa function of raduis in meters.
+
 3)The data are then passed to the second fit_function and the derivative of the results is taken 
       to be used as an input to the final fit function
+
+
 4)the data taken are then mapped again from R-space to rho-space and passed to the final fit function
 that gives the final profile density that we need in the following directory 
 /55564_interferometer_data/GPPlots_final_FITS/GPPlots_final_FITS_0.png
@@ -130,5 +140,6 @@ that gives the final profile density that we need in the following directory
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
+
 there exist also several other functions responsible fro plotting, printing and visualizing the 
 data that we have.
