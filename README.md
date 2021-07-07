@@ -146,3 +146,7 @@ script the time was taken between 5.8 and 6.1 sec
 
 there exist also several other functions responsible fro plotting, printing and visualizing the 
 data that we have.
+
+
+It is also recommended to run the script output_plots_no_asymmetry.py that would generate a comparison between the reconstructed and measured Line Integrated Density by issueing the following command.
+python output_plots_no_asymmetry.py

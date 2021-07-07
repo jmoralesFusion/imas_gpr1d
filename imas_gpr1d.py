@@ -1618,7 +1618,7 @@ def get_data(shot, run_out, occ_out, user_out, machine_out, run_in, occ_in, user
         electron_density_ne_error =  np.clip(electron_density_ne_error, absolute_error_ne, None)
 
 
-        integral_density_final_corrected = integrale_density_final #(length_2[:,Time_index]/length_1[:,Time_index])*integrale_density_final #<----- this is good
+        integral_density_final_corrected = (length_2[:,Time_index]/length_1[:,Time_index])*integrale_density_final #<----- this is good
         integral_density_final_corrected[np.isinf(integral_density_final_corrected)] = 0
         density_check = (electron_density_ne) #<----- this is good
         density_check[np.isnan(density_check)] = 0
