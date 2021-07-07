@@ -83,3 +83,52 @@ metrics are now available. The adjusted R\ :sup:`2` metric provides
 a measure of how close the fit is to the input data points. The
 pseudo R\ :sup:`2` provides a measure of this closeness accounting
 for the input data uncertainties.
+
+
+
+
+############################################################################################################
+#### running the commands:
+Running the fitting routine:
+
+It is only needed to launch the following command from the terminal:
+
+python imas_gpr1d.py 55564 -ids=interferometer -k=Gibbs_Kernel -wep
+
+where :
+1) imas_gpr1d.py is the script responsible for the studying of the data
+2) 55564 is the shot number, you can replace it with whatever shot you want
+3) -ids=interferometer : is the type of the diagnostics used to take the measurements./
+   It should be one of the following: [reflectometer_profile, ece, interferometer]
+4) -k=Gibbs_Kernel : is the type of the kernel used to fit the data, it should be either/
+   Gibbs_Kernel or RQ_Kernel
+5) -wep : refers to write edge profiles, this means if we want to save the reconstructed /
+   profiles to the database or not. so removing the term -wep will not allow saving the /
+   data to west db 
+
+once choosing the interferometer diagnostics, it is worth noting that the work becomes 
+complicated and therefore you will find a little description of the fitting procedure within 
+the following lines. It is also worth mentiong that posing the optin interferometr enables 
+the complete reconstruction of the profile density form rho =0 to rho = 1
+The result will be located in the following directories that is also created by the fitting/
+routine under a name that is combination between the shot number and the diagnostic name. 
+The use of the fit_fucntion.py has occurred three times and each time results a different fit/
+function that corresponds to the requested data by the routine.
+0)A combination of the measurements from both interferometery and reflectometry diagnostics is 
+    done and therefore a complete full reconstruction of the Line Integrated Density is calculated 
+    and therefore passed to the fitting routine
+1)fitting the Line Integrated density as a function of normalized rho 
+2)a series of interpolations and transoprting the density to rho mid plane is then done, and another
+    measurements are then taken for the Line integrated density asa function of raduis in meters.
+3)The data are then passed to the second fit_function and the derivative of the results is taken 
+      to be used as an input to the final fit function
+4)the data taken are then mapped again from R-space to rho-space and passed to the final fit function
+that gives the final profile density that we need in the following directory 
+/55564_interferometer_data/GPPlots_final_FITS/GPPlots_final_FITS_0.png
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
+############################################################################################################
+there exist also several other functions responsible fro plotting, printing and visualizing the 
+data that we have.
